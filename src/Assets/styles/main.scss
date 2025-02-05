@@ -1,0 +1,17 @@
+//Helper Styles
+@import url('./helper/_font.scss');
+@import url('./helper/_theme.scss');
+@import url('./helper/_layout.scss');
+
+
+// component Styles 
+@import url('./Components/_header.scss');
+@import url('./Components/_sidebar.scss');
+@import url('./Components/_breadcrumbs.scss');
+// @import url('./Components/_inputs.scss');
+// @import url('./Components/_footer.scss');
+// @import url('./Components/_loading.scss');
+
+// Pages styles
+
+@import url('./Pages/_home.scss')

@@ -1,0 +1,29 @@
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    height: 100%;
+
+    .s_space_view {
+        min-height: 70px;
+        max-height: 70px;
+        width: 100%;
+        border: 1px solid black;
+    }
+
+    .s_navigation {
+        height: calc(100vh - 191px);
+        overflow: auto;
+        width: 100%;
+        border: 1px solid black;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .s_footer {
+        min-height: 35px;
+        max-height: 35px;
+        width: 100%;
+        border: 1px solid black;
+    }
+}

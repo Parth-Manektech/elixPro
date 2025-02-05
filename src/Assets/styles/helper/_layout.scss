@@ -1,0 +1,32 @@
+.main-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-height: 100vh;
+}
+
+.sub_layout {
+    height: calc(100vh - 86px);
+    overflow: auto;
+    width: 100vw;
+    display: flex;
+    flex-wrap: nowrap;
+
+    .sidebar_container {
+        height: 100%;
+        overflow: auto;
+        min-width: 380px;
+        max-width: 380px;
+        background: #00d9ff49;
+        border: 1px solid black;
+    }
+
+
+    .main_container {
+        height: 100%;
+        overflow: auto;
+        width: 100%;
+        background: #ff000049;
+        border: 1px solid black;
+    }
+}
