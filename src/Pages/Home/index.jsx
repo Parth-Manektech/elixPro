@@ -5,42 +5,51 @@ function Home() {
     return (
         <div>
             <HomeResearch />
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
-            <div >A simple primary alert—check it out!</div>
+            <div className='d-flex flex-column align-items-center fs-2 '>
+                <span className='d-flex flex-row justify-content-center align-items-center'>↓↓ SCROLL HERE ↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓</span>
+                <span>↓↓↓↓</span>
+            </div>
         </div>
     )
 }

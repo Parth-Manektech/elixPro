@@ -1,62 +1,66 @@
 @import '../helper/_theme.scss';
 
-.header {
+.header_mobile {
+    height: 123px;
+}
+
+.header_big {
     height: 86px;
+}
+
+.header {
     width: 100vw;
-    background-color: rgba(0, 0, 0, 0.319);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid black;
+    background-color: #343A40;
+    color: white;
+
 
     .icon_container {
         height: 100%;
         min-width: 380px;
         max-width: 380px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid black;
     }
 
     .navbar {
         height: 100%;
         width: 100%;
-        background-color: rgba(0, 0, 0, 0.319);
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid black;
 
         .h_SEARCH {
             height: 100%;
             width: 100%;
-            padding: 0 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid black;
+            padding: 0 20px;
+
+
+            .input-group {
+                span {
+                    border: none;
+                    background-color: #495057;
+                }
+
+                .form-control {
+                    border: none;
+                    background-color: #495057;
+                    color: #fff;
+                    padding: 7px 1px !important;
+                }
+
+                ::placeholder {
+                    color: #fff;
+                }
+            }
         }
 
         .h_APP {
             height: 100%;
             width: fit-content;
             padding: 0 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid black;
+            border-left: 1px solid grey;
         }
 
         .h_PROFILE {
             height: 100%;
             width: fit-content;
             padding: 0 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid black;
+            border-left: 1px solid grey;
         }
 
     }

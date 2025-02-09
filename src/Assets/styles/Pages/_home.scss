@@ -1,8 +1,123 @@
 .home_research {
-    height: 100px;
     width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid black;
+    background-color: #fff;
+    border-bottom: 2px solid #21252964;
+    position: sticky;
+    top: 0;
+
+    .custom-btn-group {
+        border: 1px solid #CED4DA;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .btn-group-research {
+        background-color: white;
+        border: 1px solid #CED4DA;
+        color: #6C757D;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .btn-group-research.active,
+    .btn-group-research:hover {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .btn-group-research:first-of-type {
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+    }
+
+    .btn-group-research:last-of-type {
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+
+    .btn-check:checked+.btn-group-research {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+
+    .btn-archive {
+        color: #007bff;
+    }
+
+    .Research_input {
+
+        width: 50%;
+
+        .input-group {
+
+            span {
+                background-color: #007bff;
+            }
+        }
+    }
+
+    .Ordina_select {
+        color: #007bff;
+
+        option {
+            color: black;
+        }
+    }
+
+    .research_pagination {
+        .page-item {
+            .page-link {
+                border: none;
+            }
+
+            .active {
+                background-color: #007bff50;
+                color: #007bff;
+            }
+        }
+    }
+
+    .custom-toggle-group {
+        border: 1px solid #CED4DA;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .btn-toggle {
+        background-color: white;
+        border: 1px solid #CED4DA;
+        color: #6C757D;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-toggle.active,
+    .btn-toggle:hover {
+        background-color: #E9ECEF;
+        color: #495057;
+    }
+
+    .btn-toggle:first-of-type {
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+    }
+
+    .btn-toggle:last-of-type {
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+
+    .btn-check:checked+.btn-toggle {
+        background-color: #E9ECEF;
+        color: #495057;
+    }
+
 }

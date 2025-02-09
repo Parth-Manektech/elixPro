@@ -1,8 +1,20 @@
 import React from 'react'
+import { BlocksIcon, CubeIcon, SideBarIcon } from '../../Assets/SVGs'
 
-function Breadcrumbs() {
+function Breadcrumbs({ sidebarOpen, setSidebarOpen, isMobile }) {
     return (
-        <div className='breadcrumbs'>Breadcrumbs</div>
+        <div className='breadcrumbs d-flex justify-content-start align-items-center'>
+            {isMobile && <span className='px-3' onClick={() => setSidebarOpen(!sidebarOpen)} ><SideBarIcon /></span>}
+            <nav aria-label="breadcrumb">
+                <ol className="breadcrumb">
+                    <li className="breadcrumb-item"><BlocksIcon /> <span className='ms-2'>Lev1</span></li>
+                    <li className="breadcrumb-item"><CubeIcon /><span className='ms-2'>Lev2</span></li>
+                    <li className="breadcrumb-item"><span>Lev3</span></li>
+                    <li className="breadcrumb-item"><span className='fw-bold'>Lev4</span></li>
+                </ol>
+            </nav>
+
+        </div>
     )
 }
 

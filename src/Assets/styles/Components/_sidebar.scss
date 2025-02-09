@@ -4,26 +4,42 @@
     justify-content: space-around;
     height: 100%;
 
+
+
     .s_space_view {
         min-height: 70px;
         max-height: 70px;
         width: 100%;
-        border: 1px solid black;
+        border-bottom: 2px solid #21252964;
+
     }
 
     .s_navigation {
         height: calc(100vh - 191px);
-        overflow: auto;
         width: 100%;
-        border: 1px solid black;
-        display: flex;
-        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        color: #0D6EFD;
+        font-size: 25px;
     }
 
     .s_footer {
         min-height: 35px;
         max-height: 35px;
         width: 100%;
-        border: 1px solid black;
+        border-top: 2px solid #21252964;
+        background-color: #E9ECEF;
+
+        .h_line {
+            width: 1px;
+            height: 70%;
+            background-color: #CED4DA;
+        }
+    }
+
+    .s_footer_none {
+        min-height: 35px;
+        max-height: 35px;
+        width: 100%;
     }
 }

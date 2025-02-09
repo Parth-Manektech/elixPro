@@ -3,7 +3,10 @@
     flex-direction: column;
     min-height: 100vh;
     max-height: 100vh;
+    overflow: hidden;
 }
+
+
 
 .sub_layout {
     height: calc(100vh - 86px);
@@ -12,21 +15,58 @@
     display: flex;
     flex-wrap: nowrap;
 
+    .sidebar_small {
+        min-width: 60px;
+        max-width: 60px;
+    }
+
+    .sidebar_big {
+        min-width: 380px;
+        max-width: 380px;
+    }
+
+
+
     .sidebar_container {
         height: 100%;
         overflow: auto;
-        min-width: 380px;
-        max-width: 380px;
-        background: #00d9ff49;
-        border: 1px solid black;
+        background-color: #F8F9FA;
+    }
+
+
+
+    .breadcrums_container_Mobile {
+        height: 70px;
+        width: 100%;
+        border-bottom: 2px solid #21252964;
+    }
+
+    .main_container_mobile {
+        height: 100%;
+        width: 100%;
     }
 
 
     .main_container {
-        height: 100%;
-        overflow: auto;
+        height: calc(100% - 70px);
         width: 100%;
-        background: #ff000049;
-        border: 1px solid black;
+
+        .breadcrums_container {
+            height: 70px;
+            width: 100%;
+            border-bottom: 2px solid #21252964;
+        }
+
+        .page_container_mobile {
+            height: calc(100vh - 189px);
+            overflow: auto;
+            border: 1px solid rgb(0, 0, 255);
+        }
+
+        .page_container {
+            height: calc(100vh - 156px);
+            overflow: auto;
+            border: 1px solid red;
+        }
     }
 }

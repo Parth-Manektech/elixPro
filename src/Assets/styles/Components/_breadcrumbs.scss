@@ -1,8 +1,14 @@
 .breadcrumbs {
-    height: 70px;
+    height: 100%;
     width: 100%;
-    border: 1px solid black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+    .breadcrumb {
+        margin: 0px;
+
+        li {
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+        }
+    }
 }
