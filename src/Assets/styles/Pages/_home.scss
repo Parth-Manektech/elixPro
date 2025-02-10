@@ -2,7 +2,6 @@
     width: 100%;
     background-color: #fff;
     border-bottom: 2px solid #21252964;
-    position: sticky;
     top: 0;
 
     .custom-btn-group {
@@ -69,6 +68,8 @@
     }
 
     .research_pagination {
+        margin: 0;
+
         .page-item {
             .page-link {
                 border: none;
@@ -120,4 +121,8 @@
         color: #495057;
     }
 
+}
+
+.home-container {
+    color: #0D6EFD;
 }

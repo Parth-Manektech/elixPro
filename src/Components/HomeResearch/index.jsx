@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { ArchiveIcon, CircleCheckIcon, CircleCross, DownArrowMenu, DownMenuIcon, GridIcon, InfoLight, ListIcon, PlusIcon, SearchIcon } from '../../Assets/SVGs'
-import { Button, Dropdown, Form, Pagination } from 'react-bootstrap';
+import { Button, Form, Pagination } from 'react-bootstrap';
 import useMediaQuery from '../../utils/customHooks/mediaQuery';
 
 
@@ -10,9 +10,9 @@ function HomeResearch() {
     const isMobile = useMediaQuery('(max-width: 867px)');
 
     return (
-        <div className='home_research p-2 d-flex flex-column justify-content-center align-items-center gap-1'>
+        <div className={`home_research ${isMobile ? 'position-static' : 'position-sticky'} p-2 d-flex flex-column justify-content-center align-items-center gap-2`}>
 
-            <div className={`w-100 d-flex ${isMobile ? 'flex-column gap-3' : 'flex-row'} justify-content-between align-items-center `}>
+            <div className={`w-100 d-flex ${isMobile ? 'flex-column gap-3' : 'flex-row gap-3'} justify-content-between align-items-center `}>
 
                 <div className={`d-flex ${isMobile ? 'justify-content-between w-100 ' : ''} align-items-center gap-3 `}>
                     <div className="btn-group custom-btn-group" role="group">
