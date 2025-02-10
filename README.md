@@ -33,7 +33,7 @@ npm start
 This command starts the development server and you should see output similar to:
 ```
 Compiled successfully!
-You can now view Anthesi-CWF in the browser.
+You can now view elixPro in the browser.
 
 Local:            http://localhost:8080
 On Your Network:  http://192.168.0.101:8080
