@@ -6,7 +6,7 @@ function Sidebar({ isMobile, sidebarOpen, setSidebarOpen }) {
         <div className='sidebar'>
             <div className='s_space_view d-flex justify-content-between  align-items-center px-3'>
                 {(isMobile || !sidebarOpen) &&
-                    <div className='d-flex justify-content-center align-items-center gap-1'>
+                    <div className='d-flex justify-content-center align-items-center gap-1 cursor-pointer'>
                         <span className='fw-bold'>
                             Space title
                         </span>
@@ -14,7 +14,7 @@ function Sidebar({ isMobile, sidebarOpen, setSidebarOpen }) {
                     </div>
                 }
 
-                <span onClick={() => setSidebarOpen(!sidebarOpen)} ><SideBarIcon /></span>
+                <span className='cursor-pointer' onClick={() => setSidebarOpen(!sidebarOpen)} ><SideBarIcon /></span>
             </div>
 
 
@@ -66,9 +66,9 @@ function Sidebar({ isMobile, sidebarOpen, setSidebarOpen }) {
 
                 </div>
                 <div className='s_footer d-flex justify-content-center align-items-center gap'>
-                    <span className='w-50 d-flex justify-content-center align-items-center gap-2'><Iicon height={20} width={20} fill='#6C757D' />  <span>Versione</span></span>
+                    <span className='w-50 d-flex justify-content-center align-items-center gap-2 cursor-pointer'><Iicon height={20} width={20} fill='#6C757D' /><span>Versione</span></span>
                     <span className='h_line'></span>
-                    <span className='w-50 d-flex justify-content-center align-items-center gap-2'><GearIcon height={20} width={20} /><span>Aiuto</span></span>
+                    <span className='w-50 d-flex justify-content-center align-items-center gap-2 cursor-pointer'><GearIcon height={20} width={20} /><span>Aiuto</span></span>
 
                 </div>
             </> : <>

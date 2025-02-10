@@ -72,7 +72,7 @@ function HomeResearch() {
                         </label>
                     </div>
 
-                    <div className='btn-archive d-flex flex-nowrap'>
+                    <div className='btn-archive d-flex flex-nowrap cursor-pointer'>
                         <ArchiveIcon className='me-2' />
                         Archiviati
                     </div>
@@ -87,7 +87,7 @@ function HomeResearch() {
 
 
                 <div className={`d-flex ${isMobile ? 'justify-content-between w-100' : ''} align-items-center gap-3 flex-nowrap`}>
-                    <span>
+                    <span className='cursor-pointer'>
                         <DownMenuIcon />
                     </span>
                     <Button variant="primary" className='d-flex align-items-center gap-1' >

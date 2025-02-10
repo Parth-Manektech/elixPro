@@ -6,8 +6,6 @@
     overflow: hidden;
 }
 
-
-
 .sub_layout {
     height: calc(100vh - 86px);
     overflow: auto;
@@ -26,13 +24,11 @@
     }
 
 
-
     .sidebar_container {
         height: 100%;
         overflow: auto;
         background-color: #F8F9FA;
     }
-
 
 
     .breadcrums_container_Mobile {
@@ -60,13 +56,11 @@
         .page_container_mobile {
             height: calc(100vh - 189px);
             overflow: auto;
-            border: 1px solid rgb(0, 0, 255);
         }
 
         .page_container {
             height: calc(100vh - 156px);
             overflow: auto;
-            border: 1px solid red;
         }
     }
 }
