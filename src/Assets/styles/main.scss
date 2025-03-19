@@ -10,7 +10,122 @@
 @import url('./Components/_sidebar.scss');
 @import url('./Components/_breadcrumbs.scss');
 @import url('./Components/_loading.scss');
+@import url('./Components/_input.scss');
 
 // Pages styles
+@import url('./Pages/_home.scss');
+@import url('./Pages/_editorFlow.scss');
 
-@import url('./Pages/_home.scss')
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    pointer-events: none;
+    overflow: scroll;
+}
+
+.section {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+.list-item {
+    background-color: #e3f2fd;
+}
+
+.lists,
+.actions {
+    width: 30%
+}
+
+.status {
+    width: 40%
+}
+
+.status-item {
+    word-break: break-all;
+}
+
+.action-item {
+    background-color: #fff3e0;
+}
+
+.tabcontent,
+.sub-tabcontent {
+    display: none;
+}
+
+.tabcontent.active,
+.sub-tabcontent.active {
+    display: block;
+}
+
+.card-header {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f1f1f1;
+    padding-bottom: 10px;
+    cursor: pointer;
+}
+
+.category {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.plus-icon-div {
+    font-size: 22px;
+    color: #0d6efd;
+    display: none;
+    cursor: pointer;
+}
+
+.category:hover i {
+    display: block;
+}
+
+.card {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.spinner-grow {
+    width: 3rem;
+    height: 3rem;
+}
+
+.nav-item .nav-link {
+    border-bottom: 2px solid #ccc;
+    color: #6c757d;
+}
+
+.nav-item .nav-link.active {
+    border-bottom: 3px solid #007bff;
+    color: #007bff;
+}
+
+.autocomplete-dropdown {
+    max-height: 450px;
+    overflow-y: auto;
+    position: absolute;
+    background-color: white;
+    width: 100%;
+    z-index: 1000;
+}
+
+.autocomplete-item {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover {
+    background-color: #e0e0e0;
+}

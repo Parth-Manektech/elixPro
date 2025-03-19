@@ -6,7 +6,7 @@ import Loader from '../Components/Loader'
 
 function AllRoutes() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/elixPro_react">
       <Routes>
         <Route element={<MainLayout><Outlet /></MainLayout>}>
           {RoutesDetails?.map(({ path, Component, exact }) => {

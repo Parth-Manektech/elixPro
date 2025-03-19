@@ -9,6 +9,10 @@ import './Assets/styles/main.scss'
 
 import 'bootstrap/dist/css/bootstrap.min.css';  // Bootstrap CSS
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { ToastContainer } from 'react-toastify';
+
+
+
 
 
 function App() {
@@ -18,6 +22,18 @@ function App() {
       <Suspense fallback={<Loader />}>
         <AllRoutes />
       </Suspense>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </div>
   );
 }

@@ -19,8 +19,48 @@
         width: 100%;
         overflow-y: auto;
         overflow-x: hidden;
-        color: #0D6EFD;
-        font-size: 25px;
+
+        .s-title {
+            width: 85%;
+        }
+
+        .chip {
+            padding: 3px 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            background-color: #6C757D;
+            border-radius: 40%;
+        }
+
+        .navs {
+            width: 100%;
+
+            .ntitle {
+                margin: 5px 30px;
+            }
+
+            .navItems {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: pointer;
+                border-radius: 5px;
+                margin: 0px 20px;
+                padding: 5px 10px;
+
+                &:hover {
+                    background-color: #E7F1FF;
+                    color: #0D6EFD;
+                }
+            }
+
+            .navItemsactive {
+                background-color: #d7e8ff;
+                color: #0D6EFD;
+            }
+        }
+
     }
 
     .s_footer {

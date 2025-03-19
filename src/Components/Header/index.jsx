@@ -1,12 +1,14 @@
 import React from 'react'
 import ConsoleImage from "../../Assets/Images/consoleTitle.png"
 import { AppIconHeader, CircleUser, SearchIcon } from '../../Assets/SVGs'
+import { useNavigate } from 'react-router-dom'
 
 function Header({ isMobile }) {
+    const navigate = useNavigate()
     return (
         <div className={`header ${isMobile ? 'flex-column header_mobile' : 'flex-row header_big'} d-flex justify-content-center align-items-center`}>
             <div className='icon_container d-flex align-items-center justify-content-start ps-4 '>
-                <img src={ConsoleImage} className='cursor-pointer' alt="Console_Image" />
+                <img src={ConsoleImage} className='cursor-pointer' alt="Console_Image" onClick={() => navigate('/')} />
             </div>
             <div className='navbar d-flex justify-content-center align-items-center flex-nowrap'>
                 <div className='h_SEARCH d-flex justify-content-center align-items-center'>

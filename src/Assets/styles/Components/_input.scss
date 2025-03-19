@@ -1,0 +1,68 @@
+.coustomFileInputFile {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    min-width: fit-content !important;
+    display: flex;
+    width: 100%;
+    flex-wrap: nowrap;
+
+
+    .InputFileBtn {
+        background-color: #E9ECEF;
+        border-radius: 0px;
+        color: #212529;
+        padding: 6px 12px;
+        border-top: none;
+        min-width: fit-content !important;
+        border-left: none;
+        border-bottom: none;
+        border-right: 1px solid #ced4da;
+
+        &:active {
+            background-color: #E9ECEF !important;
+            color: #212529 !important;
+            border-right: 1px solid #ced4da !important;
+        }
+
+        &:hover {
+            background-color: #E9ECEF;
+            color: #212529;
+            border-right: 1px solid #ced4da;
+        }
+    }
+
+    .InputFiletext {
+        padding: 6px 12px;
+        color: #212529;
+    }
+}
+
+.codePreviewinput {
+    width: 90% !important;
+}
+
+.subJsBtn {
+    padding-left: 30px !important;
+}
+
+.subUploadbtns {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding-right: 50px !important;
+}
+
+.subUploadItems {
+    padding-right: 50px !important;
+}
+
+
+
+.coustomExcelInputFile {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}

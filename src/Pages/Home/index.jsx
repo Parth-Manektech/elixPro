@@ -1,55 +1,15 @@
-import React from 'react'
-import HomeResearch from '../../Components/HomeResearch'
+import React, { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+
 
 function Home() {
+    const navigate = useNavigate()
+    useEffect(() => {
+        navigate('/tutti-i-procedimenti')
+    }, [navigate])
     return (
         <div>
-            <HomeResearch />
-            <div className='d-flex flex-column align-items-center fs-2 home-container '>
-                <span className='d-flex flex-row justify-content-center align-items-center'>↓↓ SCROLL HERE ↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓</span>
-                <span>↓↓↓↓</span>
-            </div>
+            Home
         </div>
     )
 }

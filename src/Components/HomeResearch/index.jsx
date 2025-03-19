@@ -1,82 +1,17 @@
 import React, { useState } from 'react'
-import { ArchiveIcon, CircleCheckIcon, CircleCross, DownArrowMenu, DownMenuIcon, GridIcon, InfoLight, ListIcon, PlusIcon, SearchIcon } from '../../Assets/SVGs'
+import { DownArrowMenu, DownMenuIcon, GridIcon, ListIcon, PlusIcon, SearchIcon } from '../../Assets/SVGs'
 import { Button, Form, Pagination } from 'react-bootstrap';
 import useMediaQuery from '../../utils/customHooks/mediaQuery';
 
 
-function HomeResearch() {
-    const [selected, setSelected] = useState("tutti");
+function HomeResearch({ setShow, show }) {
     const [view, setView] = useState("list");
     const isMobile = useMediaQuery('(max-width: 867px)');
 
     return (
         <div className={`home_research ${isMobile ? 'position-static' : 'position-sticky'} p-2 d-flex flex-column justify-content-center align-items-center gap-2`}>
 
-            <div className={`w-100 d-flex ${isMobile ? 'flex-column gap-3' : 'flex-row gap-3'} justify-content-between align-items-center `}>
-
-                <div className={`d-flex ${isMobile ? 'justify-content-between w-100 ' : ''} align-items-center gap-3 `}>
-                    <div className="btn-group custom-btn-group" role="group">
-                        <input
-                            type="radio"
-                            className="btn-check"
-                            name="btnradio"
-                            id="btnradio1"
-                            autoComplete="off"
-                            checked={selected === "tutti"}
-                            onChange={() => setSelected("tutti")}
-                        />
-                        <label className={`btn btn-group-research ${selected === "tutti" ? "active" : ""}`} htmlFor="btnradio1">
-                            Tutti
-                        </label>
-
-                        <input
-                            type="radio"
-                            className="btn-check"
-                            name="btnradio"
-                            id="btnradio2"
-                            autoComplete="off"
-                            checked={selected === "definitivi"}
-                            onChange={() => setSelected("definitivi")}
-                        />
-                        <label className="btn btn-group-research d-flex justify-content-center align-items-center gap-1 flex-nowrap" htmlFor="btnradio2">
-                            <CircleCheckIcon height={17} width={17} fill="#6C757D" />
-                            {!isMobile && 'Definitivi'}
-                        </label>
-
-                        <input
-                            type="radio"
-                            className="btn-check"
-                            name="btnradio"
-                            id="btnradio3"
-                            autoComplete="off"
-                            checked={selected === "test"}
-                            onChange={() => setSelected("test")}
-                        />
-                        <label className="btn btn-group-research d-flex justify-content-center align-items-center gap-1 flex-nowrap" htmlFor="btnradio3">
-                            <InfoLight />
-                            {!isMobile && 'Intest'}
-                        </label>
-
-                        <input
-                            type="radio"
-                            className="btn-check"
-                            name="btnradio"
-                            id="btnradio4"
-                            autoComplete="off"
-                            checked={selected === "offline"}
-                            onChange={() => setSelected("offline")}
-                        />
-                        <label className="btn btn-group-research d-flex justify-content-center align-items-center gap-1 flex-nowrap" htmlFor="btnradio4">
-                            <CircleCross />
-                            {!isMobile && 'Offline'}
-                        </label>
-                    </div>
-
-                    <div className='btn-archive d-flex flex-nowrap cursor-pointer'>
-                        <ArchiveIcon className='me-2' />
-                        Archiviati
-                    </div>
-                </div>
+            <div className={`w-100 px-4 d-flex  ${isMobile ? 'flex-column gap-3' : 'flex-row gap-3'} justify-content-between align-items-center `}>
 
                 <div className={`Research_input d-flex ${isMobile ? 'justify-content-between w-100' : ''} align-items-center gap-3 flex-nowrap`}>
                     <div className="input-group">
@@ -90,9 +25,9 @@ function HomeResearch() {
                     <span className='cursor-pointer'>
                         <DownMenuIcon />
                     </span>
-                    <Button variant="primary" className='d-flex align-items-center gap-1' >
+                    <Button variant="primary" className='d-flex align-items-center gap-1' onClick={() => setShow(!show)}>
                         <PlusIcon height={20} width={20} fill='#fff' />
-                        New
+                        Nuovo
                     </Button>
                 </div>
 
@@ -167,9 +102,6 @@ function HomeResearch() {
                     </div>
                 </div>
             </div>
-
-
-
         </div>
     )
 }

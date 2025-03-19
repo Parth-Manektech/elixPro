@@ -1,0 +1,154 @@
+.Editor_Card {
+    min-width: 320px;
+    max-width: 320px;
+    height: fit-content !important;
+}
+
+.Editor_Card_new {
+    min-width: 320px;
+    max-width: 320px;
+    max-height: 80px;
+}
+
+.listeItemTitle {
+    font-size: 1rem;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    min-width: 80px;
+    max-width: auto;
+}
+
+.listeArrayItem {
+    border: 1px solid #007bff;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    background-color: #e3f2fd;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    min-width: 80px;
+    max-width: auto;
+    cursor: pointer;
+}
+
+.CardStatusTitle {
+    font-size: 1rem;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    min-width: 80px;
+    max-width: auto;
+}
+
+.StatusItemTitle {
+    border: 1px solid #000;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 5px 13px;
+    font-size: .8rem;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    min-width: 80px;
+    max-width: auto;
+    cursor: pointer;
+}
+
+.azioniItemTitle {
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    min-width: 80px;
+    max-width: auto;
+}
+
+.azioniArrayItem {
+    border: 1px solid #ffc107;
+    background-color: #fff3e0;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    min-width: 80px;
+    max-width: auto;
+    cursor: pointer;
+}
+
+.plus-icon {
+    display: none;
+    /* Hide the icon by default */
+}
+
+.listeItemTitle:hover .plus-icon,
+.CardStatusTitle:hover .plus-icon,
+.azioniItemTitle:hover .plus-icon {
+    display: inline-block;
+    margin-left: 5px;
+    /* Show the icon when the parent span is hovered */
+}
+
+
+
+
+
+.toolbar-row {
+    background-color: #4a4a4a;
+    padding: 10px;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.toolbar-row label {
+    color: white;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.toolbar-row input[type="number"] {
+    width: 80px;
+    padding: 5px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    background-color: #333;
+    color: white;
+}
+
+.toolbar-row input[type="number"]::-webkit-inner-spin-button,
+.toolbar-row input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+
+/* Highlight draggable items */
+.Editor_Card:hover,
+.listeArrayItem:hover,
+.azioniArrayItem:hover {
+    background-color: #f0f0f0;
+    cursor: grab;
+}
+
+/* Style while dragging */
+.Editor_Card[draggable="true"],
+.listeArrayItem[draggable="true"],
+.azioniArrayItem[draggable="true"] {
+    opacity: 0.8;
+}
