@@ -1,13 +1,15 @@
 import React from 'react'
-import { Alert, Button, Col, Form, Modal, Row } from 'react-bootstrap';
+import { Button, Col, Form, Modal, Row } from 'react-bootstrap';
 import { Controller, useForm } from 'react-hook-form';
-import { AlertIcon } from '../../../Assets/SVGs';
+// import { AlertIcon } from '../../../Assets/SVGs';
+import { useNavigate } from 'react-router-dom';
 
 function DaZeroModalForm() {
     const { control, handleSubmit, formState: { errors }, } = useForm();
-
+    const navigate = useNavigate();
     function onSubmit(data) {
         console.log('data', data)
+        navigate('/tutti-i-procedimenti/procedimento-x/editor')
     }
 
 
@@ -57,9 +59,9 @@ function DaZeroModalForm() {
                     )}
                 </Col>
             </Row>
-            <Alert className='mt-4 d-flex align-items-center' key='danger' variant='danger'>
+            {/* <Alert className='mt-4 d-flex align-items-center' key='danger' variant='danger'>
                 <AlertIcon width={20} height={20} />&nbsp;Esiste già un Procedimento con questo TAG/nome.
-            </Alert>
+            </Alert> */}
             <Modal.Footer>
                 <Button variant="primary" type='submit'>Crea Procedimento</Button>
             </Modal.Footer>

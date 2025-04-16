@@ -88,6 +88,8 @@ const SortableItem = ({ id, children, className, style, onMouseEnter, onMouseLea
     );
 };
 
+
+
 function View({ epWorkflowjson, setEpWorkflowjson }) {
     // eslint-disable-next-line
     const MainData = epWorkflowjson ? JSON.parse(epWorkflowjson) : [];
@@ -171,6 +173,35 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         ctx.stroke();
     }, []);
 
+    const getRoleForElement = (elementId) => {
+        for (const role of MainData) {
+            if (!role.ruolo?.nome) continue;
+            // Check if the elementId belongs to a list item
+            if (role.liste) {
+                for (const list of role.liste) {
+                    if (list.listArray.some(item => item.key === elementId)) {
+                        return role.ruolo.nome;
+                    }
+                }
+            }
+
+            // Check if the elementId belongs to an action
+            if (role.azioni) {
+                for (const action of role.azioni) {
+                    if (action.listArray.some(item => item.key === elementId)) {
+                        return role.ruolo.nome;
+                    }
+                }
+            }
+
+            // Check if the elementId is a status
+            if (role.pulsantiAttivi && Object.keys(role.pulsantiAttivi).includes(elementId)) {
+                return role.ruolo.nome;
+            }
+        }
+        return null;
+    };
+
     const drawConnections = useCallback((connections) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -180,18 +211,27 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         connections.forEach(({ startId, endId, color }) => {
             const startElement = refsMap.current[startId];
             const endElement = refsMap.current[endId];
-            if (startElement && endElement) {
-                const startRect = startElement.getBoundingClientRect();
-                const endRect = endElement.getBoundingClientRect();
-                const canvasRect = canvas.getBoundingClientRect();
-                let fromX = startRect.left < endRect.left ? startRect.right - canvasRect.left - 5 : startRect.left - canvasRect.left + 5;
-                const fromY = startRect.top + startRect.height / 2 - canvasRect.top;
-                let toX = startRect.left < endRect.left ? endRect.left - canvasRect.left + 15 : endRect.right - canvasRect.left - 15;
-                const toY = endRect.top + endRect.height / 2 - canvasRect.top;
-                drawArrow(ctx, fromX, fromY, toX, toY, color);
-            }
+
+            // Skip if either element is not found
+            if (!startElement || !endElement) return;
+
+            // Get the roles for start and end elements
+            const startRole = getRoleForElement(startId);
+            const endRole = getRoleForElement(endId);
+            // Skip if either role is not found or is collapsed
+            if (collapsedCards[startRole] || collapsedCards[endRole]) return;
+
+            const startRect = startElement.getBoundingClientRect();
+            const endRect = endElement.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            let fromX = startRect.left < endRect.left ? startRect.right - canvasRect.left - 5 : startRect.left - canvasRect.left + 5;
+            const fromY = startRect.top + startRect.height / 2 - canvasRect.top;
+            let toX = startRect.left < endRect.left ? endRect.left - canvasRect.left - 1 : endRect.right - canvasRect.left + 1;
+            const toY = endRect.top + endRect.height / 2 - canvasRect.top;
+            drawArrow(ctx, fromX, fromY, toX, toY, color);
         });
-    }, [canvasRef, drawArrow]);
+        // eslint-disable-next-line
+    }, [canvasRef, drawArrow, collapsedCards]); // Add collapsedCards to dependencies
 
     const handleListMouseHover = (listItemKey) => {
         const workflowIndex = MainData.length - 1;
@@ -209,6 +249,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         setActiveConnections(connections);
         drawConnections(connections);
     };
+
 
     const handleStatusMouseHover = (statusItemKey) => {
         const workflowIndex = MainData.length - 1;
@@ -285,7 +326,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             cancelAnimationFrame(rafId);
             window.removeEventListener('resize', resizeCanvas);
         };
-    }, [MainData, activeConnections, drawConnections, maxRolesInRow, currentRolesInRow, zoom]);
+    }, [MainData, activeConnections, drawConnections, maxRolesInRow, currentRolesInRow, zoom, collapsedCards]);
 
     // Handle drag end for role cards
     const handleDragEndRole = (event) => {
@@ -539,6 +580,19 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             updatedData[workflowIndex].workflowmapping.forEach((wf) => {
                 if (wf.statoDestinazione === oldStatus) {
                     wf.statoDestinazione = newStatus;
+                }
+            });
+
+            // Add this block to update the status key in every action's listArray across all roles
+            updatedData.forEach((role) => {
+                if (role.azioni) {
+                    role.azioni.forEach((action) => {
+                        action.listArray.forEach((item) => {
+                            if (item.status === oldStatus) {
+                                item.status = newStatus;
+                            }
+                        });
+                    });
                 }
             });
 
@@ -1061,7 +1115,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                                 }}
                                                                 onClick={() => openStatusItemModal(element.ruolo.nome, StatusItem)}
                                                                 key={StatusItem}
-                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: shownStatus === StatusItem ? 'bold' : 'normal' }}
                                                             >
                                                                 {StatusItem}
                                                                 {(hoveredStatus?.role === roleName && hoveredStatus?.status === StatusItem) || shownStatus === StatusItem ? (
@@ -1174,6 +1228,9 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     </div>
                 </SortableContext>
             </DndContext>
+
+
+
             <ListItemModal
                 show={listItemModalShow}
                 handleClose={() => { setListItemModalShow(false); setCurrentFaculty(''); }}
@@ -1204,6 +1261,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 titleModalType={titleModalType}
                 initialData={selectedTitle ? { title: selectedTitle } : null}
             />
+
             <RoleItemModal
                 show={roleModalShow}
                 initialData={selectedRoleItem ? selectedRoleItem : null}

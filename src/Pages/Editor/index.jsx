@@ -11,8 +11,11 @@ import ReaddataInput from '../../Components/editorComponents/Readdatainput';
 import View from './view';
 import { CopyIcon, DownloadIcon, FLowIcon, UploadIcon } from '../../Assets/SVGs';
 import { ErrorToast, SuccessToast } from '../../utils/Toster';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Editor = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [epWorkflowjson, setEpWorkflowjson] = useState(null)
     const [activeKey, setActiveKey] = useState("code");
     const [isLoading, setisLoading] = useState(false)
@@ -31,6 +34,18 @@ const Editor = () => {
     const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm();
     const { control: mainControl, handleSubmit: mainhandleSubmit, watch: mainWatch, reset: mainReset } = useForm();
 
+    useEffect(() => {
+        const stateData = location.state;
+        if (stateData?.from === "Nuovo + Genera da JSON" || stateData?.from === "Nuovo + Importa da Excel") {
+            setActiveKey("view");
+            const Data = JSON.parse(stateData?.ePWorkFlowJson)
+            setisLoading(stateData?.isLoading)
+            processAllCodeSegment(Data)
+        }
+        console.log('stateData', stateData);
+        // eslint-disable-next-line
+    }, [location])
+
     function onSubmit(data) {
         setisLoading(true)
         const formData = new FormData();
@@ -42,6 +57,8 @@ const Editor = () => {
             })
                 .then((response) => {
                     if (!response.ok) {
+                        setisLoading(false);
+                        ErrorToast("Failed to process the Excel file.")
                         throw new Error("Failed to process the Excel file.");
                     }
                     return response.json();
@@ -53,16 +70,18 @@ const Editor = () => {
                 })
                 .catch((error) => {
                     console.error(error);
+                    ErrorToast("Something went wrong please check")
                     setisLoading(false)
                 });
         } catch (e) {
             console.error('e', e);
+            ErrorToast("Something went wrong please check")
             setisLoading(false)
         }
     }
 
     // http://efapi601.ext.ovh.anthesi.com:8080
-    // http://localhost:8080
+    // httppp://localhost:8080/
 
     const processAllCodeSegment = (ePWorkFlowJson) => {
 
@@ -98,10 +117,13 @@ const Editor = () => {
                 })
                 .catch((error) => {
                     setisLoading(false)
+                    ErrorToast("Something went wrong please check")
                     console.error(error);
+
                 });
         } catch (error) {
             console.error('catch', error);
+            ErrorToast("Something went wrong please check")
             setisLoading(false)
         }
     }
@@ -409,6 +431,7 @@ const Editor = () => {
         })
             .then((response) => {
                 if (!response.ok) {
+                    ErrorToast("Failed to process code segment.")
                     throw new Error("Failed to process code segment.");
                 }
                 return response.json();
@@ -418,12 +441,13 @@ const Editor = () => {
             })
             .catch((error) => {
                 console.error(error);
+                ErrorToast("Something went wrong please check")
             });
     }
 
     return (
         <div className='position-relative'>
-            {isLoading && <div className='position-absolute top-0 w-100 h-100' style={{ background: '#00000075' }}> <Loader /></div>}
+            {isLoading && <div className='z-3 position-absolute top-0 w-100 h-100' style={{ background: '#00000075' }}> <Loader /></div>}
             <Tabs
                 activeKey={activeKey}
                 onSelect={(k) => setActiveKey(k)}
@@ -464,7 +488,7 @@ const Editor = () => {
                                     )}
                                 </div>
                                 <Button className="btn btn-primary w-auto me-2" type='submit' >Submit</Button>
-                                <button className="btn btn-success" onClick={() => window.location.reload()}>
+                                <button className="btn btn-success" onClick={() => { navigate('/tutti-i-procedimenti/procedimento-x/editor', { replace: true }); window.location.reload() }}>
                                     New Workflow
                                 </button>
                                 {watch('ePWorkFlowJSONPreview') && <div className="btn btn-success" onClick={(e) => DownloadFile(e)}>
@@ -479,7 +503,7 @@ const Editor = () => {
                                 className="mb-3"
                                 fill
                             >
-                                <Tab eventKey="WrokflowJson" title="Wrokflow Json">
+                                <Tab eventKey="WrokflowJson" title="Workflow Json">
                                     <Tab.Container defaultActiveKey="ePWorkFlowJSON" id="uncontrolled-tab-example" className="mb-2">
 
                                         <Nav variant="pills" className="d-flex flex-row justify-content-between  flex-wrap subJsBtn">
@@ -516,10 +540,13 @@ const Editor = () => {
                                                                                     reader.onload = (event) => {
                                                                                         try {
                                                                                             setisLoading(true)
+
                                                                                             const jsonData = JSON.parse(event.target.result);
                                                                                             processAllCodeSegment(jsonData);
                                                                                             mainReset({ xlsFile: '' })
                                                                                         } catch (error) {
+                                                                                            ErrorToast("Uploaded epWorkflowjson is not valid");
+                                                                                            setisLoading(false);
                                                                                             console.error('Error parsing JSON:', error);
                                                                                         }
                                                                                     };
@@ -563,6 +590,8 @@ const Editor = () => {
                                                                                             handleNormalJSONUplod(NormaljsonData);
                                                                                             mainReset({ xlsFile: '' })
                                                                                         } catch (error) {
+                                                                                            setisLoading(false);
+                                                                                            ErrorToast("Uploaded Normaljson is not valid")
                                                                                             console.error('Error parsing Normal JSON:', error);
                                                                                         }
                                                                                     };
@@ -617,6 +646,7 @@ const Editor = () => {
                                                                             handleJavaUpload(WorkflowData);
                                                                             mainReset({ xlsFile: '' })
                                                                         } catch (error) {
+                                                                            ErrorToast("Uploaded Workflow.java is not valid");
                                                                             console.error('Error parsing JAVA:', error);
                                                                         }
                                                                     };
@@ -674,6 +704,7 @@ const Editor = () => {
                                                                                     handleJSUpload(JSData);
                                                                                     mainReset({ xlsFile: '' })
                                                                                 } catch (error) {
+                                                                                    ErrorToast("Uploaded configJS is not valid")
                                                                                     console.error('Error parsing Normal JSON:', error);
                                                                                 }
                                                                             };

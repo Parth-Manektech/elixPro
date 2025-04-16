@@ -35,7 +35,7 @@ This command starts the development server and you should see output similar to:
 Compiled successfully!
 You can now view elixPro in the browser.
 
-Local:            http://localhost:8080
+Local:            http://efapi601.ext.ovh.anthesi.com:8080
 On Your Network:  http://192.168.0.101:8080
 ```
 Open your browser and navigate to [http://localhost:3000](http://localhost:3000) to see the application running.
