@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
+import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
-const ListItemModal = ({ show, handleClose, handleAddListItem, handleDeleteListItem, initialData }) => {
+const ListItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentListTitle, selectedListItem, setEpWorkflowjson, setSelectedListItem, setListItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || { key: "", title: "", type: "", isDetailAllowed: "" }
     });
@@ -41,6 +42,82 @@ const ListItemModal = ({ show, handleClose, handleAddListItem, handleDeleteListI
 
     const handleCancelDelete = () => {
         setShowDeleteConfirmation(false);
+    };
+
+    const handleDeleteListItem = () => {
+        if (!selectedListItem) return;
+        const updatedData = initializeWorkflowMapping([...MainData]);
+        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        const workflowIndex = updatedData.length - 1;
+
+        const listIndex = updatedData[facultyIndex].liste.findIndex((list) => list.title === currentListTitle);
+        const itemKey = selectedListItem.key;
+        updatedData[facultyIndex].liste[listIndex].listArray = updatedData[facultyIndex].liste[listIndex].listArray.filter(
+            (item) => item.key !== selectedListItem.key
+        );
+
+        updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+            wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
+            wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
+        });
+
+        updatedData[facultyIndex].azioni.forEach(action => {
+            action.listArray.forEach(item => {
+                if (item.moveToList) {
+                    const moveToListKeys = item.moveToList.split(',').map(key => key.trim());
+                    item.moveToList = moveToListKeys.filter(key => key !== itemKey).join(', ');
+                }
+                if (item.doNotMoveToList) {
+                    const doNotMoveToListKeys = item.doNotMoveToList.split(',').map(key => key.trim());
+                    item.doNotMoveToList = doNotMoveToListKeys.filter(key => key !== itemKey).join(', ');
+                }
+            });
+        });
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setSelectedListItem(null);
+        setListItemModalShow(false);
+    };
+
+
+    const handleAddListItem = (data) => {
+        const updatedData = initializeWorkflowMapping([...MainData]);
+        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        const workflowIndex = updatedData.length - 1;
+
+        const listIndex = updatedData[facultyIndex].liste.findIndex((list) => list.title === currentListTitle);
+        if (selectedListItem) {
+            const oldKey = selectedListItem.key;
+            const newKey = data.key.trim();
+            const itemIndex = updatedData[facultyIndex].liste[listIndex].listArray.findIndex((item) => item.key === selectedListItem.key);
+            updatedData[facultyIndex].liste[listIndex].listArray[itemIndex] = data;
+
+            updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+                wf.listeDestinazione = wf.listeDestinazione.map(key => key === oldKey ? newKey : key);
+                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key);
+            });
+
+            updatedData[facultyIndex].azioni.forEach(action => {
+                action.listArray.forEach(item => {
+                    if (item.moveToList) {
+                        const moveToListKeys = item.moveToList.split(',').map(key => key.trim());
+                        const updatedMoveToList = moveToListKeys.map(key => key === oldKey ? newKey : key).join(', ');
+                        item.moveToList = updatedMoveToList;
+                    }
+                    if (item.doNotMoveToList) {
+                        const doNotMoveToListKeys = item.doNotMoveToList.split(',').map(key => key.trim());
+                        const updatedDoNotMoveToList = doNotMoveToListKeys.map(key => key === oldKey ? newKey : key).join(', ');
+                        item.doNotMoveToList = updatedDoNotMoveToList;
+                    }
+                });
+            });
+        } else {
+            updatedData[facultyIndex].liste[listIndex].listArray.push(data);
+        }
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setSelectedListItem(null);
+        setListItemModalShow(false);
     };
 
     return (

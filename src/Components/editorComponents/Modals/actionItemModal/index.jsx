@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
+import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 
-const ActionItemModal = ({ show, handleClose, handleAddActionItem, handleDeleteActionItem, initialData, statusOptions }) => {
+const ActionItemModal = ({ show, handleClose, initialData, statusOptions, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || {
             key: "",
@@ -23,6 +24,107 @@ const ActionItemModal = ({ show, handleClose, handleAddActionItem, handleDeleteA
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+    const handleDeleteActionItem = () => {
+        if (!selectedActionItem) return;
+        const updatedData = initializeWorkflowMapping([...MainData]);
+        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        const actionIndex = updatedData[facultyIndex].azioni.findIndex((action) => action.title === currentActionTitle);
+        const workflowIndex = updatedData.length - 1;
+
+        const itemKey = selectedActionItem.key;
+        updatedData[facultyIndex].azioni[actionIndex].listArray = updatedData[facultyIndex].azioni[actionIndex].listArray.filter(
+            (item) => item.key !== selectedActionItem.key
+        );
+
+        updatedData[workflowIndex].workflowmapping = updatedData[workflowIndex].workflowmapping.filter(
+            (wf) => wf.keyAzione !== itemKey
+        );
+        updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+            wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
+            wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
+            if (wf.statoDestinazione === itemKey) {
+                wf.statoDestinazione = null;
+            }
+        });
+
+        updatedData.forEach((faculty, index) => {
+            if (faculty.pulsantiAttivi) {
+                Object.keys(faculty.pulsantiAttivi).forEach(status => {
+                    delete faculty.pulsantiAttivi[status][itemKey];
+                });
+            }
+        });
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setSelectedActionItem(null);
+        setActionItemModalShow(false);
+    };
+
+
+    const handleAddActionItem = (data) => {
+        const updatedData = initializeWorkflowMapping([...MainData]);
+        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        const actionIndex = updatedData[facultyIndex].azioni.findIndex((action) => action.title === currentActionTitle);
+        const workflowIndex = updatedData.length - 1;
+
+        if (selectedActionItem) {
+            const oldKey = selectedActionItem.key;
+            const newKey = data.key.trim();
+            const itemIndex = updatedData[facultyIndex].azioni[actionIndex].listArray.findIndex((item) => item.key === selectedActionItem.key);
+            updatedData[facultyIndex].azioni[actionIndex].listArray[itemIndex] = data;
+
+            updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+                if (wf.keyAzione === oldKey) {
+                    wf.keyAzione = newKey;
+                }
+                wf.listeDestinazione = wf.listeDestinazione.map(key => key === oldKey ? newKey : key);
+                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key);
+                if (wf.statoDestinazione === oldKey) {
+                    wf.statoDestinazione = newKey;
+                }
+            });
+
+            updatedData.forEach((faculty, index) => {
+                if (faculty.pulsantiAttivi) {
+                    const oldStatusKeys = Object.keys(faculty.pulsantiAttivi);
+                    oldStatusKeys.forEach(oldStatus => {
+                        if (faculty.pulsantiAttivi[oldStatus][oldKey]) {
+                            const value = faculty.pulsantiAttivi[oldStatus][oldKey];
+                            delete faculty.pulsantiAttivi[oldStatus][oldKey];
+                            faculty.pulsantiAttivi[oldStatus][newKey] = value;
+                        }
+                    });
+                }
+            });
+        } else {
+            updatedData[facultyIndex].azioni[actionIndex].listArray.push(data);
+        }
+
+        const actionKey = data.key;
+        const moveToListKeys = data.moveToList ? data.moveToList.split(',').map(key => key.trim()).filter(key => key) : [];
+        const doNotMoveToListKeys = data.doNotMoveToList ? data.doNotMoveToList.split(',').map(key => key.trim()).filter(key => key) : [];
+
+        let workflowItemIndex = updatedData[workflowIndex].workflowmapping.findIndex((wf) => wf.keyAzione === actionKey);
+        if (workflowItemIndex === -1) {
+            updatedData[workflowIndex].workflowmapping.push({
+                keyAzione: actionKey,
+                behaviour: data.behaviourTag || '',
+                statoDestinazione: data.status || null,
+                listeDestinazione: moveToListKeys,
+                doNotlisteDestinazione: doNotMoveToListKeys
+            });
+        } else {
+            const existingWorkflow = updatedData[workflowIndex].workflowmapping[workflowItemIndex];
+            existingWorkflow.statoDestinazione = data.status || existingWorkflow.statoDestinazione || null;
+            existingWorkflow.listeDestinazione = moveToListKeys;
+            existingWorkflow.doNotlisteDestinazione = doNotMoveToListKeys;
+        }
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setSelectedActionItem(null);
+        setActionItemModalShow(false);
+    };
 
     useEffect(() => {
         if (initialData) {

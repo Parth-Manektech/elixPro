@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
+import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
-const StatusModal = ({ show, handleClose, handleAddStatusItem, handleDeleteStatusItem, initialData }) => {
+const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty, selectedStatusItem, setEpWorkflowjson, setSelectedStatusItem, setStatusItemModalShow, shownStatuses, setShownStatuses }) => {
 
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || { status: "" }
@@ -13,6 +14,86 @@ const StatusModal = ({ show, handleClose, handleAddStatusItem, handleDeleteStatu
     useEffect(() => {
         reset(initialData || { status: "" });
     }, [initialData, reset]);
+
+    const handleAddStatusItem = (data) => {
+        const updatedData = initializeWorkflowMapping([...MainData]);
+        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        const workflowIndex = updatedData.length - 1;
+
+        if (selectedStatusItem) {
+            const oldStatus = selectedStatusItem;
+            const newStatus = data.status.trim();
+            if (!updatedData[facultyIndex].pulsantiAttivi) {
+                updatedData[facultyIndex].pulsantiAttivi = {};
+            }
+
+            const oldValue = updatedData[facultyIndex].pulsantiAttivi[oldStatus] || {};
+            delete updatedData[facultyIndex].pulsantiAttivi[oldStatus];
+            updatedData[facultyIndex].pulsantiAttivi[newStatus] = oldValue;
+
+            updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+                if (wf.statoDestinazione === oldStatus) {
+                    wf.statoDestinazione = newStatus;
+                }
+            });
+
+            // Add this block to update the status key in every action's listArray across all roles
+            updatedData.forEach((role) => {
+                if (role.azioni) {
+                    role.azioni.forEach((action) => {
+                        action.listArray.forEach((item) => {
+                            if (item.status === oldStatus) {
+                                item.status = newStatus;
+                            }
+                        });
+                    });
+                }
+            });
+
+            if (shownStatuses[currentFaculty] === oldStatus) {
+                setShownStatuses(prev => ({
+                    ...prev,
+                    [currentFaculty]: newStatus
+                }));
+            }
+        } else {
+            if (!updatedData[facultyIndex].pulsantiAttivi) {
+                updatedData[facultyIndex].pulsantiAttivi = {};
+            }
+            updatedData[facultyIndex].pulsantiAttivi[data.status.trim()] = {};
+        }
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setSelectedStatusItem(null);
+        setStatusItemModalShow(false);
+    };
+
+    const handleDeleteStatusItem = () => {
+        if (!selectedStatusItem) return;
+        const updatedData = initializeWorkflowMapping([...MainData]);
+        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        const workflowIndex = updatedData.length - 1;
+
+        delete updatedData[facultyIndex].pulsantiAttivi[selectedStatusItem];
+
+        updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+            if (wf.statoDestinazione === selectedStatusItem) {
+                wf.statoDestinazione = null;
+            }
+        });
+
+        if (shownStatuses[currentFaculty] === selectedStatusItem) {
+            setShownStatuses(prev => {
+                const newStatuses = { ...prev };
+                delete newStatuses[currentFaculty];
+                return newStatuses;
+            });
+        }
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setSelectedStatusItem(null);
+        setStatusItemModalShow(false);
+    };
 
     const onSubmit = (data) => {
         const trimmedData = {
