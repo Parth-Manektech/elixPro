@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Card } from 'react-bootstrap';
 import { PencilIcon, RoundPlusIcon, ViewClosedEyeIcon, ViewOpenEyeIcon } from '../../Assets/SVGs';
 import {
@@ -16,7 +17,6 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
-
 import ListItemModal from '../../Components/editorComponents/Modals/ListItemModal';
 import ActionItemModal from '../../Components/editorComponents/Modals/actionItemModal';
 import StatusModal from '../../Components/editorComponents/Modals/StatusModal';
@@ -24,21 +24,13 @@ import TitleModal from '../../Components/editorComponents/Modals/TitleModal';
 import RoleItemModal from '../../Components/editorComponents/Modals/RoleModal';
 import { SortableItem, SortableRoleCard } from '../../Components/editorComponents/ViewComponentUtility';
 
-
-
-
 function View({ epWorkflowjson, setEpWorkflowjson }) {
-    // eslint-disable-next-line
-    const MainData = epWorkflowjson ? JSON.parse(epWorkflowjson) : [];
-
-
+    const MainData = useMemo(() => epWorkflowjson ? JSON.parse(epWorkflowjson) : [], [epWorkflowjson]);
     const [zoomLevel, setZoomLevel] = useState(1);
-
-
     const [shownStatuses, setShownStatuses] = useState({});
     const [hoveredStatus, setHoveredStatus] = useState(null);
     const [hoveredAction, setHoveredAction] = useState(null);
-
+    const [hoveredList, setHoveredList] = useState(null);
     const [listItemModalShow, setListItemModalShow] = useState(false);
     const [actionItemModalShow, setActionItemModalShow] = useState(false);
     const [statusItemModalShow, setStatusItemModalShow] = useState(false);
@@ -53,21 +45,22 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     const [currentListTitle, setCurrentListTitle] = useState('');
     const [currentActionTitle, setCurrentActionTitle] = useState('');
     const [selectedTitle, setSelectedTitle] = useState(null);
-
     const [collapsedCards, setCollapsedCards] = useState({});
     const [hoveredRole, setHoveredRole] = useState(null);
+    const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
     const canvasRef = useRef(null);
+    const containerRef = useRef(null);
     const refsMap = useRef({});
-
-
-
+    const resizingRef = useRef(null);
+    const startPosRef = useRef({ x: 0, y: 0 });
+    const startSizeRef = useRef({ width: 0, height: 0 });
 
     const drawArrow = useCallback((ctx, fromX, fromY, toX, toY, color) => {
         ctx.beginPath();
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 5 / zoomLevel;
         ctx.strokeStyle = color;
-        const horizontalOffset = 10;
+        const horizontalOffset = 10 / zoomLevel;
         let midX1 = toX > fromX ? fromX + horizontalOffset : fromX - horizontalOffset;
         const midY1 = fromY;
         const midX2 = midX1;
@@ -76,7 +69,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         ctx.lineTo(midX1, midY1);
         ctx.lineTo(midX2, midY2);
         ctx.lineTo(toX, toY);
-        const headLength = 6;
+        const headLength = 6 / zoomLevel;
         let angle;
         if (toX > midX2) angle = 0;
         else if (toX < midX2) angle = Math.PI;
@@ -88,12 +81,11 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         ctx.lineTo(toX, toY);
         ctx.fillStyle = color;
         ctx.stroke();
-    }, []);
+    }, [zoomLevel]);
 
     const getRoleForElement = (elementId) => {
         for (const role of MainData) {
             if (!role.ruolo?.nome) continue;
-            // Check if the elementId belongs to a list item
             if (role.liste) {
                 for (const list of role.liste) {
                     if (list.listArray.some(item => item.key === elementId)) {
@@ -101,8 +93,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     }
                 }
             }
-
-            // Check if the elementId belongs to an action
             if (role.azioni) {
                 for (const action of role.azioni) {
                     if (action.listArray.some(item => item.key === elementId)) {
@@ -110,8 +100,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     }
                 }
             }
-
-            // Check if the elementId is a status
             if (role.pulsantiAttivi && Object.keys(role.pulsantiAttivi).includes(elementId)) {
                 return role.ruolo.nome;
             }
@@ -128,31 +116,25 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         connections.forEach(({ startId, endId, color }) => {
             const startElement = refsMap.current[startId];
             const endElement = refsMap.current[endId];
-
-            // Skip if either element is not found
             if (!startElement || !endElement) return;
-
-            // Get the roles for start and end elements
             const startRole = getRoleForElement(startId);
             const endRole = getRoleForElement(endId);
-            // Skip if either role is not found or is collapsed
             if (collapsedCards[startRole] || collapsedCards[endRole]) return;
-
             const startRect = startElement.getBoundingClientRect();
             const endRect = endElement.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
-            let fromX = startRect.left < endRect.left ? startRect.right - canvasRect.left - 5 : startRect.left - canvasRect.left + 5;
+            let fromX = startRect.left < endRect.left ? startRect.right - canvasRect.left : startRect.left - canvasRect.left;
             const fromY = startRect.top + startRect.height / 2 - canvasRect.top;
-            let toX = startRect.left < endRect.left ? endRect.left - canvasRect.left - 1 : endRect.right - canvasRect.left + 1;
+            let toX = startRect.left < endRect.left ? endRect.left - canvasRect.left : endRect.right - canvasRect.left;
             const toY = endRect.top + endRect.height / 2 - canvasRect.top;
-            drawArrow(ctx, fromX, fromY, toX, toY, color);
+            drawArrow(ctx, fromX / zoomLevel, fromY / zoomLevel, toX / zoomLevel, toY / zoomLevel, color);
         });
-        // eslint-disable-next-line
-    }, [canvasRef, drawArrow, collapsedCards]); // Add collapsedCards to dependencies
-
-
+    }, [drawArrow, collapsedCards, zoomLevel]);
 
     const handleListMouseHover = (listItemKey) => {
+        setHoveredList(listItemKey);
+        setHoveredStatus(null);
+        setHoveredAction(null);
         const workflowIndex = MainData.length - 1;
         const connections = [];
         if (MainData[workflowIndex]?.workflowmapping) {
@@ -168,8 +150,10 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         drawConnections(connections);
     };
 
-
     const handleStatusMouseHover = (statusItemKey) => {
+        setHoveredStatus(statusItemKey);
+        setHoveredAction(null);
+        setHoveredList(null);
         const workflowIndex = MainData.length - 1;
         const connections = [];
         if (MainData[workflowIndex]?.workflowmapping) {
@@ -183,6 +167,9 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     };
 
     const handleActionMouseHover = (actionKey) => {
+        setHoveredAction(actionKey);
+        setHoveredStatus(null);
+        setHoveredList(null);
         const workflowIndex = MainData.length - 1;
         const connections = [];
         if (MainData[workflowIndex]?.workflowmapping) {
@@ -209,52 +196,94 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     };
 
     const handleMouseLeave = () => {
+        if (hoveredList || hoveredStatus || hoveredAction) return;
         const canvas = canvasRef.current;
         if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        setHoveredList(null);
+        setHoveredStatus(null);
+        setHoveredAction(null);
     };
 
+    const updateCanvasSize = useCallback(() => {
+        const container = containerRef.current;
+        if (!container) return;
 
+        const maxWidth = Math.max(
+            container.scrollWidth,
+            ...MainData.map(role => ((role.layout?.left || 0) + (role.layout?.width || 320)) * zoomLevel)
+        );
+        const maxHeight = Math.max(
+            container.scrollHeight,
+            ...MainData.map(role => ((role.layout?.top || 0) + (role.layout?.height || 461)) * zoomLevel)
+        );
 
+        setCanvasSize(prev => {
+            if (prev.width !== maxWidth || prev.height !== maxHeight) {
+                return { width: maxWidth, height: maxHeight };
+            }
+            return prev;
+        });
+    }, [MainData, zoomLevel]);
 
     useEffect(() => {
-        MainData.forEach((role, index) => {
-
+        let hasChanges = false;
+        const updatedData = MainData.map((role, index) => {
             if (!role.layout) {
-                role.layout = {
-                    top: index * 30,
-                    left: index * 30,
-                    width: 320,
-                    height: 461,
+                hasChanges = true;
+                return {
+                    ...role,
+                    layout: {
+                        top: index * 30,
+                        left: index * 30,
+                        width: 320,
+                        height: 461,
+                    }
                 };
             }
+            return role;
         });
 
-        setEpWorkflowjson(JSON.stringify(MainData));
-        // eslint-disable-next-line
-    }, [MainData]);
+        if (hasChanges) {
+            setEpWorkflowjson(JSON.stringify(updatedData));
+        } else {
+            updateCanvasSize();
+        }
+    }, [MainData, setEpWorkflowjson, updateCanvasSize]);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            canvas.width = canvasSize.width;
+            canvas.height = canvasSize.height;
+        }
+    }, [canvasSize]);
 
     const handleRoleCardDragEnd = (event) => {
-        console.log("event : ", event);
         const { delta, active } = event;
         const id = active.id;
 
-        MainData.forEach((role, index) => {
+        MainData.forEach((role) => {
             if (role.ruolo?.nome === id) {
                 const currentLayout = role.layout || { top: 0, left: 0, width: 320, height: 461 };
+                let newTop = Math.max(0, parseInt(currentLayout.top) + delta.y / zoomLevel);
+                let newLeft = Math.max(0, parseInt(currentLayout.left) + delta.x / zoomLevel);
 
                 role.layout = {
                     ...currentLayout,
-                    top: parseInt(currentLayout.top) + delta.y,
-                    left: parseInt(currentLayout.left) + delta.x,
+                    top: newTop,
+                    left: newLeft,
                 };
             }
         });
         setEpWorkflowjson(JSON.stringify(MainData));
-    }
+        updateCanvasSize();
+        if (hoveredList || hoveredStatus || hoveredAction) {
+            if (hoveredList) handleListMouseHover(hoveredList);
+            if (hoveredStatus) handleStatusMouseHover(hoveredStatus);
+            if (hoveredAction) handleActionMouseHover(hoveredAction);
+        }
+    };
 
-
-
-    // Handle drag end for list items
     const handleDragEndListItem = (event, facultyName, listTitle) => {
         const { active, over } = event;
         if (active.id !== over.id) {
@@ -270,7 +299,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         }
     };
 
-    // Handle drag end for action items
     const handleDragEndActionItem = (event, facultyName, actionTitle) => {
         const { active, over } = event;
         if (active.id !== over.id) {
@@ -286,20 +314,16 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         }
     };
 
-    // Configure sensors with activation constraints to distinguish clicks from drags
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 5, // Require a 5-pixel movement to initiate a drag
+                distance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-
-
-
 
     const toggleStatusVisibility = (roleName, status) => {
         setShownStatuses(prev => {
@@ -316,23 +340,18 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     const toggleActionVisibility = (roleName, status, actionKey) => {
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === roleName);
-
         if (roleIndex === -1) return;
-
         const role = updatedData[roleIndex];
         if (!role.pulsantiAttivi[status]) {
             role.pulsantiAttivi[status] = {};
         }
-
         if (role.pulsantiAttivi[status][actionKey]) {
             delete role.pulsantiAttivi[status][actionKey];
         } else {
             role.pulsantiAttivi[status][actionKey] = true;
         }
-
         setEpWorkflowjson(JSON.stringify(updatedData));
     };
-
 
     const openListItemModal = (facultyName, listTitle, listItem = null) => {
         setCurrentFaculty(facultyName);
@@ -377,8 +396,62 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         return Array.from(allStatuses);
     };
 
+    const handleResizeStart = (e, roleName) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resizingRef.current = roleName;
+        startPosRef.current = { x: e.clientX, y: e.clientY };
+        const role = MainData.find(r => r.ruolo?.nome === roleName);
+        startSizeRef.current = {
+            width: role.layout?.width || 320,
+            height: role.layout?.height || 461
+        };
+        const sortableCard = document.querySelector(`[data-id="${roleName}"]`);
+        if (sortableCard) {
+            sortableCard.style.pointerEvents = 'none';
+        }
+    };
+
+    const handleResize = useCallback((e) => {
+        if (!resizingRef.current) return;
+        const roleName = resizingRef.current;
+        const dx = (e.clientX - startPosRef.current.x) / zoomLevel;
+        const dy = (e.clientY - startPosRef.current.y) / zoomLevel;
+        const newWidth = Math.max(200, startSizeRef.current.width + dx);
+        const newHeight = Math.max(200, startSizeRef.current.height + dy);
+
+        const updatedData = [...MainData];
+        const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
+        updatedData[roleIndex].layout = {
+            ...updatedData[roleIndex].layout,
+            width: newWidth,
+            height: newHeight
+        };
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        updateCanvasSize();
+    }, [MainData, zoomLevel]);
+
+    const handleResizeEnd = () => {
+        if (resizingRef.current) {
+            const sortableCard = document.querySelector(`[data-id="${resizingRef.current}"]`);
+            if (sortableCard) {
+                sortableCard.style.pointerEvents = 'auto';
+            }
+        }
+        resizingRef.current = null;
+    };
+
+    useEffect(() => {
+        window.addEventListener('mousemove', handleResize);
+        window.addEventListener('mouseup', handleResizeEnd);
+        return () => {
+            window.removeEventListener('mousemove', handleResize);
+            window.removeEventListener('mouseup', handleResizeEnd);
+        };
+    }, [handleResize]);
+
     return (
-        <div style={{ position: 'relative', width: '100%', minHeight: '100vh', border: "2px solid blue" }}>
+        <div ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', border: "2px solid blue", overflow: 'auto' }}>
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -405,6 +478,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                         <option value={0.5}>50%</option>
                         <option value={0.75}>75%</option>
                         <option value={1}>100%</option>
+                        <option value={1.5}>150%</option>
+                        <option value={2}>200%</option>
                     </select>
                 </div>
             </div>
@@ -413,24 +488,26 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                width: '100%',
-                height: '100%',
+                width: canvasSize.width,
+                height: canvasSize.height,
                 zIndex: 1000,
                 pointerEvents: 'none',
                 border: "1px solid red"
             }} />
 
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleRoleCardDragEnd} >
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleRoleCardDragEnd}>
                 <SortableContext items={MainData.map(item => item.ruolo?.nome).filter(Boolean)}
                     strategy={horizontalListSortingStrategy}>
-                    <div className='d-flex justify-content-around flex-wrap' style={{ position: 'relative' }}>
+                    <div className='d-flex justify-content-around flex-wrap' style={{ position: 'relative', transform: `scale(${zoomLevel})`, transformOrigin: 'top left', width: `${100 / zoomLevel}%`, height: `${100 / zoomLevel}%` }}>
                         {MainData?.map((element, index) => {
                             if (element?.ruolo) {
                                 const roleName = element.ruolo.nome;
                                 const shownStatus = shownStatuses[roleName];
                                 const associatedActions = shownStatus ? element.pulsantiAttivi?.[shownStatus] || {} : {};
-                                const top = element.layout?.top;
-                                const left = element.layout?.left;
+                                const top = element.layout?.top || 0;
+                                const left = element.layout?.left || 0;
+                                const width = element.layout?.width || 320;
+                                const height = element.layout?.height || 461;
 
                                 return (
                                     <SortableRoleCard
@@ -439,15 +516,14 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                         index={index}
                                         className='mb-3 px-2 d-flex justify-content-between flex-wrap Editor_Card'
                                         style={{
-                                            transform: `scale(${zoomLevel})`,
-                                            width: `${100 / zoomLevel}%`,
-                                            height: `${100 / zoomLevel}%`,
+                                            position: 'absolute',
                                             top: `${top}px`,
                                             left: `${left}px`,
-                                            position: 'absolute',
+                                            width: `${width}px`,
+                                            height: `${height}px`
                                         }}
                                     >
-                                        <Card>
+                                        <Card style={{ width: '100%', height: '100%', position: 'relative' }}>
                                             <Card.Header
                                                 onDoubleClick={() => {
                                                     setCollapsedCards(prev => ({
@@ -455,7 +531,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                         [roleName]: !prev[roleName]
                                                     }));
                                                 }}
-
                                                 onMouseEnter={() => setHoveredRole(roleName)}
                                                 onMouseLeave={() => setHoveredRole(null)}
                                                 style={{
@@ -479,7 +554,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                 )}
                                             </Card.Header>
                                             <Card.Body
-                                                style={{ display: collapsedCards[roleName] ? 'none' : 'block' }}>
+                                                style={{ display: collapsedCards[roleName] ? 'none' : 'block', overflow: 'auto' }}>
                                                 <div className='d-flex gap-2'>
                                                     <div className='d-flex flex-column'>
                                                         {element?.liste?.map((listeItem) => (
@@ -554,10 +629,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                                     });
                                                                     handleStatusMouseHover(StatusItem);
                                                                 }}
-                                                                onMouseLeave={() => {
-                                                                    setHoveredStatus(null);
-                                                                    handleMouseLeave();
-                                                                }}
+                                                                onMouseLeave={handleMouseLeave}
                                                                 onClick={() => openStatusItemModal(element.ruolo.nome, StatusItem)}
                                                                 key={StatusItem}
                                                                 style={{
@@ -632,10 +704,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                                                             });
                                                                                             handleActionMouseHover(azioniArrayItem.key);
                                                                                         }}
-                                                                                        onMouseLeave={() => {
-                                                                                            setHoveredAction(null);
-                                                                                            handleMouseLeave();
-                                                                                        }}
+                                                                                        onMouseLeave={handleMouseLeave}
                                                                                         onClick={() => openActionItemModal(element.ruolo.nome, azioniItem.title, azioniArrayItem)}
                                                                                     >
                                                                                         <span
@@ -676,6 +745,19 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                     </div>
                                                 </div>
                                             </Card.Body>
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    right: 0,
+                                                    width: '15px',
+                                                    height: '15px',
+                                                    background: '#ccc',
+                                                    cursor: 'se-resize',
+                                                    zIndex: 1001
+                                                }}
+                                                onMouseDown={(e) => handleResizeStart(e, roleName)}
+                                            />
                                         </Card>
                                     </SortableRoleCard>
                                 );
@@ -708,7 +790,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     setActionItemModalShow(false);
                     setCurrentFaculty('');
                 }}
-
                 MainData={MainData}
                 currentFaculty={currentFaculty}
                 currentActionTitle={currentActionTitle}
@@ -725,7 +806,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     setStatusItemModalShow(false);
                     setCurrentFaculty('');
                 }}
-
                 MainData={MainData}
                 currentFaculty={currentFaculty}
                 selectedStatusItem={selectedStatusItem}
@@ -734,7 +814,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 setStatusItemModalShow={setStatusItemModalShow}
                 shownStatuses={shownStatuses}
                 setShownStatuses={setShownStatuses}
-
                 initialData={selectedStatusItem ? { status: selectedStatusItem } : null}
             />
             <TitleModal
@@ -753,7 +832,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 titleModalType={titleModalType}
                 initialData={selectedTitle ? { title: selectedTitle } : null}
             />
-
             <RoleItemModal
                 show={roleModalShow}
                 initialData={selectedRoleItem ? selectedRoleItem : null}
@@ -764,7 +842,9 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 MainData={MainData}
                 selectedRoleItem={selectedRoleItem}
                 setEpWorkflowjson={setEpWorkflowjson}
-                setSelectedRoleItem={setSelectedRoleItem} setRoleModalShow={setRoleModalShow} setShownStatuses={setShownStatuses}
+                setSelectedRoleItem={setSelectedRoleItem}
+                setRoleModalShow={setRoleModalShow}
+                setShownStatuses={setShownStatuses}
             />
         </div>
     );
