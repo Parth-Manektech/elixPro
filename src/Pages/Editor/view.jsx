@@ -1,28 +1,11 @@
-
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Card } from 'react-bootstrap';
 import { PencilIcon, RoundPlusIcon, ViewClosedEyeIcon, ViewOpenEyeIcon } from '../../Assets/SVGs';
-import {
-    closestCenter,
-    DndContext,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors
-} from '@dnd-kit/core';
-import {
-    arrayMove,
-    horizontalListSortingStrategy,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy
-} from '@dnd-kit/sortable';
 import ListItemModal from '../../Components/editorComponents/Modals/ListItemModal';
 import ActionItemModal from '../../Components/editorComponents/Modals/actionItemModal';
 import StatusModal from '../../Components/editorComponents/Modals/StatusModal';
 import TitleModal from '../../Components/editorComponents/Modals/TitleModal';
 import RoleItemModal from '../../Components/editorComponents/Modals/RoleModal';
-import { SortableItem, SortableRoleCard } from '../../Components/editorComponents/ViewComponentUtility';
 
 function View({ epWorkflowjson, setEpWorkflowjson }) {
     const MainData = useMemo(() => epWorkflowjson ? JSON.parse(epWorkflowjson) : [], [epWorkflowjson]);
@@ -48,6 +31,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     const [collapsedCards, setCollapsedCards] = useState({});
     const [hoveredRole, setHoveredRole] = useState(null);
     const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+    const [draggingItem, setDraggingItem] = useState(null);
+    const [originalPositions, setOriginalPositions] = useState({});
 
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
@@ -55,12 +40,13 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     const resizingRef = useRef(null);
     const startPosRef = useRef({ x: 0, y: 0 });
     const startSizeRef = useRef({ width: 0, height: 0 });
+    const dragStartPosRef = useRef({ x: 0, y: 0 });
 
     const drawArrow = useCallback((ctx, fromX, fromY, toX, toY, color) => {
         ctx.beginPath();
-        ctx.lineWidth = 5 / zoomLevel;
+        ctx.lineWidth = 5 * zoomLevel; // Scale line width with zoom level
         ctx.strokeStyle = color;
-        const horizontalOffset = 10 / zoomLevel;
+        const horizontalOffset = 10 * zoomLevel; // Scale offset with zoom level
         let midX1 = toX > fromX ? fromX + horizontalOffset : fromX - horizontalOffset;
         const midY1 = fromY;
         const midX2 = midX1;
@@ -69,7 +55,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         ctx.lineTo(midX1, midY1);
         ctx.lineTo(midX2, midY2);
         ctx.lineTo(toX, toY);
-        const headLength = 6 / zoomLevel;
+        const headLength = 6 * zoomLevel; // Scale arrowhead size with zoom level
         let angle;
         if (toX > midX2) angle = 0;
         else if (toX < midX2) angle = Math.PI;
@@ -123,11 +109,12 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             const startRect = startElement.getBoundingClientRect();
             const endRect = endElement.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
-            let fromX = startRect.left < endRect.left ? startRect.right - canvasRect.left : startRect.left - canvasRect.left;
-            const fromY = startRect.top + startRect.height / 2 - canvasRect.top;
-            let toX = startRect.left < endRect.left ? endRect.left - canvasRect.left : endRect.right - canvasRect.left;
-            const toY = endRect.top + endRect.height / 2 - canvasRect.top;
-            drawArrow(ctx, fromX / zoomLevel, fromY / zoomLevel, toX / zoomLevel, toY / zoomLevel, color);
+            const containerRect = containerRef.current.getBoundingClientRect();
+            let fromX = startRect.left < endRect.left ? startRect.right - containerRect.left : startRect.left - containerRect.left;
+            const fromY = startRect.top + startRect.height / 2 - containerRect.top;
+            let toX = startRect.left < endRect.left ? endRect.left - containerRect.left : endRect.right - containerRect.left;
+            const toY = endRect.top + endRect.height / 2 - containerRect.top;
+            drawArrow(ctx, fromX, fromY, toX, toY, color);
         });
     }, [drawArrow, collapsedCards, zoomLevel]);
 
@@ -253,77 +240,229 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     useEffect(() => {
         const canvas = canvasRef.current;
         if (canvas) {
-            canvas.width = canvasSize.width;
-            canvas.height = canvasSize.height;
+            canvas.width = canvasSize.width * zoomLevel;
+            canvas.height = canvasSize.height * zoomLevel;
+            canvas.style.width = `${canvasSize.width}px`;
+            canvas.style.height = `${canvasSize.height}px`;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(zoomLevel, zoomLevel);
         }
-    }, [canvasSize]);
+    }, [canvasSize, zoomLevel]);
 
-    const handleRoleCardDragEnd = (event) => {
-        const { delta, active } = event;
-        const id = active.id;
+    const handleRoleCardDragStart = (e, roleName) => {
+        if (e.target.closest('.listeArrayItem, .StatusItemTitle, .azioniArrayItem, .listeItemTitle, .azioniItemTitle, .CardStatusTitle, .plus-icon')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
 
-        MainData.forEach((role) => {
-            if (role.ruolo?.nome === id) {
-                const currentLayout = role.layout || { top: 0, left: 0, width: 320, height: 461 };
-                let newTop = Math.max(0, parseInt(currentLayout.top) + delta.y / zoomLevel);
-                let newLeft = Math.max(0, parseInt(currentLayout.left) + delta.x / zoomLevel);
+        setDraggingItem({ type: 'role', roleName });
+        e.dataTransfer.setData('roleName', roleName);
+        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
 
-                role.layout = {
-                    ...currentLayout,
-                    top: newTop,
-                    left: newLeft,
-                };
+        const role = MainData.find(r => r.ruolo?.nome === roleName);
+        setOriginalPositions(prev => ({
+            ...prev,
+            [roleName]: {
+                top: role.layout?.top || 0,
+                left: role.layout?.left || 0,
+                width: role.layout?.width || 320,
+                height: role.layout?.height || 461
             }
-        });
-        setEpWorkflowjson(JSON.stringify(MainData));
+        }));
+
+        const updatedData = [...MainData];
+        const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
+        updatedData[roleIndex].layout = {
+            ...updatedData[roleIndex].layout,
+            width: (updatedData[roleIndex].layout?.width || 320) + 50,
+            height: (updatedData[roleIndex].layout?.height || 461) + 50
+        };
+        setEpWorkflowjson(JSON.stringify(updatedData));
+    };
+
+    const handleRoleCardDrag = (e) => {
+        if (!draggingItem || draggingItem.type !== 'role') return;
+
+        const roleName = draggingItem.roleName;
+
+        if (e.clientX === 0 && e.clientY === 0) return;
+
+        const updatedData = [...MainData];
+        const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 320, height: 461 };
+
+        const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
+        const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
+
+        let newTop = Math.max(0, parseInt(currentLayout.top) + deltaY);
+        let newLeft = Math.max(0, parseInt(currentLayout.left) + deltaX);
+
+        updatedData[roleIndex].layout = {
+            ...currentLayout,
+            top: newTop,
+            left: newLeft,
+        };
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
         updateCanvasSize();
-        if (hoveredList || hoveredStatus || hoveredAction) {
-            if (hoveredList) handleListMouseHover(hoveredList);
-            if (hoveredStatus) handleStatusMouseHover(hoveredStatus);
-            if (hoveredAction) handleActionMouseHover(hoveredAction);
-        }
+        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handleDragEndListItem = (event, facultyName, listTitle) => {
-        const { active, over } = event;
-        if (active.id !== over.id) {
+    const handleRoleCardDrop = (e, roleName) => {
+        e.preventDefault();
+        if (!draggingItem || draggingItem.type !== 'role') return;
+
+        const updatedData = [...MainData];
+        const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
+        const currentLayout = updatedData[roleIndex].layout;
+        const original = originalPositions[roleName];
+
+        if (original && Math.abs(currentLayout.top - original.top) < 10 && Math.abs(currentLayout.left - original.left) < 10) {
+            updatedData[roleIndex].layout = {
+                ...currentLayout,
+                top: original.top,
+                left: original.left,
+                width: original.width,
+                height: original.height
+            };
+        }
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setDraggingItem(null);
+        setOriginalPositions(prev => {
+            const newPositions = { ...prev };
+            delete newPositions[roleName];
+            return newPositions;
+        });
+        updateCanvasSize();
+
+        if (hoveredList) handleListMouseHover(hoveredList);
+        if (hoveredStatus) handleStatusMouseHover(hoveredStatus);
+        if (hoveredAction) handleActionMouseHover(hoveredAction);
+    };
+
+    const handleRoleCardDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleListItemDragStart = (e, facultyName, listTitle, itemKey) => {
+        setDraggingItem({ type: 'list', facultyName, listTitle, itemKey });
+        e.dataTransfer.setData('text/plain', JSON.stringify({ itemKey, facultyName, listTitle }));
+        e.stopPropagation();
+    };
+
+    const handleListItemDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleListItemDrop = (e, facultyName, listTitle, targetKey) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!draggingItem || draggingItem.type !== 'list') return;
+
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const sourceKey = data.itemKey;
+            const sourceFaculty = data.facultyName;
+            const sourceListTitle = data.listTitle;
+
+            if (sourceKey === targetKey || sourceFaculty !== facultyName || sourceListTitle !== listTitle) {
+                setDraggingItem(null);
+                return;
+            }
+
             setEpWorkflowjson(prevJson => {
-                const data = [...JSON.parse(prevJson)];
+                const data = JSON.parse(prevJson);
                 const facultyIndex = data.findIndex(item => item.ruolo?.nome === facultyName);
-                const listIndex = data[facultyIndex].liste.findIndex(list => list.title === listTitle);
-                const oldIndex = data[facultyIndex].liste[listIndex].listArray.findIndex(item => item.key === active.id);
-                const newIndex = data[facultyIndex].liste[listIndex].listArray.findIndex(item => item.key === over.id);
-                data[facultyIndex].liste[listIndex].listArray = arrayMove(data[facultyIndex].liste[listIndex].listArray, oldIndex, newIndex);
+                if (facultyIndex === -1) {
+                    console.error('Faculty not found:', facultyName);
+                    return prevJson;
+                }
+                const listIndex = data[facultyIndex].liste?.findIndex(list => list.title === listTitle);
+                if (listIndex === -1) {
+                    console.error('List not found:', listTitle);
+                    return prevJson;
+                }
+                const listArray = [...(data[facultyIndex].liste[listIndex].listArray || [])];
+                const oldIndex = listArray.findIndex(item => item.key === sourceKey);
+                const newIndex = listArray.findIndex(item => item.key === targetKey);
+
+                if (oldIndex === -1 || newIndex === -1) {
+                    console.error('Item not found:', { sourceKey, targetKey });
+                    return prevJson;
+                }
+
+                const [movedItem] = listArray.splice(oldIndex, 1);
+                listArray.splice(newIndex, 0, movedItem);
+                data[facultyIndex].liste[listIndex].listArray = listArray;
+
                 return JSON.stringify(data);
             });
+        } catch (error) {
+            console.error('Error parsing drag data:', error);
         }
+        setDraggingItem(null);
     };
 
-    const handleDragEndActionItem = (event, facultyName, actionTitle) => {
-        const { active, over } = event;
-        if (active.id !== over.id) {
+    const handleActionItemDragStart = (e, facultyName, actionTitle, itemKey) => {
+        setDraggingItem({ type: 'action', facultyName, actionTitle, itemKey });
+        e.dataTransfer.setData('text/plain', JSON.stringify({ itemKey, facultyName, actionTitle }));
+        e.stopPropagation();
+    };
+
+    const handleActionItemDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    const handleActionItemDrop = (e, facultyName, actionTitle, targetKey) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!draggingItem || draggingItem.type !== 'action') return;
+
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const sourceKey = data.itemKey;
+            const sourceFaculty = data.facultyName;
+            const sourceActionTitle = data.actionTitle;
+
+            if (sourceKey === targetKey || sourceFaculty !== facultyName || sourceActionTitle !== actionTitle) {
+                setDraggingItem(null);
+                return;
+            }
+
             setEpWorkflowjson(prevJson => {
-                const data = [...JSON.parse(prevJson)];
+                const data = JSON.parse(prevJson);
                 const facultyIndex = data.findIndex(item => item.ruolo?.nome === facultyName);
-                const actionIndex = data[facultyIndex].azioni.findIndex(action => action.title === actionTitle);
-                const oldIndex = data[facultyIndex].azioni[actionIndex].listArray.findIndex(item => item.key === active.id);
-                const newIndex = data[facultyIndex].azioni[actionIndex].listArray.findIndex(item => item.key === over.id);
-                data[facultyIndex].azioni[actionIndex].listArray = arrayMove(data[facultyIndex].azioni[actionIndex].listArray, oldIndex, newIndex);
+                if (facultyIndex === -1) {
+                    console.error('Faculty not found:', facultyName);
+                    return prevJson;
+                }
+                const actionIndex = data[facultyIndex].azioni?.findIndex(action => action.title === actionTitle);
+                if (actionIndex === -1) {
+                    console.error('Action not found:', actionTitle);
+                    return prevJson;
+                }
+                const actionArray = [...(data[facultyIndex].azioni[actionIndex].listArray || [])];
+                const oldIndex = actionArray.findIndex(item => item.key === sourceKey);
+                const newIndex = actionArray.findIndex(item => item.key === targetKey);
+
+                if (oldIndex === -1 || newIndex === -1) {
+                    console.error('Item not found:', { sourceKey, targetKey });
+                    return prevJson;
+                }
+
+                const [movedItem] = actionArray.splice(oldIndex, 1);
+                actionArray.splice(newIndex, 0, movedItem);
+                data[facultyIndex].azioni[actionIndex].listArray = actionArray;
+
                 return JSON.stringify(data);
             });
+        } catch (error) {
+            console.error('Error parsing drag data:', error);
         }
+        setDraggingItem(null);
     };
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 5,
-            },
-        }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
 
     const toggleStatusVisibility = (roleName, status) => {
         setShownStatuses(prev => {
@@ -406,10 +545,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             width: role.layout?.width || 320,
             height: role.layout?.height || 461
         };
-        const sortableCard = document.querySelector(`[data-id="${roleName}"]`);
-        if (sortableCard) {
-            sortableCard.style.pointerEvents = 'none';
-        }
     };
 
     const handleResize = useCallback((e) => {
@@ -432,12 +567,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     }, [MainData, zoomLevel]);
 
     const handleResizeEnd = () => {
-        if (resizingRef.current) {
-            const sortableCard = document.querySelector(`[data-id="${resizingRef.current}"]`);
-            if (sortableCard) {
-                sortableCard.style.pointerEvents = 'auto';
-            }
-        }
         resizingRef.current = null;
     };
 
@@ -451,7 +580,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     }, [handleResize]);
 
     return (
-        <div ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', border: "2px solid blue", overflow: 'auto' }}>
+        <div ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', border: '2px solid blue', overflow: 'auto' }}>
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -488,285 +617,281 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                width: canvasSize.width,
-                height: canvasSize.height,
                 zIndex: 1000,
                 pointerEvents: 'none',
-                border: "1px solid red"
+                border: '1px solid red'
             }} />
 
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleRoleCardDragEnd}>
-                <SortableContext items={MainData.map(item => item.ruolo?.nome).filter(Boolean)}
-                    strategy={horizontalListSortingStrategy}>
-                    <div className='d-flex justify-content-around flex-wrap' style={{ position: 'relative', transform: `scale(${zoomLevel})`, transformOrigin: 'top left', width: `${100 / zoomLevel}%`, height: `${100 / zoomLevel}%` }}>
-                        {MainData?.map((element, index) => {
-                            if (element?.ruolo) {
-                                const roleName = element.ruolo.nome;
-                                const shownStatus = shownStatuses[roleName];
-                                const associatedActions = shownStatus ? element.pulsantiAttivi?.[shownStatus] || {} : {};
-                                const top = element.layout?.top || 0;
-                                const left = element.layout?.left || 0;
-                                const width = element.layout?.width || 320;
-                                const height = element.layout?.height || 461;
+            <div className='d-flex justify-content-around flex-wrap' style={{
+                position: 'relative',
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top left',
+                width: `${100 / zoomLevel}%`,
+                height: `${100 / zoomLevel}%`
+            }}>
+                {MainData?.map((element) => {
+                    if (element?.ruolo) {
+                        const roleName = element.ruolo.nome;
+                        const shownStatus = shownStatuses[roleName];
+                        const associatedActions = shownStatus ? element.pulsantiAttivi?.[shownStatus] || {} : {};
+                        const top = element.layout?.top || 0;
+                        const left = element.layout?.left || 0;
+                        const width = element.layout?.width || 320;
+                        const height = element.layout?.height || 461;
 
-                                return (
-                                    <SortableRoleCard
-                                        key={roleName}
-                                        id={roleName}
-                                        index={index}
-                                        className='mb-3 px-2 d-flex justify-content-between flex-wrap Editor_Card'
+                        return (
+                            <div
+                                key={roleName}
+                                draggable
+                                onDragStart={(e) => handleRoleCardDragStart(e, roleName)}
+                                onDrag={(e) => handleRoleCardDrag(e)}
+                                onDragEnd={(e) => handleRoleCardDrop(e, roleName)}
+                                onDragOver={handleRoleCardDragOver}
+                                className='mb-3 px-2 d-flex justify-content-between flex-wrap Editor_Card'
+                                style={{
+                                    position: 'absolute',
+                                    top: `${top}px`,
+                                    left: `${left}px`,
+                                    width: `${width}px`,
+                                    height: `${height}px`,
+                                    opacity: 1,
+                                    background: draggingItem?.type === 'role' && draggingItem?.roleName === roleName ? '#f0f0f0' : 'white'
+                                }}
+                            >
+                                <Card style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                    <Card.Header
+                                        onDoubleClick={() => {
+                                            setCollapsedCards(prev => ({
+                                                ...prev,
+                                                [roleName]: !prev[roleName]
+                                            }));
+                                        }}
+                                        onMouseEnter={() => setHoveredRole(roleName)}
+                                        onMouseLeave={() => setHoveredRole(null)}
                                         style={{
-                                            position: 'absolute',
-                                            top: `${top}px`,
-                                            left: `${left}px`,
-                                            width: `${width}px`,
-                                            height: `${height}px`
+                                            position: 'relative',
+                                            cursor: 'move',
+                                            display: 'flex',
+                                            alignItems: 'center',
                                         }}
                                     >
-                                        <Card style={{ width: '100%', height: '100%', position: 'relative' }}>
-                                            <Card.Header
-                                                onDoubleClick={() => {
-                                                    setCollapsedCards(prev => ({
-                                                        ...prev,
-                                                        [roleName]: !prev[roleName]
-                                                    }));
+                                        {element?.ruolo?.nome}
+                                        {hoveredRole === roleName && (
+                                            <span
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openRoleModal(element?.ruolo);
                                                 }}
-                                                onMouseEnter={() => setHoveredRole(roleName)}
-                                                onMouseLeave={() => setHoveredRole(null)}
-                                                style={{
-                                                    position: 'relative',
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                }}
+                                                className='cursor-pointer mb-2 ms-2'
                                             >
-                                                {element?.ruolo?.nome}
-                                                {hoveredRole === roleName && (
-                                                    <span
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            openRoleModal(element?.ruolo);
-                                                        }}
-                                                        className='cursor-pointer mb-2 ms-2'
-                                                    >
-                                                        <PencilIcon />
-                                                    </span>
-                                                )}
-                                            </Card.Header>
-                                            <Card.Body
-                                                style={{ display: collapsedCards[roleName] ? 'none' : 'block', overflow: 'auto' }}>
-                                                <div className='d-flex gap-2'>
-                                                    <div className='d-flex flex-column'>
-                                                        {element?.liste?.map((listeItem) => (
-                                                            <div className='d-flex flex-column'
-                                                                key={listeItem.title}>
-                                                                <span
-                                                                    className='listeItemTitle text-center cursor-pointer'>
-                                                                    <span
-                                                                        onClick={() => openTitleItemModal(element.ruolo.nome, 'liste', { title: listeItem.title })}>
-                                                                        {listeItem?.title}{' '}
-                                                                    </span>
-                                                                    <span className="plus-icon"
-                                                                        onClick={() => openListItemModal(element.ruolo.nome, listeItem.title)}>
-                                                                        <RoundPlusIcon className='cursor-pointer'
-                                                                            height={20} width={20} />
-                                                                    </span>
-                                                                </span>
-                                                                <DndContext sensors={sensors}
-                                                                    collisionDetection={closestCenter}
-                                                                    onDragEnd={(event) => handleDragEndListItem(event, element.ruolo.nome, listeItem.title)}>
-                                                                    <SortableContext
-                                                                        items={listeItem.listArray.map(item => item.key)}
-                                                                        strategy={verticalListSortingStrategy}>
-                                                                        <div className='d-flex flex-column'>
-                                                                            {listeItem?.listArray?.map((listArrayItem) => (
-                                                                                <SortableItem
-                                                                                    key={listArrayItem.key}
-                                                                                    id={listArrayItem.key}
-                                                                                    className='listeArrayItem'
-                                                                                    style={{}}
-                                                                                    onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
-                                                                                    onMouseLeave={handleMouseLeave}
-                                                                                    onClick={() => openListItemModal(element.ruolo.nome, listeItem.title, listArrayItem)}
-                                                                                >
-                                                                                    <span
-                                                                                        ref={(el) => (refsMap.current[listArrayItem.key] = el)}
-                                                                                        id={listArrayItem?.key}>
-                                                                                        {listArrayItem?.title}
-                                                                                    </span>
-                                                                                </SortableItem>
-                                                                            ))}
-                                                                        </div>
-                                                                    </SortableContext>
-                                                                </DndContext>
-                                                            </div>
-                                                        ))}
-                                                        <div
-                                                            className='bg-dark text-white rounded fs-6 text-center cursor-pointer'
-                                                            onClick={() => openTitleItemModal(element.ruolo.nome, 'liste')}
-                                                        >
-                                                            Add List Title
-                                                        </div>
-                                                    </div>
-                                                    <div className='d-flex flex-column align-items-center'>
-                                                        <span className='mb-1 CardStatusTitle text-center'>
-                                                            Status{' '}
+                                                <PencilIcon />
+                                            </span>
+                                        )}
+                                    </Card.Header>
+                                    <Card.Body
+                                        style={{ display: collapsedCards[roleName] ? 'none' : 'block', overflow: 'auto' }}>
+                                        <div className='d-flex gap-2'>
+                                            <div className='d-flex flex-column'>
+                                                {element?.liste?.map((listeItem) => (
+                                                    <div className='d-flex flex-column' key={listeItem.title}>
+                                                        <span className='listeItemTitle text-center cursor-pointer'>
+                                                            <span
+                                                                onClick={() => openTitleItemModal(element.ruolo.nome, 'liste', { title: listeItem.title })}>
+                                                                {listeItem?.title}{' '}
+                                                            </span>
                                                             <span className="plus-icon"
-                                                                onClick={() => openStatusItemModal(element.ruolo.nome)}>
-                                                                <RoundPlusIcon className='cursor-pointer' height={20}
-                                                                    width={20} />
+                                                                onClick={() => openListItemModal(element.ruolo.nome, listeItem.title)}>
+                                                                <RoundPlusIcon className='cursor-pointer' height={20} width={20} />
                                                             </span>
                                                         </span>
-                                                        {element?.pulsantiAttivi && Object.keys(element?.pulsantiAttivi)?.map((StatusItem) => (
-                                                            <span
-                                                                ref={(el) => (refsMap.current[StatusItem] = el)}
-                                                                className='StatusItemTitle'
-                                                                id={StatusItem}
-                                                                onMouseEnter={() => {
-                                                                    setHoveredStatus({
-                                                                        role: roleName,
-                                                                        status: StatusItem
-                                                                    });
-                                                                    handleStatusMouseHover(StatusItem);
-                                                                }}
-                                                                onMouseLeave={handleMouseLeave}
-                                                                onClick={() => openStatusItemModal(element.ruolo.nome, StatusItem)}
-                                                                key={StatusItem}
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    fontWeight: shownStatus === StatusItem ? 'bold' : 'normal'
-                                                                }}
-                                                            >
-                                                                {StatusItem}
-                                                                {(hoveredStatus?.role === roleName && hoveredStatus?.status === StatusItem) || shownStatus === StatusItem ? (
+                                                        <div className='d-flex flex-column'>
+                                                            {listeItem?.listArray?.map((listArrayItem) => (
+                                                                <div
+                                                                    key={listArrayItem.key}
+                                                                    draggable
+                                                                    onDragStart={(e) => handleListItemDragStart(e, element.ruolo.nome, listeItem.title, listArrayItem.key)}
+                                                                    onDragOver={handleListItemDragOver}
+                                                                    onDrop={(e) => handleListItemDrop(e, element.ruolo.nome, listeItem.title, listArrayItem.key)}
+                                                                    className='listeArrayItem'
+                                                                    style={{
+                                                                        cursor: 'grab',
+                                                                        padding: '5px',
+                                                                        margin: '2px 0',
+                                                                        background: draggingItem?.type === 'list' && draggingItem?.itemKey === listArrayItem.key ? '#e0e0e0' : 'transparent'
+                                                                    }}
+                                                                    onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
+                                                                    onMouseLeave={handleMouseLeave}
+                                                                    onClick={() => openListItemModal(element.ruolo.nome, listeItem.title, listArrayItem)}
+                                                                >
                                                                     <span
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            toggleStatusVisibility(roleName, StatusItem);
-                                                                        }}
-                                                                        style={{
-                                                                            marginLeft: '5px',
-                                                                            cursor: 'pointer'
-                                                                        }}
-                                                                    >
-                                                                        {shownStatus === StatusItem ? <ViewOpenEyeIcon /> :
-                                                                            <ViewClosedEyeIcon />}
+                                                                        ref={(el) => (refsMap.current[listArrayItem.key] = el)}
+                                                                        id={listArrayItem?.key}>
+                                                                        {listArrayItem?.title}
                                                                     </span>
-                                                                ) : null}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                    <div className='d-flex flex-column'>
-                                                        {element?.azioni?.map((azioniItem) => (
-                                                            <div className='d-flex flex-column'
-                                                                key={azioniItem.title}>
-                                                                <span
-                                                                    className='azioniItemTitle text-center cursor-pointer'>
-                                                                    <span
-                                                                        onClick={() => openTitleItemModal(element.ruolo.nome, 'azioni', { title: azioniItem.title })}>
-                                                                        {azioniItem?.title}{' '}
-                                                                    </span>
-                                                                    <span className="plus-icon"
-                                                                        onClick={() => openActionItemModal(element.ruolo.nome, azioniItem.title)}>
-                                                                        <RoundPlusIcon className='cursor-pointer'
-                                                                            height={20} width={20} />
-                                                                    </span>
-                                                                </span>
-                                                                <DndContext sensors={sensors}
-                                                                    collisionDetection={closestCenter}
-                                                                    onDragEnd={(event) => handleDragEndActionItem(event, element.ruolo.nome, azioniItem.title)}>
-                                                                    <SortableContext
-                                                                        items={azioniItem.listArray.map(item => item.key)}
-                                                                        strategy={verticalListSortingStrategy}>
-                                                                        <div className='d-flex flex-column'>
-                                                                            {azioniItem?.listArray?.map((azioniArrayItem) => {
-                                                                                const isAssociated = shownStatus && associatedActions[azioniArrayItem.key];
-                                                                                const isHovered = hoveredAction?.role === roleName && hoveredAction?.actionKey === azioniArrayItem.key;
-
-                                                                                return (
-                                                                                    <SortableItem
-                                                                                        key={azioniArrayItem.key}
-                                                                                        id={azioniArrayItem.key}
-                                                                                        className='azioniArrayItem'
-                                                                                        style={{
-                                                                                            fontWeight: shownStatus && isAssociated ? 'bold' : 'normal',
-                                                                                            opacity: shownStatus && !isAssociated ? 0.5 : 1,
-                                                                                            display: 'flex',
-                                                                                            alignItems: 'center',
-                                                                                            justifyContent: 'space-between'
-                                                                                        }}
-                                                                                        onMouseEnter={() => {
-                                                                                            setHoveredAction({
-                                                                                                role: roleName,
-                                                                                                actionKey: azioniArrayItem.key
-                                                                                            });
-                                                                                            handleActionMouseHover(azioniArrayItem.key);
-                                                                                        }}
-                                                                                        onMouseLeave={handleMouseLeave}
-                                                                                        onClick={() => openActionItemModal(element.ruolo.nome, azioniItem.title, azioniArrayItem)}
-                                                                                    >
-                                                                                        <span
-                                                                                            ref={(el) => (refsMap.current[azioniArrayItem.key] = el)}
-                                                                                            id={azioniArrayItem.key}>
-                                                                                            {azioniArrayItem?.title}
-                                                                                            {shownStatus && isHovered ? (
-                                                                                                <span
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        toggleActionVisibility(roleName, shownStatus, azioniArrayItem.key);
-                                                                                                    }}
-                                                                                                    style={{
-                                                                                                        marginLeft: '5px',
-                                                                                                        cursor: 'pointer'
-                                                                                                    }}
-                                                                                                >
-                                                                                                    {isAssociated ?
-                                                                                                        <ViewOpenEyeIcon /> :
-                                                                                                        <ViewClosedEyeIcon />}
-                                                                                                </span>
-                                                                                            ) : null}
-                                                                                        </span>
-                                                                                    </SortableItem>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    </SortableContext>
-                                                                </DndContext>
-                                                            </div>
-                                                        ))}
-                                                        <div
-                                                            className='bg-dark text-white rounded fs-6 text-center cursor-pointer'
-                                                            onClick={() => openTitleItemModal(element.ruolo.nome, 'azioni')}
-                                                        >
-                                                            Add Action Title
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
+                                                ))}
+                                                <div
+                                                    className='bg-dark text-white rounded fs-6 text-center cursor-pointer'
+                                                    onClick={() => openTitleItemModal(element.ruolo.nome, 'liste')}
+                                                >
+                                                    Add List Title
                                                 </div>
-                                            </Card.Body>
-                                            <div
-                                                style={{
-                                                    position: 'absolute',
-                                                    bottom: 0,
-                                                    right: 0,
-                                                    width: '15px',
-                                                    height: '15px',
-                                                    background: '#ccc',
-                                                    cursor: 'se-resize',
-                                                    zIndex: 1001
-                                                }}
-                                                onMouseDown={(e) => handleResizeStart(e, roleName)}
-                                            />
-                                        </Card>
-                                    </SortableRoleCard>
-                                );
-                            }
-                            return null;
-                        })}
-                    </div>
-                </SortableContext>
-            </DndContext>
+                                            </div>
+                                            <div className='d-flex flex-column align-items-center'>
+                                                <span className='mb-1 CardStatusTitle text-center'>
+                                                    Status{' '}
+                                                    <span className="plus-icon"
+                                                        onClick={() => openStatusItemModal(element.ruolo.nome)}>
+                                                        <RoundPlusIcon className='cursor-pointer' height={20} width={20} />
+                                                    </span>
+                                                </span>
+                                                {element?.pulsantiAttivi && Object.keys(element?.pulsantiAttivi)?.map((StatusItem) => (
+                                                    <span
+                                                        ref={(el) => (refsMap.current[StatusItem] = el)}
+                                                        className='StatusItemTitle'
+                                                        id={StatusItem}
+                                                        onMouseEnter={() => {
+                                                            setHoveredStatus({
+                                                                role: roleName,
+                                                                status: StatusItem
+                                                            });
+                                                            handleStatusMouseHover(StatusItem);
+                                                        }}
+                                                        onMouseLeave={handleMouseLeave}
+                                                        onClick={() => openStatusItemModal(element.ruolo.nome, StatusItem)}
+                                                        key={StatusItem}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontWeight: shownStatus === StatusItem ? 'bold' : 'normal',
+                                                            cursor: 'pointer',
+                                                            padding: '5px',
+                                                            margin: '2px 0'
+                                                        }}
+                                                    >
+                                                        {StatusItem}
+                                                        {(hoveredStatus?.role === roleName && hoveredStatus?.status === StatusItem) || shownStatus === StatusItem ? (
+                                                            <span
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleStatusVisibility(roleName, StatusItem);
+                                                                }}
+                                                                style={{
+                                                                    marginLeft: '5px',
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                {shownStatus === StatusItem ? <ViewOpenEyeIcon /> : <ViewClosedEyeIcon />}
+                                                            </span>
+                                                        ) : null}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <div className='d-flex flex-column'>
+                                                {element?.azioni?.map((azioniItem) => (
+                                                    <div className='d-flex flex-column' key={azioniItem.title}>
+                                                        <span className='azioniItemTitle text-center cursor-pointer'>
+                                                            <span
+                                                                onClick={() => openTitleItemModal(element.ruolo.nome, 'azioni', { title: azioniItem.title })}>
+                                                                {azioniItem?.title}{' '}
+                                                            </span>
+                                                            <span className="plus-icon"
+                                                                onClick={() => openActionItemModal(element.ruolo.nome, azioniItem.title)}>
+                                                                <RoundPlusIcon className='cursor-pointer' height={20} width={20} />
+                                                            </span>
+                                                        </span>
+                                                        <div className='d-flex flex-column'>
+                                                            {azioniItem?.listArray?.map((azioniArrayItem) => {
+                                                                const isAssociated = shownStatus && associatedActions[azioniArrayItem.key];
+                                                                const isHovered = hoveredAction?.role === roleName && hoveredAction?.actionKey === azioniArrayItem.key;
+
+                                                                return (
+                                                                    <div
+                                                                        key={azioniArrayItem.key}
+                                                                        draggable
+                                                                        onDragStart={(e) => handleActionItemDragStart(e, element.ruolo.nome, azioniItem.title, azioniArrayItem.key)}
+                                                                        onDragOver={handleActionItemDragOver}
+                                                                        onDrop={(e) => handleActionItemDrop(e, element.ruolo.nome, azioniItem.title, azioniArrayItem.key)}
+                                                                        className='azioniArrayItem'
+                                                                        style={{
+                                                                            fontWeight: shownStatus && isAssociated ? 'bold' : 'normal',
+                                                                            opacity: shownStatus && !isAssociated ? 0.5 : 1,
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'space-between',
+                                                                            cursor: 'grab',
+                                                                            padding: '5px',
+                                                                            margin: '2px 0',
+                                                                            background: draggingItem?.type === 'action' && draggingItem?.itemKey === azioniArrayItem.key ? '#e0e0e0' : 'transparent'
+                                                                        }}
+                                                                        onMouseEnter={() => {
+                                                                            setHoveredAction({
+                                                                                role: roleName,
+                                                                                actionKey: azioniArrayItem.key
+                                                                            });
+                                                                            handleActionMouseHover(azioniArrayItem.key);
+                                                                        }}
+                                                                        onMouseLeave={handleMouseLeave}
+                                                                        onClick={() => openActionItemModal(element.ruolo.nome, azioniItem.title, azioniArrayItem)}
+                                                                    >
+                                                                        <span
+                                                                            ref={(el) => (refsMap.current[azioniArrayItem.key] = el)}
+                                                                            id={azioniArrayItem.key}>
+                                                                            {azioniArrayItem?.title}
+                                                                            {shownStatus && isHovered ? (
+                                                                                <span
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        toggleActionVisibility(roleName, shownStatus, azioniArrayItem.key);
+                                                                                    }}
+                                                                                    style={{
+                                                                                        marginLeft: '5px',
+                                                                                        cursor: 'pointer'
+                                                                                    }}
+                                                                                >
+                                                                                    {isAssociated ? <ViewOpenEyeIcon /> : <ViewClosedEyeIcon />}
+                                                                                </span>
+                                                                            ) : null}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div
+                                                    className='bg-dark text-white rounded fs-6 text-center cursor-pointer'
+                                                    onClick={() => openTitleItemModal(element.ruolo.nome, 'azioni')}
+                                                >
+                                                    Add Action Title
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Card.Body>
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            right: 0,
+                                            width: '15px',
+                                            height: '15px',
+                                            background: '#ccc',
+                                            cursor: 'se-resize',
+                                            zIndex: 1001
+                                        }}
+                                        onMouseDown={(e) => handleResizeStart(e, roleName)}
+                                    />
+                                </Card>
+                            </div>
+                        );
+                    }
+                    return null;
+                })}
+            </div>
 
             <ListItemModal
                 show={listItemModalShow}
