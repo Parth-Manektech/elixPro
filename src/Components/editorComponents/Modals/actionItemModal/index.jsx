@@ -5,7 +5,7 @@ import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 
-const ActionItemModal = ({ show, handleClose, initialData, statusOptions, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
+const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || {
             key: "",
@@ -24,6 +24,17 @@ const ActionItemModal = ({ show, handleClose, initialData, statusOptions, MainDa
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+    const getStatusOptions = () => {
+        if (!MainData) return [];
+        const allStatuses = new Set();
+        MainData.forEach((element) => {
+            if (element.ruolo && element.pulsantiAttivi) {
+                Object.keys(element.pulsantiAttivi).forEach((status) => allStatuses.add(status));
+            }
+        });
+        return Array.from(allStatuses);
+    };
 
     const handleDeleteActionItem = () => {
         if (!selectedActionItem) return;
@@ -202,11 +213,11 @@ const ActionItemModal = ({ show, handleClose, initialData, statusOptions, MainDa
         const inputValue = value.trim().toLowerCase();
         if (inputValue === "" || value === undefined) {
             // Show all status options when input is focused or empty
-            setSuggestions([...statusOptions]);
+            setSuggestions([...getStatusOptions()]);
             setShowSuggestions(true);
         } else {
             // Filter suggestions based on typing
-            const filtered = statusOptions.filter(option =>
+            const filtered = getStatusOptions().filter(option =>
                 option.toLowerCase().includes(inputValue)
             );
             setSuggestions(filtered);

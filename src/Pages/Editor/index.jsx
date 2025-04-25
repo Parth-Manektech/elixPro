@@ -36,13 +36,23 @@ const Editor = () => {
 
     useEffect(() => {
         const stateData = location.state;
-        if (stateData?.from === "Nuovo + Genera da JSON" || stateData?.from === "Nuovo + Importa da Excel") {
+
+        const LocalData = localStorage.getItem("ePWorkFlow")
+        if (LocalData && LocalData !== "null") {
+            console.log('LocalData', LocalData)
+            console.log('Local');
             setActiveKey("view");
-            const Data = JSON.parse(stateData?.ePWorkFlowJson)
-            setisLoading(stateData?.isLoading)
-            processAllCodeSegment(Data)
+            setisLoading(true)
+            processAllCodeSegment(LocalData)
+        } else {
+            if (stateData?.from === "Nuovo + Genera da JSON" || stateData?.from === "Nuovo + Importa da Excel") {
+                console.log('state');
+                setActiveKey("view");
+                const Data = JSON.parse(stateData?.ePWorkFlowJson)
+                setisLoading(stateData?.isLoading)
+                processAllCodeSegment(Data)
+            }
         }
-        console.log('stateData', stateData);
         // eslint-disable-next-line
     }, [location])
 
@@ -91,7 +101,7 @@ const Editor = () => {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
-                body: new URLSearchParams({ jsonInput: JSON.stringify(ePWorkFlowJson) }),
+                body: new URLSearchParams({ jsonInput: typeof ePWorkFlowJson !== 'string' ? JSON.stringify(ePWorkFlowJson) : ePWorkFlowJson }),
             })
                 .then((response) => {
                     if (!response.ok) {
@@ -113,13 +123,16 @@ const Editor = () => {
                         Statusenum: data?.ajStatoEnum,
                         Listaenum: data?.ajListaEnum,
                     }
-                    fillData(sData, ePWorkFlowJson)
+                    if (typeof ePWorkFlowJson === 'string') {
+                        fillData(sData, JSON.parse(ePWorkFlowJson));
+                    } else {
+                        fillData(sData, ePWorkFlowJson);
+                    }
                 })
                 .catch((error) => {
                     setisLoading(false)
                     ErrorToast("Something went wrong please check")
                     console.error(error);
-
                 });
         } catch (error) {
             console.error('catch', error);
@@ -172,6 +185,7 @@ const Editor = () => {
         const FlowJson = JSON.stringify(ePWorkFlowJson);
 
         setEpWorkflowjson(FlowJson);
+        localStorage.setItem("ePWorkFlow", ePWorkFlowJson)
         const FinalNormalJson = prettyFormat(sData?.Json, 'json');
         const FinalconfigJSJson = prettyFormat(sData?.configJavascript, 'js');
         const FinalnotifyJSJson = prettyFormat(sData?.notifyJavascript, 'js');
@@ -203,6 +217,15 @@ const Editor = () => {
     useEffect(() => {
         const FinalePWorkFlowJson = prettyFormat(epWorkflowjson, 'jsson');
         setValue('ePWorkFlowJSONPreview', FinalePWorkFlowJson);
+        // localStorage.setItem("ePWorkFlow", epWorkflowjson)
+
+        try {
+            const parsedJson = typeof epWorkflowjson === 'string' ? JSON.parse(epWorkflowjson) : epWorkflowjson;
+            const normalJson = JSON.stringify(parsedJson);
+            localStorage.setItem("ePWorkFlow", normalJson);
+        } catch (error) {
+            console.error('Error converting JSON:', error);
+        }
         // eslint-disable-next-line
     }, [epWorkflowjson])
 
@@ -445,6 +468,12 @@ const Editor = () => {
             });
     }
 
+    const NewWorkFlow = () => {
+        localStorage.clear('ePWorkFlow');
+        navigate('/tutti-i-procedimenti/procedimento-x/editor', { replace: true });
+        window.location.reload()
+    }
+
     return (
         <div className='position-relative'>
             {isLoading && <div className='z-3 position-absolute top-0 w-100 h-100' style={{ background: '#00000075' }}> <Loader /></div>}
@@ -488,7 +517,7 @@ const Editor = () => {
                                     )}
                                 </div>
                                 <Button className="btn btn-primary w-auto me-2" type='submit' >Submit</Button>
-                                <button className="btn btn-success" onClick={() => { navigate('/tutti-i-procedimenti/procedimento-x/editor', { replace: true }); window.location.reload() }}>
+                                <button className="btn btn-success" onClick={NewWorkFlow}>
                                     New Workflow
                                 </button>
                                 {watch('ePWorkFlowJSONPreview') && <div className="btn btn-success" onClick={(e) => DownloadFile(e)}>
