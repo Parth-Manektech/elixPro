@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Card } from 'react-bootstrap';
-import { PencilIcon, RoundPlusIcon, ViewClosedEyeIcon, ViewOpenEyeIcon } from '../../Assets/SVGs';
+import { CardResizer, PencilIcon, RoundPlusIcon, ViewClosedEyeIcon, ViewOpenEyeIcon } from '../../Assets/SVGs';
 import ListItemModal from '../../Components/editorComponents/Modals/ListItemModal';
 import ActionItemModal from '../../Components/editorComponents/Modals/actionItemModal';
 import StatusModal from '../../Components/editorComponents/Modals/StatusModal';
@@ -34,6 +34,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
     const [draggingItem, setDraggingItem] = useState(null);
     const [originalPositions, setOriginalPositions] = useState({});
+
+    const [resizingItem, setResizingItem] = useState(null);
 
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
@@ -219,11 +221,11 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
 
         const maxWidth = Math.max(
             container.scrollWidth,
-            ...MainData.map(role => ((role.layout?.left || 0) + (role.layout?.width || 350)) * zoomLevel)
+            ...MainData.map(role => ((role.layout?.left || 0) + (role.layout?.width || 799)) * zoomLevel)
         );
         const maxHeight = Math.max(
             container.scrollHeight,
-            ...MainData.map(role => ((role.layout?.top || 0) + (role.layout?.height || 461)) * zoomLevel)
+            ...MainData.map(role => ((role.layout?.top || 0) + (role.layout?.height || 690)) * zoomLevel)
         );
 
         setCanvasSize(prev => {
@@ -242,10 +244,10 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 return {
                     ...role,
                     layout: {
-                        top: index * 30,
-                        left: index * 30,
-                        width: 350,
-                        height: 461,
+                        top: index * 50,
+                        left: index * 50,
+                        width: 799,
+                        height: 690,
                     }
                 };
             }
@@ -290,8 +292,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             [roleName]: {
                 top: role.layout?.top || 0,
                 left: role.layout?.left || 0,
-                width: role.layout?.width || 350,
-                height: role.layout?.height || 461
+                width: role.layout?.width || 799,
+                height: role.layout?.height || 690
             }
         }));
 
@@ -299,8 +301,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
         updatedData[roleIndex].layout = {
             ...updatedData[roleIndex].layout,
-            width: (updatedData[roleIndex].layout?.width || 350) + 50,
-            height: (updatedData[roleIndex].layout?.height || 461) + 50
+            width: (updatedData[roleIndex].layout?.width || 799) + 50,
+            height: (updatedData[roleIndex].layout?.height || 690) + 50
         };
         setEpWorkflowjson(JSON.stringify(updatedData));
     };
@@ -314,7 +316,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
 
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
-        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350, height: 461 };
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 799, height: 690 };
 
         const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
         const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
@@ -561,6 +563,71 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         return Array.from(allStatuses);
     };
 
+    const handleResizeStart = (e, roleName) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        setResizingItem({ roleName });
+        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+
+        // Store original dimensions
+        const role = MainData.find(r => r.ruolo?.nome === roleName);
+        setOriginalPositions(prev => ({
+            ...prev,
+            [roleName]: {
+                top: role.layout?.top || 0,
+                left: role.layout?.left || 0,
+                width: role.layout?.width || 799,
+                height: role.layout?.height || 690
+            }
+        }));
+
+        // Add event listeners for mouse move and up
+        document.addEventListener('mousemove', handleResize);
+        document.addEventListener('mouseup', handleResizeStop);
+    };
+
+    const handleResize = (e) => {
+        if (!resizingItem) return;
+
+        const roleName = resizingItem.roleName;
+        const updatedData = [...MainData];
+        const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 799, height: 690 };
+
+        const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
+        const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
+
+        // Update width and height with minimum constraints
+        const newWidth = Math.max(200, currentLayout.width + deltaX); // Minimum width: 200px
+        const newHeight = Math.max(200, currentLayout.height + deltaY); // Minimum height: 200px
+
+        updatedData[roleIndex].layout = {
+            ...currentLayout,
+            width: newWidth,
+            height: newHeight,
+        };
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        updateCanvasSize();
+        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const handleResizeStop = () => {
+        if (!resizingItem) return;
+
+        document.removeEventListener('mousemove', handleResize);
+        document.removeEventListener('mouseup', handleResizeStop);
+
+        setResizingItem(null);
+        updateCanvasSize();
+
+        // Redraw connections if needed
+        if (hoveredList) handleListMouseHover(hoveredList);
+        if (hoveredStatus) handleStatusMouseHover(hoveredStatus.status, hoveredStatus.role);
+        if (hoveredAction) handleActionMouseHover(hoveredAction.actionKey, hoveredAction.role);
+    };
+
     return (
         <div ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', border: '2px solid blue', overflow: 'auto' }}>
             <div style={{
@@ -618,8 +685,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                         const associatedActions = shownStatus ? element.pulsantiAttivi?.[shownStatus] || {} : {};
                         const top = element.layout?.top || 0;
                         const left = element.layout?.left || 0;
-                        const width = element.layout?.width || 350;
-                        const height = element.layout?.height || 461;
+                        const width = element.layout?.width || 799;
+                        const height = element.layout?.height || 690;
 
                         return (
                             <div
@@ -856,6 +923,24 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                             </div>
                                         </div>
                                     </Card.Body>
+                                    <div
+                                        className="resize-handle"
+                                        onMouseDown={(e) => handleResizeStart(e, roleName)}
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            right: 0,
+                                            display: 'flex',
+                                            justifyContent: "center",
+                                            width: '20px',
+                                            height: '20px',
+                                            background: '#fff',
+                                            cursor: 'se-resize',
+                                            // zIndex: 10,
+                                        }}
+                                    >
+                                        <CardResizer height={20} width={20} />
+                                    </div>
                                 </Card>
                             </div>
                         );

@@ -38,7 +38,7 @@ const Editor = () => {
         const stateData = location.state;
 
         const LocalData = localStorage.getItem("ePWorkFlow")
-        if (LocalData && LocalData !== "null") {
+        if (LocalData && LocalData !== "null" && LocalData !== null) {
             console.log('LocalData', LocalData)
             console.log('Local');
             setActiveKey("view");

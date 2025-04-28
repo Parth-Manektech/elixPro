@@ -1,7 +1,12 @@
 .Editor_Card {
     min-width: 350px;
-    max-width: 350px;
-    height: fit-content !important;
+    // max-width: 350px;
+    min-height: fit-content !important;
+    overflow: auto;
+}
+
+.resize-handle:hover {
+    background: #666;
 }
 
 // .Editor_Card_new {
@@ -21,6 +26,7 @@
     word-break: break-all;
     min-width: 80px;
     max-width: auto;
+    color: #000 !important;
 }
 
 .listeArrayItem {
