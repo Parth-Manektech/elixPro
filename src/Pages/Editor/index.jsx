@@ -33,14 +33,61 @@ const Editor = () => {
 
     const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm();
     const { control: mainControl, handleSubmit: mainhandleSubmit, watch: mainWatch, reset: mainReset } = useForm();
+    const KEY = 'ePWorkFlow';
+    const HEARTBEAT_KEY = 'app_heartbeat';
+    const TAB_COUNT_KEY = 'open_tab_count';
+    const HEARTBEAT_INTERVAL = 1000; // 1 sec
+    const EXPIRE_TIME = 3000;            // 2 seconds to detect full browser close
+
+    useEffect(() => {
+        // Increase tab count
+        const increaseTabCount = () => {
+            const count = parseInt(localStorage.getItem(TAB_COUNT_KEY) || '0', 10);
+            localStorage.setItem(TAB_COUNT_KEY, (count + 1).toString());
+        };
+
+        // Decrease tab count
+        const decreaseTabCount = () => {
+            const count = parseInt(localStorage.getItem(TAB_COUNT_KEY) || '1', 10);
+            const newCount = Math.max(0, count - 1);
+            localStorage.setItem(TAB_COUNT_KEY, newCount.toString());
+        };
+
+        // Check if browser was closed
+        const checkIfBrowserClosed = () => {
+            const lastBeat = parseInt(localStorage.getItem(HEARTBEAT_KEY) || '0', 10);
+            const now = Date.now();
+            const tabCount = parseInt(localStorage.getItem(TAB_COUNT_KEY) || '0', 10);
+
+            if (now - lastBeat > EXPIRE_TIME && tabCount === 0) {
+                console.log('Browser was closed. Clearing data...');
+                localStorage.removeItem(KEY);
+            }
+        };
+
+        // Start heartbeat
+        const heartbeatInterval = setInterval(() => {
+            localStorage.setItem(HEARTBEAT_KEY, Date.now().toString());
+        }, HEARTBEAT_INTERVAL);
+
+        // On load
+        increaseTabCount();
+        checkIfBrowserClosed();
+
+        // On unload
+        window.addEventListener('beforeunload', decreaseTabCount);
+
+        return () => {
+            clearInterval(heartbeatInterval);
+            window.removeEventListener('beforeunload', decreaseTabCount);
+        };
+    }, []);
 
     useEffect(() => {
         const stateData = location.state;
 
         const LocalData = localStorage.getItem("ePWorkFlow")
         if (LocalData && LocalData !== "null" && LocalData !== null) {
-            console.log('LocalData', LocalData)
-            console.log('Local');
             setActiveKey("view");
             setisLoading(true)
             processAllCodeSegment(LocalData)
@@ -61,7 +108,7 @@ const Editor = () => {
         const formData = new FormData();
         formData.append("excelFile", data?.xlsFile);
         try {
-            fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateJson", {
+            fetch("http://localhost:8080/elixPro/rest/generateJson", {
                 method: "POST",
                 body: formData,
             })
@@ -90,13 +137,13 @@ const Editor = () => {
         }
     }
 
-    // http://efapi601.ext.ovh.anthesi.com:8080
-    // httppp://localhost:8080/
+    // httpppp://efapi601.ext.ovh.anthesi.com:80800
+    // http://localhost:8080/
 
     const processAllCodeSegment = (ePWorkFlowJson) => {
 
         try {
-            fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateBaseCode", {
+            fetch("http://localhost:8080/elixPro/rest/generateBaseCode", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
@@ -351,7 +398,7 @@ const Editor = () => {
 
     const DownloadFile = () => {
         const temp = JSON.parse(watch('ePWorkFlowJSONPreview'))
-        fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/download/excel", {
+        fetch("http://localhost:8080/elixPro/rest/download/excel", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -440,7 +487,7 @@ const Editor = () => {
 
     const generateEPWorkflow = (Json, Java, JS) => {
         setisLoading(true)
-        fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generate/configToWorkflowJson", {
+        fetch("http://localhost:8080/elixPro/rest/generate/configToWorkflowJson", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"

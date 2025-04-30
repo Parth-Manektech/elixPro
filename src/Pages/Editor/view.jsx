@@ -35,12 +35,12 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     const [draggingItem, setDraggingItem] = useState(null);
     const [originalPositions, setOriginalPositions] = useState({});
 
-    const [resizingItem, setResizingItem] = useState(null);
 
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const refsMap = useRef({});
     const dragStartPosRef = useRef({ x: 0, y: 0 });
+    const resizingRoleRef = useRef(null);
 
     const drawArrow = useCallback((ctx, fromX, fromY, toX, toY, color) => {
         ctx.beginPath();
@@ -93,6 +93,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         }
         return null;
     };
+
 
     const drawConnections = useCallback((connections) => {
         const canvas = canvasRef.current;
@@ -261,6 +262,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         }
     }, [MainData, setEpWorkflowjson, updateCanvasSize]);
 
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (canvas) {
@@ -271,8 +273,15 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             const ctx = canvas.getContext('2d');
             ctx.scale(zoomLevel, zoomLevel);
         }
-    }, [canvasSize, zoomLevel]);
 
+        // Cleanup event listeners on unmount
+        return () => {
+            console.log('Cleaning up resize event listeners');
+            document.removeEventListener('mousemove', handleResize);
+            document.removeEventListener('mouseup', handleResizeStop);
+        };
+        // eslint-disable-next-line
+    }, [canvasSize, zoomLevel]);
 
 
     const handleRoleCardDragStart = (e, roleName) => {
@@ -564,14 +573,31 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     };
 
     const handleResizeStart = (e, roleName) => {
+        if (!e.target.closest('.resize-handle')) {
+            console.warn('Resize start aborted: Not a resize handle', e.target);
+            return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
 
-        setResizingItem({ roleName });
+        console.log('Resize Start:', { roleName, clientX: e.clientX, clientY: e.clientY });
+
+        // Set synchronous ref for resizing role
+        resizingRoleRef.current = roleName;
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+
+
 
         // Store original dimensions
         const role = MainData.find(r => r.ruolo?.nome === roleName);
+        if (!role) {
+            console.error('Role not found:', roleName);
+            resizingRoleRef.current = null;
+
+            return;
+        }
+
         setOriginalPositions(prev => ({
             ...prev,
             [roleName]: {
@@ -582,25 +608,57 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             }
         }));
 
-        // Add event listeners for mouse move and up
+        // Remove any existing listeners
+        document.removeEventListener('mousemove', handleResize);
+        document.removeEventListener('mouseup', handleResizeStop);
+
+        // Add event listeners
         document.addEventListener('mousemove', handleResize);
         document.addEventListener('mouseup', handleResizeStop);
     };
 
     const handleResize = (e) => {
-        if (!resizingItem) return;
+        if (!resizingRoleRef.current) {
+            console.warn('Resize aborted: No resizing role');
+            document.removeEventListener('mousemove', handleResize);
+            return;
+        }
 
-        const roleName = resizingItem.roleName;
+        if (!dragStartPosRef.current) {
+            console.warn('Resize aborted: No drag start position');
+            return;
+        }
+
+        if (e.clientX === 0 && e.clientY === 0) {
+            console.warn('Invalid mouse event:', { clientX: e.clientX, clientY: e.clientY });
+            return;
+        }
+
+        const roleName = resizingRoleRef.current;
+        console.log('Resizing:', {
+            roleName,
+            clientX: e.clientX,
+            clientY: e.clientY,
+            deltaX: (e.clientX - dragStartPosRef.current.x) / zoomLevel,
+            deltaY: (e.clientY - dragStartPosRef.current.y) / zoomLevel
+        });
+
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
+        if (roleIndex === -1) {
+            console.error('Role not found during resize:', roleName);
+            resizingRoleRef.current = null;
+
+            return;
+        }
+
         const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 799, height: 690 };
 
         const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
         const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
 
-        // Update width and height with minimum constraints
-        const newWidth = Math.max(200, currentLayout.width + deltaX); // Minimum width: 200px
-        const newHeight = Math.max(200, currentLayout.height + deltaY); // Minimum height: 200px
+        const newWidth = Math.max(200, currentLayout.width + deltaX);
+        const newHeight = Math.max(200, currentLayout.height + deltaY);
 
         updatedData[roleIndex].layout = {
             ...currentLayout,
@@ -614,12 +672,19 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     };
 
     const handleResizeStop = () => {
-        if (!resizingItem) return;
+        console.log('Resize Stop:', { resizingRole: resizingRoleRef.current });
 
+        // Always remove listeners
         document.removeEventListener('mousemove', handleResize);
         document.removeEventListener('mouseup', handleResizeStop);
 
-        setResizingItem(null);
+        if (!resizingRoleRef.current) {
+            console.warn('Resize stop called with no resizing role');
+            return;
+        }
+
+        resizingRoleRef.current = null;
+
         updateCanvasSize();
 
         // Redraw connections if needed
@@ -627,6 +692,17 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         if (hoveredStatus) handleStatusMouseHover(hoveredStatus.status, hoveredStatus.role);
         if (hoveredAction) handleActionMouseHover(hoveredAction.actionKey, hoveredAction.role);
     };
+
+    // useEffect(() => {
+    //     MainData.forEach((role) => {
+    //         if (role.ruolo?.nome && role.layout) {
+    //             console.log(`Role Layout Updated: ${role.ruolo.nome}`, {
+    //                 width: role.layout.width,
+    //                 height: role.layout.height
+    //             });
+    //         }
+    //     });
+    // }, [MainData]);
 
     return (
         <div ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', border: '2px solid blue', overflow: 'auto' }}>
@@ -925,7 +1001,12 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                     </Card.Body>
                                     <div
                                         className="resize-handle"
-                                        onMouseDown={(e) => handleResizeStart(e, roleName)}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            console.log('Mouse Down on Resize Handle:', { roleName, clientX: e.clientX, clientY: e.clientY });
+                                            handleResizeStart(e, roleName);
+                                        }}
                                         style={{
                                             position: 'absolute',
                                             bottom: 0,
