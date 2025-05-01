@@ -15,6 +15,30 @@
 //     max-height: 80px;
 // }
 
+.role_menu {
+    padding: 0 !important;
+    background-color: transparent !important;
+    border: transparent !important;
+
+    &::after {
+        display: none !important;
+    }
+}
+
+.Editor_Card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+
+    .Editor_Card_Header {
+        position: relative;
+        cursor: move;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
 .listeItemTitle {
     font-size: 1rem;
     display: flex;

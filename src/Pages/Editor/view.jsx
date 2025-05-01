@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { Card } from 'react-bootstrap';
-import { CardResizer, PencilIcon, RoundPlusIcon, ViewClosedEyeIcon, ViewOpenEyeIcon } from '../../Assets/SVGs';
+import { Card, Dropdown } from 'react-bootstrap';
+import { BlackplusIcon, CardResizer, MinusIcon, RoundPlusIcon, ThreeDotsIcon, ViewClosedEyeIcon, ViewOpenEyeIcon } from '../../Assets/SVGs';
 import ListItemModal from '../../Components/editorComponents/Modals/ListItemModal';
 import ActionItemModal from '../../Components/editorComponents/Modals/actionItemModal';
 import StatusModal from '../../Components/editorComponents/Modals/StatusModal';
@@ -30,9 +30,9 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
     const [currentActionTitle, setCurrentActionTitle] = useState('');
     const [selectedTitle, setSelectedTitle] = useState(null);
     const [collapsedCards, setCollapsedCards] = useState({});
-    const [hoveredRole, setHoveredRole] = useState(null);
     const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
     const [draggingItem, setDraggingItem] = useState(null);
+    const [collapsedDimensions, setCollapsedDimensions] = useState({});
     const [originalPositions, setOriginalPositions] = useState({});
 
 
@@ -222,20 +222,34 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
 
         const maxWidth = Math.max(
             container.scrollWidth,
-            ...MainData.map(role => ((role.layout?.left || 0) + (role.layout?.width || 799)) * zoomLevel)
+            ...MainData.map((role) => {
+                const roleName = role.ruolo?.nome;
+                const width = collapsedCards[roleName]
+                    ? 350 // Fixed width for collapsed cards
+                    : role.layout?.width || 350;
+                return ((role.layout?.left || 0) + width) * zoomLevel;
+            })
         );
         const maxHeight = Math.max(
             container.scrollHeight,
-            ...MainData.map(role => ((role.layout?.top || 0) + (role.layout?.height || 690)) * zoomLevel)
+            ...MainData.map((role) => {
+                const roleName = role.ruolo?.nome;
+                const height = collapsedCards[roleName]
+                    ? 50 // Fixed height for collapsed cards
+                    : role.layout?.height || 690;
+                return ((role.layout?.top || 0) + height) * zoomLevel;
+            })
         );
 
-        setCanvasSize(prev => {
+        setCanvasSize((prev) => {
             if (prev.width !== maxWidth || prev.height !== maxHeight) {
+                console.log("Updating canvas size:", { width: maxWidth, height: maxHeight });
                 return { width: maxWidth, height: maxHeight };
             }
             return prev;
         });
-    }, [MainData, zoomLevel]);
+    }, [MainData, zoomLevel, collapsedCards]);
+
 
     useEffect(() => {
         let hasChanges = false;
@@ -247,7 +261,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     layout: {
                         top: index * 50,
                         left: index * 50,
-                        width: 799,
+                        width: 350,
                         height: 690,
                     }
                 };
@@ -291,6 +305,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             return;
         }
 
+        console.log('Drag Start:', { roleName, clientX: e.clientX, clientY: e.clientY }); // Debugging
+
         setDraggingItem({ type: 'role', roleName });
         e.dataTransfer.setData('roleName', roleName);
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
@@ -301,19 +317,10 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             [roleName]: {
                 top: role.layout?.top || 0,
                 left: role.layout?.left || 0,
-                width: role.layout?.width || 799,
+                width: role.layout?.width || 350,
                 height: role.layout?.height || 690
             }
         }));
-
-        const updatedData = [...MainData];
-        const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
-        updatedData[roleIndex].layout = {
-            ...updatedData[roleIndex].layout,
-            width: (updatedData[roleIndex].layout?.width || 799) + 50,
-            height: (updatedData[roleIndex].layout?.height || 690) + 50
-        };
-        setEpWorkflowjson(JSON.stringify(updatedData));
     };
 
     const handleRoleCardDrag = (e) => {
@@ -325,7 +332,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
 
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
-        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 799, height: 690 };
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350, height: 690 };
 
         const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
         const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
@@ -348,12 +355,15 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         e.preventDefault();
         if (!draggingItem || draggingItem.type !== 'role') return;
 
+        console.log('Drag Drop:', { roleName, clientX: e.clientX, clientY: e.clientY }); // Debugging
+
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
         const currentLayout = updatedData[roleIndex].layout;
         const original = originalPositions[roleName];
 
         if (original && Math.abs(currentLayout.top - original.top) < 10 && Math.abs(currentLayout.left - original.left) < 10) {
+            console.log('Restoring original position and dimensions:', { roleName, original });
             updatedData[roleIndex].layout = {
                 ...currentLayout,
                 top: original.top,
@@ -373,8 +383,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         updateCanvasSize();
 
         if (hoveredList) handleListMouseHover(hoveredList);
-        if (hoveredStatus) handleStatusMouseHover(hoveredStatus);
-        if (hoveredAction) handleActionMouseHover(hoveredAction);
+        if (hoveredStatus) handleStatusMouseHover(hoveredStatus.status, hoveredStatus.role);
+        if (hoveredAction) handleActionMouseHover(hoveredAction.actionKey, hoveredAction.role);
     };
 
     const handleRoleCardDragOver = (e) => {
@@ -603,7 +613,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             [roleName]: {
                 top: role.layout?.top || 0,
                 left: role.layout?.left || 0,
-                width: role.layout?.width || 799,
+                width: role.layout?.width || 350,
                 height: role.layout?.height || 690
             }
         }));
@@ -652,7 +662,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
             return;
         }
 
-        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 799, height: 690 };
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350, height: 690 };
 
         const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
         const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
@@ -693,16 +703,16 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         if (hoveredAction) handleActionMouseHover(hoveredAction.actionKey, hoveredAction.role);
     };
 
-    // useEffect(() => {
-    //     MainData.forEach((role) => {
-    //         if (role.ruolo?.nome && role.layout) {
-    //             console.log(`Role Layout Updated: ${role.ruolo.nome}`, {
-    //                 width: role.layout.width,
-    //                 height: role.layout.height
-    //             });
-    //         }
-    //     });
-    // }, [MainData]);
+
+    useEffect(() => {
+        Object.entries(collapsedCards).forEach(([roleName, isCollapsed]) => {
+            console.log(`Collapse State: ${roleName}`, {
+                isCollapsed,
+                dimensions: collapsedDimensions[roleName] || { width: "N/A", height: "N/A" },
+            });
+        });
+    }, [collapsedCards, collapsedDimensions]);
+
 
     return (
         <div ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', border: '2px solid blue', overflow: 'auto' }}>
@@ -761,7 +771,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                         const associatedActions = shownStatus ? element.pulsantiAttivi?.[shownStatus] || {} : {};
                         const top = element.layout?.top || 0;
                         const left = element.layout?.left || 0;
-                        const width = element.layout?.width || 799;
+                        const width = element.layout?.width || 350;
                         const height = element.layout?.height || 690;
 
                         return (
@@ -772,49 +782,99 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                 onDrag={(e) => handleRoleCardDrag(e)}
                                 onDragEnd={(e) => handleRoleCardDrop(e, roleName)}
                                 onDragOver={handleRoleCardDragOver}
-                                className='mb-3 px-2 d-flex justify-content-between flex-wrap Editor_Card'
+                                className="mb-3 px-2 d-flex justify-content-between flex-wrap Editor_Card"
                                 style={{
-                                    position: 'absolute',
+                                    position: "absolute",
                                     top: `${top}px`,
                                     left: `${left}px`,
-                                    width: `${width}px`,
-                                    height: `${height}px`,
+                                    width: collapsedCards[roleName]
+                                        ? `${width}px` // Fixed width when collapsed, adjust if needed
+                                        : `${width}px`, // Original width when expanded
+                                    height: collapsedCards[roleName]
+                                        ? "fit-content" // Approximate header height
+                                        : `${height}px`, // Original height when expanded
                                     opacity: 1,
-                                    background: draggingItem?.type === 'role' && draggingItem?.roleName === roleName ? '#f0f0f0' : 'white'
+                                    background:
+                                        draggingItem?.type === "role" && draggingItem?.roleName === roleName
+                                            ? "#f0f0f0"
+                                            : "white",
                                 }}
                             >
                                 <Card style={{ width: '100%', height: '100%', position: 'relative' }}>
                                     <Card.Header
-                                        onDoubleClick={() => {
-                                            setCollapsedCards(prev => ({
-                                                ...prev,
-                                                [roleName]: !prev[roleName]
-                                            }));
-                                        }}
-                                        onMouseEnter={() => setHoveredRole(roleName)}
-                                        onMouseLeave={() => setHoveredRole(null)}
                                         style={{
                                             position: 'relative',
                                             cursor: 'move',
                                             display: 'flex',
                                             alignItems: 'center',
+                                            justifyContent: 'space-between',
                                         }}
                                     >
                                         {element?.ruolo?.nome}
-                                        {hoveredRole === roleName && (
-                                            <span
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    openRoleModal(element?.ruolo);
-                                                }}
-                                                className='cursor-pointer mb-2 ms-2'
-                                            >
-                                                <PencilIcon />
+
+                                        <div className='d-flex gap-2 '>
+                                            <span>
+                                                <Dropdown>
+                                                    <Dropdown.Toggle className='role_menu'>
+                                                        <ThreeDotsIcon height={20} width={20} />
+                                                    </Dropdown.Toggle>
+
+                                                    <Dropdown.Menu>
+                                                        <Dropdown.Item onClick={(e) => { e.stopPropagation(); openRoleModal(element?.ruolo) }}>Edit</Dropdown.Item>
+                                                        <Dropdown.Item>Delete</Dropdown.Item>
+                                                        <Dropdown.Item>Clone</Dropdown.Item>
+                                                    </Dropdown.Menu>
+                                                </Dropdown>
                                             </span>
-                                        )}
+
+
+
+                                            <span
+                                                className="cursor-pointer"
+                                                onClick={() => {
+                                                    setCollapsedCards((prev) => {
+                                                        const isCollapsed = !prev[roleName];
+
+                                                        if (isCollapsed) {
+                                                            // Collapsing: Store original dimensions and set minimal size
+                                                            setCollapsedDimensions((prevDims) => ({
+                                                                ...prevDims,
+                                                                [roleName]: {
+                                                                    width: element.layout?.width || 350,
+                                                                    height: element.layout?.height || 690,
+                                                                },
+                                                            }));
+                                                        } else {
+                                                            // Expanding: Clear stored dimensions
+                                                            setCollapsedDimensions((prevDims) => {
+                                                                const newDims = { ...prevDims };
+                                                                delete newDims[roleName];
+                                                                return newDims;
+                                                            });
+                                                        }
+
+                                                        return {
+                                                            ...prev,
+                                                            [roleName]: isCollapsed,
+                                                        };
+                                                    });
+                                                }}
+                                            >
+                                                {collapsedCards[roleName] ? (
+                                                    <BlackplusIcon height={20} width={20} />
+                                                ) : (
+                                                    <MinusIcon height={20} width={20} />
+                                                )}
+                                            </span>
+
+
+
+
+                                        </div>
                                     </Card.Header>
                                     <Card.Body
-                                        style={{ display: collapsedCards[roleName] ? 'none' : 'block', overflow: 'auto' }}>
+                                        style={{ display: collapsedCards[roleName] ? "none" : "block", overflow: "auto" }}
+                                    >
                                         <div className='d-flex gap-2'>
                                             <div className='d-flex flex-column'>
                                                 {element?.liste?.map((listeItem) => (
@@ -999,29 +1059,34 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                             </div>
                                         </div>
                                     </Card.Body>
-                                    <div
-                                        className="resize-handle"
-                                        onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            console.log('Mouse Down on Resize Handle:', { roleName, clientX: e.clientX, clientY: e.clientY });
-                                            handleResizeStart(e, roleName);
-                                        }}
-                                        style={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            right: 0,
-                                            display: 'flex',
-                                            justifyContent: "center",
-                                            width: '20px',
-                                            height: '20px',
-                                            background: '#fff',
-                                            cursor: 'se-resize',
-                                            // zIndex: 10,
-                                        }}
-                                    >
-                                        <CardResizer height={20} width={20} />
-                                    </div>
+                                    {!collapsedCards[roleName] && (
+                                        <div
+                                            className="resize-handle"
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                console.log("Mouse Down on Resize Handle:", {
+                                                    roleName,
+                                                    clientX: e.clientX,
+                                                    clientY: e.clientY,
+                                                });
+                                                handleResizeStart(e, roleName);
+                                            }}
+                                            style={{
+                                                position: "absolute",
+                                                bottom: 0,
+                                                right: 0,
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                width: "20px",
+                                                height: "20px",
+                                                background: "#fff",
+                                                cursor: "se-resize",
+                                            }}
+                                        >
+                                            <CardResizer height={20} width={20} />
+                                        </div>
+                                    )}
                                 </Card>
                             </div>
                         );
@@ -1108,7 +1173,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 setRoleModalShow={setRoleModalShow}
                 setShownStatuses={setShownStatuses}
             />
-        </div>
+        </div >
     );
 }
 
