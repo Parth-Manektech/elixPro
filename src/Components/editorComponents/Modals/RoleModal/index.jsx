@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
@@ -5,11 +6,11 @@ import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleItem, setEpWorkflowjson, setSelectedRoleItem, setRoleModalShow, setShownStatuses }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
-        defaultValues: initialData || { nome: "", descrizione: "", listaDefault: "" }
+        defaultValues: initialData || { nome: "", descrizione: "", listaDefault: "", key: "" }
     });
 
     useEffect(() => {
-        reset(initialData || { nome: "", descrizione: "", listaDefault: "" });
+        reset(initialData || { nome: "", descrizione: "", listaDefault: "", key: "" });
     }, [initialData, reset]);
 
     const handleAddRole = (data) => {
@@ -20,10 +21,21 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
             ruolo: {
                 nome: data.nome.trim(),
                 descrizione: data.descrizione.trim(),
-                listaDefault: data.listaDefault.trim()
+                listaDefault: data.listaDefault.trim(),
+                key: data.key.trim(),
+                colore: initialData?.colore || "#6f42c1"
             },
             liste: [],
-            azioni: []
+            azioni: [],
+            pulsantiAttivi: {},
+            sezioni: "",
+            procedimentoTag: "",
+            layout: {
+                top: workflowIndex * 50,
+                left: workflowIndex * 50,
+                width: 350,
+                height: 690
+            }
         };
 
         if (selectedRoleItem) {
@@ -48,7 +60,8 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
         const trimmedData = {
             nome: data.nome.trim(),
             descrizione: data.descrizione.trim(),
-            listaDefault: data.listaDefault.trim()
+            listaDefault: data.listaDefault.trim(),
+            key: data.key.trim()
         };
         handleAddRole(trimmedData);
     };
@@ -58,7 +71,8 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
         reset({
             nome: "",
             descrizione: "",
-            listaDefault: ""
+            listaDefault: "",
+            key: ""
         });
     };
 
@@ -66,7 +80,7 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
         <Modal show={show} onHide={onClose} size="lg" centered>
             <Modal.Body>
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Form.Group controlId="formKey" className="mb-3">
+                    <Form.Group controlId="formNome" className="mb-3">
                         <Form.Label>Name</Form.Label>
                         <Controller
                             name="nome"
@@ -79,7 +93,7 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                         <Form.Control.Feedback type="invalid">{errors.nome?.message}</Form.Control.Feedback>
                     </Form.Group>
 
-                    <Form.Group controlId="formTitle" className="mb-3">
+                    <Form.Group controlId="formDescrizione" className="mb-3">
                         <Form.Label>Description</Form.Label>
                         <Controller
                             name="descrizione"
@@ -92,7 +106,7 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                         <Form.Control.Feedback type="invalid">{errors.descrizione?.message}</Form.Control.Feedback>
                     </Form.Group>
 
-                    <Form.Group controlId="formType" className="mb-3">
+                    <Form.Group controlId="formListaDefault" className="mb-3">
                         <Form.Label>Lista Default</Form.Label>
                         <Controller
                             name="listaDefault"
@@ -103,6 +117,19 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                             )}
                         />
                         <Form.Control.Feedback type="invalid">{errors.listaDefault?.message}</Form.Control.Feedback>
+                    </Form.Group>
+
+                    <Form.Group controlId="formKey" className="mb-3">
+                        <Form.Label>Key</Form.Label>
+                        <Controller
+                            name="key"
+                            control={control}
+                            rules={{ required: "Key is required" }}
+                            render={({ field }) => (
+                                <Form.Control type="text" {...field} isInvalid={!!errors.key} />
+                            )}
+                        />
+                        <Form.Control.Feedback type="invalid">{errors.key?.message}</Form.Control.Feedback>
                     </Form.Group>
 
                     <div className="d-flex justify-content-center mt-4">

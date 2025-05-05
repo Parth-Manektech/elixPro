@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { format as formatSQL } from 'sql-formatter';
 import { js as beautify } from 'js-beautify'
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
@@ -12,6 +11,7 @@ import View from './view';
 import { CopyIcon, DownloadIcon, FLowIcon, UploadIcon } from '../../Assets/SVGs';
 import { ErrorToast, SuccessToast } from '../../utils/Toster';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { customFormatSql } from '../../Components/editorComponents/ViewComponentUtility';
 
 const Editor = () => {
     const location = useLocation();
@@ -108,7 +108,7 @@ const Editor = () => {
         const formData = new FormData();
         formData.append("excelFile", data?.xlsFile);
         try {
-            fetch("http://localhost:8080/elixPro/rest/generateJson", {
+            fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateJson", {
                 method: "POST",
                 body: formData,
             })
@@ -137,13 +137,13 @@ const Editor = () => {
         }
     }
 
-    // httpppp://efapi601.ext.ovh.anthesi.com:80800
-    // http://localhost:8080/
+    // http://efapi601.ext.ovh.anthesi.com:8080
+    // httpp://localhost:8080/
 
     const processAllCodeSegment = (ePWorkFlowJson) => {
 
         try {
-            fetch("http://localhost:8080/elixPro/rest/generateBaseCode", {
+            fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateBaseCode", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
@@ -159,6 +159,7 @@ const Editor = () => {
                     return response.json();
                 })
                 .then((data) => {
+                    console.log('data', data)
                     setisLoading(false)
                     const sData = {
                         Json: data?.jsonData,
@@ -214,7 +215,6 @@ const Editor = () => {
 
     const fillData = (sData, ePWorkFlowJson) => {
 
-
         const formatFallback = (code, type) => {
             if (!code) return '';
             try {
@@ -238,7 +238,17 @@ const Editor = () => {
         const FinalnotifyJSJson = prettyFormat(sData?.notifyJavascript, 'js');
         const FinalJavaJson = formatFallback(sData?.Java, 'java');
         const FinalSQLJson = sData?.sql
-            ? formatSQL(sData.sql, { language: 'sql', tabWidth: 4 })
+            ? (() => {
+                try {
+                    console.log('Raw SQL content:', sData.sql);
+                    const formattedSql = customFormatSql(sData.sql);
+                    console.log('Formatted SQL content:', formattedSql);
+                    return formattedSql;
+                } catch (error) {
+                    console.error('SQL formatting failed:', error.message, 'SQL content:', sData.sql);
+                    return formatFallback(sData.sql, 'sql'); // Fallback to unformatted SQL
+                }
+            })()
             : '';
 
         const FinalAEnumJson = formatFallback(sData?.Azionienum, 'enum');
@@ -398,7 +408,7 @@ const Editor = () => {
 
     const DownloadFile = () => {
         const temp = JSON.parse(watch('ePWorkFlowJSONPreview'))
-        fetch("http://localhost:8080/elixPro/rest/download/excel", {
+        fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/download/excel", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -487,7 +497,7 @@ const Editor = () => {
 
     const generateEPWorkflow = (Json, Java, JS) => {
         setisLoading(true)
-        fetch("http://localhost:8080/elixPro/rest/generate/configToWorkflowJson", {
+        fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generate/configToWorkflowJson", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -528,7 +538,7 @@ const Editor = () => {
                 activeKey={activeKey}
                 onSelect={(k) => setActiveKey(k)}
                 id="uncontrolled-tab-example"
-                className="my-2"
+                className="mb-2"
             >
                 <Tab eventKey="code" title="CODE">
                     <main className="container mb-4">
