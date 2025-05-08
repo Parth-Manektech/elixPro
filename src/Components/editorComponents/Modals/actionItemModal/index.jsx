@@ -3,6 +3,7 @@ import { Modal, Button, Form } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
+import Select from 'react-select';
 
 
 const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
@@ -24,6 +25,21 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+    const listOptions = MainData?.filter(item => item.ruolo && item.liste).flatMap(item =>
+        item.liste.flatMap(liste =>
+            liste.listArray.map(listItem => ({
+                value: listItem.key,
+                label: listItem.key
+            }))
+        )
+    );
+    const bihaviourtagOptions = [
+        { value: "passaAConMotivazione", label: "passaAConMotivazione" },
+        { value: "aggiungiSchedaAlFascicolo", label: "aggiungiSchedaAlFascicolo" },
+        { value: "apriProcessoEsterno", label: "apriProcessoEsterno" },
+        { value: "riapriConMotivazione", label: "riapriConMotivazione" }
+    ]
 
     const getStatusOptions = () => {
         if (!MainData) return [];
@@ -114,6 +130,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
 
         const actionKey = data.key;
         const moveToListKeys = data.moveToList ? data.moveToList.split(',').map(key => key.trim()).filter(key => key) : [];
+        // console.log('moveToListKeys', moveToListKeys)
         const doNotMoveToListKeys = data.doNotMoveToList ? data.doNotMoveToList.split(',').map(key => key.trim()).filter(key => key) : [];
 
         let workflowItemIndex = updatedData[workflowIndex].workflowmapping.findIndex((wf) => wf.keyAzione === actionKey);
@@ -128,7 +145,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
         } else {
             const existingWorkflow = updatedData[workflowIndex].workflowmapping[workflowItemIndex];
             existingWorkflow.statoDestinazione = data.status || existingWorkflow.statoDestinazione || null;
-            existingWorkflow.listeDestinazione = moveToListKeys;
+            existingWorkflow.listeDestinazione = moveToListKeys || [];
             existingWorkflow.doNotlisteDestinazione = doNotMoveToListKeys;
         }
 
@@ -155,18 +172,18 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                 developerNotes: ""
             });
         }
-    }, [initialData, reset]);
+    }, [initialData, show, reset]);
 
     const onSubmit = (data) => {
-        console.log('data.status', data)
+        console.log('data.status', data.moveToList.toString(), data.doNotMoveToList)
         const trimmedData = {
             ...data,
             key: data.key?.trim(),
             title: data.title?.trim(),
             type: data.type?.trim(),
-            moveToList: data.moveToList?.trim(),
+            moveToList: data?.moveToList?.toString() || "",
             status: data.status?.trim(),
-            doNotMoveToList: data.doNotMoveToList?.trim(),
+            doNotMoveToList: data?.doNotMoveToList?.toString() || "",
             behaviourTag: data.behaviourTag?.trim(),
             config: data.config?.trim(),
             notifica: data.notifica?.trim(),
@@ -228,6 +245,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
     return (
         <>
             <Modal show={show} onHide={hendleFinalClose} size="lg" centered>
+                <Modal.Header closeButton></Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmit(onSubmit)}>
                         <Form.Group controlId="formKey" className="mb-3">
@@ -272,11 +290,29 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                         <Form.Group controlId="formMoveToList" className="mb-3">
                             <Form.Label>Move to List</Form.Label>
                             <Controller
-                                name="moveToList"
+                                name={"moveToList"}
                                 control={control}
-                                render={({ field }) => <Form.Control as="textarea" rows={1} {...field} />}
+                                render={({ field: { onChange, value } }) => (
+                                    <Select
+                                        placeholder="Select List..."
+                                        isMulti
+                                        options={listOptions}
+                                        value={listOptions.filter(option => value?.includes(option.value))}
+                                        onChange={(selectedOptions) => {
+                                            const selectedValues = selectedOptions
+                                                ? selectedOptions.map(option => option.value)
+                                                : [];
+                                            onChange(selectedValues);
+                                        }}
+                                        className="basic-multi-select"
+                                        classNamePrefix="select"
+                                    />
+                                )}
                             />
                         </Form.Group>
+
+
+
 
                         <Form.Group controlId="formSetToStatus" className="mb-3 position-relative">
                             <Form.Label>Set To Status</Form.Label>
@@ -329,28 +365,51 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
 
                         <Form.Group controlId="formDoNotMoveToList" className="mb-3">
                             <Form.Label>Do Not Move to List</Form.Label>
+
                             <Controller
-                                name="doNotMoveToList"
+                                name={"doNotMoveToList"}
                                 control={control}
-                                render={({ field }) => <Form.Control as="textarea" rows={1} {...field} />}
+                                render={({ field: { onChange, value } }) => (
+                                    <Select
+                                        placeholder="Select List..."
+                                        isMulti
+                                        options={listOptions}
+                                        value={listOptions.filter(option => value?.includes(option.value))}
+                                        onChange={(selectedOptions) => {
+                                            const selectedValues = selectedOptions
+                                                ? selectedOptions.map(option => option.value)
+                                                : [];
+                                            onChange(selectedValues);
+                                        }}
+                                        className="basic-multi-select"
+                                        classNamePrefix="select"
+                                    />
+                                )}
                             />
                         </Form.Group>
 
                         <Form.Group controlId="formBehaviorTag" className="mb-3">
                             <Form.Label>Behavior Tag</Form.Label>
                             <Controller
-                                name="behaviourTag"
+                                name={"behaviourTag"}
                                 control={control}
                                 rules={{ required: "Behavior Tag is required" }} // Added required validation
-                                render={({ field }) => (
-                                    <Form.Control
-                                        type="text"
-                                        {...field}
+                                render={({ field: { onChange, value } }) => (
+
+                                    <Select
+                                        placeholder="Select Behavior Tag"
+                                        options={bihaviourtagOptions}
                                         isInvalid={!!errors.behaviourTag} // Show validation error styling
+                                        value={bihaviourtagOptions.filter(option => value?.includes(option.value))}
+                                        onChange={(selectedOptions) => {
+                                            console.log('selectedOptions', value)
+                                            onChange(selectedOptions?.value);
+                                        }}
+                                        className="basic-multi-select"
+                                        classNamePrefix="select Behavior Tag"
                                     />
                                 )}
                             />
-
                             <Form.Control.Feedback type="invalid">
                                 {errors.behaviourTag?.message}
                             </Form.Control.Feedback>

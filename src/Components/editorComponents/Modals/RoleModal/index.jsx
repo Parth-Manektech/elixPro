@@ -78,6 +78,7 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
 
     return (
         <Modal show={show} onHide={onClose} size="lg" centered>
+            <Modal.Header closeButton></Modal.Header>
             <Modal.Body>
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group controlId="formNome" className="mb-3">

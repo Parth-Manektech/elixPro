@@ -11,7 +11,7 @@ const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, 
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     useEffect(() => {
         reset(initialData || { title: "" });
-    }, [initialData, reset]);
+    }, [initialData, reset, show]);
 
     const handleDeleteTitle = (title, type) => {
         const updatedData = initializeWorkflowMapping([...MainData]);

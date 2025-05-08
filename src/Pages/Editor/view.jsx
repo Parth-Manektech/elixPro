@@ -1001,7 +1001,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 </div>
 
             </div>
-            <div ref={containerRef} style={{ position: 'relative', width: '100%', minHeight: '100vh', border: '2px solid blue', overflow: 'auto' }}>
+            <div ref={containerRef} className='editor-visualization' style={{ position: 'relative', width: '100%', overflow: 'auto' }}>
 
 
                 <canvas ref={canvasRef} style={{
@@ -1010,7 +1010,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     left: 0,
                     zIndex: 1000,
                     pointerEvents: 'none',
-                    border: '1px solid red'
+                    // border: '1px solid red'
                 }} />
 
                 <div className='d-flex justify-content-around flex-wrap' style={{
@@ -1047,9 +1047,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                         width: collapsedCards[roleName]
                                             ? `${width}px`
                                             : `${width}px`,
-                                        height: collapsedCards[roleName]
-                                            ? "fit-content"
-                                            : `fit-content`,
+                                        height: collapsedCards[roleName] ? "fit-content" : "fit-content",
                                         opacity: 1,
                                         background:
                                             draggingItem?.type === "role" && draggingItem?.roleName === roleName

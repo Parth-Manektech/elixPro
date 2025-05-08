@@ -1,7 +1,11 @@
+.editor-visualization {
+    height: calc(100vh - 295px);
+}
+
 .Editor_Card {
     min-width: 350px;
     // max-width: 350px;
-    min-height: fit-content !important;
+    min-height: fit-content;
 }
 
 .toolbar {

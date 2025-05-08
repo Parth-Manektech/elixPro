@@ -12,7 +12,7 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
 
     useEffect(() => {
         reset(initialData || { key: "", title: "", type: "", isDetailAllowed: "" });
-    }, [initialData, reset]);
+    }, [initialData, reset, show]);
 
     const onSubmit = (data) => {
         const trimmedData = {
@@ -123,6 +123,7 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
     return (
         <>
             <Modal show={show} onHide={hendleFinalClose} size="lg" centered>
+                <Modal.Header closeButton></Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmit(onSubmit)}>
                         <Form.Group controlId="formKey" className="mb-3">

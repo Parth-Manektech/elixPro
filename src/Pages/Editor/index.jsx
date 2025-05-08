@@ -137,8 +137,8 @@ const Editor = () => {
         }
     }
 
-    // http://efapi601.ext.ovh.anthesi.com:8080
-    // httpp://localhost:8080/
+    // http://efapi601.ext.ovh.anthesi.com:8080/
+    // httppp://localhost:8080/
 
     const processAllCodeSegment = (ePWorkFlowJson) => {
 
@@ -537,7 +537,7 @@ const Editor = () => {
             <Tabs
                 activeKey={activeKey}
                 onSelect={(k) => setActiveKey(k)}
-                id="uncontrolled-tab-example"
+                id="uncontrolled-tab-example "
                 className="mb-2"
             >
                 <Tab eventKey="code" title="CODE">

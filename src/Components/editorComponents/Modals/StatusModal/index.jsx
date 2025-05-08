@@ -13,7 +13,7 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
 
     useEffect(() => {
         reset(initialData || { status: "" });
-    }, [initialData, reset]);
+    }, [initialData, reset, show]);
 
     const handleAddStatusItem = (data) => {
         const updatedData = initializeWorkflowMapping([...MainData]);

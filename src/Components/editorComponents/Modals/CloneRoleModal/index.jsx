@@ -26,9 +26,7 @@ const CloneRoleModal = ({ show, handleClose, onClone, initialNome }) => {
 
     return (
         <Modal show={show} onHide={onClose} size="lg" centered>
-            <Modal.Header>
-                <Modal.Title>Clone Role</Modal.Title>
-            </Modal.Header>
+            <Modal.Header closeButton></Modal.Header>
             <Modal.Body>
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group controlId="formCloneNome" className="mb-3">
