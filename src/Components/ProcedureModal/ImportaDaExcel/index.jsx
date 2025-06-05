@@ -15,6 +15,7 @@ function ImportaDaExcel() {
 
     function onSubmit(data) {
         setisLoading(true);
+        localStorage.clear('ePWorkFlow');
         const formData = new FormData();
         formData.append("excelFile", data?.excelFile);
         try {
@@ -38,7 +39,7 @@ function ImportaDaExcel() {
                         isLoading: true,
                         ePWorkFlowJson: JSON.stringify(data?.ePWorkFlowJson)
                     }
-                    navigate('/tutti-i-procedimenti/procedimento-x/editor', { state: stateData })
+                    navigate('/tutti-i-procedimenti/procedimento-x/editor', { state: stateData }, { replace: true })
 
                 })
                 .catch((error) => {

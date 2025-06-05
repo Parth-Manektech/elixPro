@@ -107,6 +107,7 @@ const Editor = () => {
         setisLoading(true)
         const formData = new FormData();
         formData.append("excelFile", data?.xlsFile);
+        NewWorkFlow();
         try {
             fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateJson", {
                 method: "POST",
@@ -141,7 +142,6 @@ const Editor = () => {
     // httppp://localhost:8080/
 
     const processAllCodeSegment = (ePWorkFlowJson) => {
-
         try {
             fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateBaseCode", {
                 method: "POST",
@@ -472,6 +472,7 @@ const Editor = () => {
 
     useEffect(() => {
         if (fileData?.java && fileData?.json && fileData?.js) {
+            NewWorkFlow();
             generateEPWorkflow(fileData?.json, fileData?.java, fileData?.js)
         }
         // eslint-disable-next-line
@@ -482,6 +483,7 @@ const Editor = () => {
 
         // Use navigator.clipboard API to copy text
         navigator.clipboard.writeText(data)
+        
             .then(() => {
                 // Optional: Show success message
                 SuccessToast('copied to clipboard successfully', 2000);
@@ -528,8 +530,8 @@ const Editor = () => {
     const NewWorkFlow = () => {
         localStorage.clear('ePWorkFlow');
         navigate('/tutti-i-procedimenti/procedimento-x/editor', { replace: true });
-        window.location.reload()
     }
+
 
     return (
         <div className='position-relative'>
@@ -573,8 +575,8 @@ const Editor = () => {
                                         <small className="text-danger">{errors.xlsFile.message}</small>
                                     )}
                                 </div>
-                                <Button className="btn btn-primary w-auto me-2" type='submit' >Submit</Button>
-                                <button className="btn btn-success" onClick={NewWorkFlow}>
+                                <Button className="btn btn-primary w-auto me-2" type='submit'>Submit</Button>
+                                <button className="btn btn-success" onClick={() => { NewWorkFlow(); window.location.reload() }}>
                                     New Workflow
                                 </button>
                                 {watch('ePWorkFlowJSONPreview') && <div className="btn btn-success" onClick={(e) => DownloadFile(e)}>
@@ -882,7 +884,7 @@ const Editor = () => {
 
                             </Tabs>
                             <div className='d-flex justify-content-center w-100 mt-4 mb-5'>
-                                {watch('ePWorkFlowJSONPreview') && <Button onClick={() => { setisLoading(true); processAllCodeSegment(JSON.parse(watch('ePWorkFlowJSONPreview'))) }} variant="success"><FLowIcon height={20} fill='#fff' width={20} className='pb-1' /> Generate Code</Button>}
+                                {watch('ePWorkFlowJSONPreview') && <Button onClick={() => { setisLoading(true); NewWorkFlow(); processAllCodeSegment(JSON.parse(watch('ePWorkFlowJSONPreview'))) }} variant="success"><FLowIcon height={20} fill='#fff' width={20} className='pb-1' /> Generate Code</Button>}
                             </div>
                         </form>
                     </main>

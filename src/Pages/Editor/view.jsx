@@ -267,8 +267,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     layout: {
                         top: index * 50,
                         left: index * 50,
-                        width: 350,
-                        height: 690,
+                        width: 768,
+                        height: 637,
                     },
                 };
             }
@@ -278,7 +278,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                     ...updatedRole,
                     ruolo: {
                         ...role.ruolo,
-                        colore: "#6f42c1",
+                        colore: "#00ccff",
                     },
                 };
             }
@@ -821,6 +821,8 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         updateCanvasSize();
     };
 
+
+    // resize Card 
     const handleResizeStart = (e, roleName) => {
         if (!e.target.closest('.resize-handle')) {
             console.warn('Resize start aborted: Not a resize handle', e.target);
@@ -877,13 +879,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         }
 
         const roleName = resizingRoleRef.current;
-        console.log('Resizing:', {
-            roleName,
-            clientX: e.clientX,
-            clientY: e.clientY,
-            deltaX: (e.clientX - dragStartPosRef.current.x) / zoomLevel,
-            deltaY: (e.clientY - dragStartPosRef.current.y) / zoomLevel
-        });
+
 
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex(r => r.ruolo?.nome === roleName);
@@ -931,6 +927,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
         if (hoveredStatus) handleStatusMouseHover(hoveredStatus.status, hoveredStatus.role);
         if (hoveredAction) handleActionMouseHover(hoveredAction.actionKey, hoveredAction.role);
     };
+
 
     useEffect(() => {
         Object.entries(collapsedCards).forEach(([roleName, isCollapsed]) => {
@@ -1001,7 +998,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                 </div>
 
             </div>
-            <div ref={containerRef} className='editor-visualization' style={{ position: 'relative', width: '100%', overflow: 'auto' }}>
+            <div ref={containerRef} className='editor-visualization' style={{ position: 'relative', width: '100%', overflow: 'auto', backgroundColor: '#D6D6D6' }}>
 
 
                 <canvas ref={canvasRef} style={{
@@ -1039,7 +1036,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                     onDrag={(e) => handleRoleCardDrag(e)}
                                     onDragEnd={(e) => handleRoleCardDrop(e, roleName)}
                                     onDragOver={handleRoleCardDragOver}
-                                    className="mb-3 px-2 d-flex justify-content-between flex-wrap Editor_Card"
+                                    className="mb-3 d-flex justify-content-between flex-wrap Editor_Card"
                                     style={{
                                         position: "absolute",
                                         top: `${top}px`,
@@ -1171,7 +1168,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                             style={{ display: collapsedCards[roleName] ? "none" : "block", overflow: "auto" }}
                                         >
                                             <div className='d-flex gap-2'>
-                                                <div className='d-flex flex-column'>
+                                                <div className='d-flex flex-column gap-2'>
                                                     {element?.liste?.map((listeItem) => (
                                                         <div className='d-flex flex-column' key={listeItem.title}>
                                                             <span className='listeItemTitle text-center cursor-pointer'>
@@ -1186,7 +1183,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                                     <RoundPlusIcon className='cursor-pointer' height={20} width={20} />
                                                                 </span>
                                                             </span>
-                                                            <div className='d-flex flex-column'>
+                                                            <div className='d-flex flex-column' >
                                                                 {listeItem?.listArray?.map((listArrayItem) => (
                                                                     <div
                                                                         key={listArrayItem.key}
@@ -1198,7 +1195,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                                         style={{
                                                                             cursor: 'grab',
                                                                             padding: '5px',
-                                                                            margin: '2px 0',
                                                                             background: draggingItem?.type === 'list' && draggingItem?.itemKey === listArrayItem.key ? '#e0e0e0' : 'transparent'
                                                                         }}
                                                                         onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
@@ -1275,7 +1271,7 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                         </span>
                                                     ))}
                                                 </div>
-                                                <div className='d-flex flex-column'>
+                                                <div className='d-flex flex-column gap-2'>
                                                     {element?.azioni?.map((azioniItem) => (
                                                         <div className='d-flex flex-column' key={azioniItem.title}>
                                                             <span className='azioniItemTitle text-center cursor-pointer'>
@@ -1309,7 +1305,6 @@ function View({ epWorkflowjson, setEpWorkflowjson }) {
                                                                                 justifyContent: 'space-between',
                                                                                 cursor: 'grab',
                                                                                 padding: '5px',
-                                                                                margin: '2px 0',
                                                                                 background: draggingItem?.type === 'action' && draggingItem?.itemKey === azioniArrayItem.key ? '#e0e0e0' : 'transparent'
                                                                             }}
                                                                             onMouseEnter={() => {

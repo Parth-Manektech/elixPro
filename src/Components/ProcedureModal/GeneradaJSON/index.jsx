@@ -20,6 +20,7 @@ function GeneradaJSON() {
     function onSubmit() {
         if (fileData?.java && fileData?.json && fileData?.js) {
             setisLoading(true)
+            localStorage.clear('ePWorkFlow');
             generateEPWorkflow(fileData?.json, fileData?.java, fileData?.js);
         }
 
@@ -52,7 +53,7 @@ function GeneradaJSON() {
                     isLoading: true,
                     ePWorkFlowJson: JSON.stringify(data?.ePWorkFlowJson)
                 }
-                navigate('/tutti-i-procedimenti/procedimento-x/editor', { state: stateData })
+                navigate('/tutti-i-procedimenti/procedimento-x/editor', { state: stateData }, { replace: true })
 
             })
             .catch((error) => {
