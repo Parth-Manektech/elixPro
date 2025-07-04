@@ -483,7 +483,7 @@ const Editor = () => {
 
         // Use navigator.clipboard API to copy text
         navigator.clipboard.writeText(data)
-        
+
             .then(() => {
                 // Optional: Show success message
                 SuccessToast('copied to clipboard successfully', 2000);
@@ -531,7 +531,9 @@ const Editor = () => {
         localStorage.clear('ePWorkFlow');
         navigate('/tutti-i-procedimenti/procedimento-x/editor', { replace: true });
     }
-
+    const hendelGenrateCode = () => {
+        setisLoading(true); NewWorkFlow(); processAllCodeSegment(JSON.parse(watch('ePWorkFlowJSONPreview')))
+    }
 
     return (
         <div className='position-relative'>
@@ -884,14 +886,14 @@ const Editor = () => {
 
                             </Tabs>
                             <div className='d-flex justify-content-center w-100 mt-4 mb-5'>
-                                {watch('ePWorkFlowJSONPreview') && <Button onClick={() => { setisLoading(true); NewWorkFlow(); processAllCodeSegment(JSON.parse(watch('ePWorkFlowJSONPreview'))) }} variant="success"><FLowIcon height={20} fill='#fff' width={20} className='pb-1' /> Generate Code</Button>}
+                                {watch('ePWorkFlowJSONPreview') && <Button onClick={() => hendelGenrateCode()} variant="success"><FLowIcon height={20} fill='#fff' width={20} className='pb-1' /> Generate Code</Button>}
                             </div>
                         </form>
                     </main>
                 </Tab>
 
                 <Tab eventKey="view" title="VIEW">
-                    <View epWorkflowjson={epWorkflowjson} setEpWorkflowjson={setEpWorkflowjson} />
+                    <View epWorkflowjson={epWorkflowjson} setEpWorkflowjson={setEpWorkflowjson} hendelGenrateCode={hendelGenrateCode} />
                 </Tab>
             </Tabs>
 

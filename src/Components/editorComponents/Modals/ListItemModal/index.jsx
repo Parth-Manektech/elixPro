@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 const ListItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentListTitle, selectedListItem, setEpWorkflowjson, setSelectedListItem, setListItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
-        defaultValues: initialData || { key: "", title: "", type: "", isDetailAllowed: "" }
+        defaultValues: initialData || { key: "", title: "", type: "button", isDetailAllowed: "true" }
     });
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     useEffect(() => {
-        reset(initialData || { key: "", title: "", type: "", isDetailAllowed: "" });
+        reset(initialData || { key: "", title: "", type: "button", isDetailAllowed: "true" });
     }, [initialData, reset, show]);
 
     const onSubmit = (data) => {
@@ -122,62 +122,122 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
 
     return (
         <>
-            <Modal show={show} onHide={hendleFinalClose} size="lg" centered>
-                <Modal.Header closeButton></Modal.Header>
-                <Modal.Body>
-                    <Form onSubmit={handleSubmit(onSubmit)}>
+            <Modal show={show} onHide={hendleFinalClose} size="xl" >
+                <Form onSubmit={handleSubmit(onSubmit)}>
+                    <Modal.Header className="fs-5" closeButton> {initialData?.key ? "Modifica" : " Nuova"}&nbsp;<span className="fw-bold">Lista</span></Modal.Header>
+                    <Modal.Body className="mx-3">
+
+                        <Col lg={12} className="mt-3">
+                            <div className="modal-sezione">
+                                <span className="modal-sezione-titolo">Dati</span>
+                                <div className="modal-sezione-line"></div>
+                            </div>
+                        </Col>
+
                         <Form.Group controlId="formKey" className="mb-3">
-                            <Form.Label>Key</Form.Label>
-                            <Controller
-                                name="key"
-                                control={control}
-                                rules={{ required: "Key is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.key} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.key?.message}</Form.Control.Feedback>
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    Key
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="key"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Control placeholder="Inserisci la key" type="text" {...field} isInvalid={!!errors.key} />
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.key?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
+
                         </Form.Group>
 
                         <Form.Group controlId="formTitle" className="mb-3">
-                            <Form.Label>Title</Form.Label>
-                            <Controller
-                                name="title"
-                                control={control}
-                                rules={{ required: "Title is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.title} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    Nome
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="title"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Control placeholder="Inserisci la nome" type="text" {...field} isInvalid={!!errors.title} />
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
                         </Form.Group>
 
+                        <Col lg={12}>
+                            <div className="modal-sezione">
+                                <span className="modal-sezione-titolo">Impostazioni</span>
+                                <div className="modal-sezione-line"></div>
+                            </div>
+                        </Col>
+
                         <Form.Group controlId="formType" className="mb-3">
-                            <Form.Label>Type</Form.Label>
-                            <Controller
-                                name="type"
-                                control={control}
-                                rules={{ required: "Type is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.type} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.type?.message}</Form.Control.Feedback>
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    {"Tipo (to-be-removed)"}
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="type"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Select
+                                                {...field}
+                                                value={field.value}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value);
+                                                }}
+                                                aria-label="select type"
+                                                isInvalid={!!errors.type}
+                                            >
+                                                <option value="button">button</option>
+                                            </Form.Select>
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.type?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
+
                         </Form.Group>
 
                         <Form.Group controlId="formDetailAllowed" className="mb-3">
-                            <Form.Label>Is Detail Allowed</Form.Label>
-                            <Controller
-                                name="isDetailAllowed"
-                                control={control}
-                                rules={{ required: "This field is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.isDetailAllowed} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.isDetailAllowed?.message}</Form.Control.Feedback>
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    Mostra "Dettaglio" pratiche
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="isDetailAllowed"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Form.Check
+                                                type="switch"
+                                                id="isDetailAllowed-switch"
+                                                checked={field.value === "true"}
+                                                onChange={(e) => {
+                                                    const newValue = e.target.checked ? "true" : "false";
+                                                    field.onChange(newValue);
+                                                }}
+                                                isInvalid={!!errors.isDetailAllowed}
+                                                style={{ cursor: "pointer !impotant" }}
+                                            />
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.isDetailAllowed?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
                         </Form.Group>
-
+                        {/* 
                         <div className="d-flex justify-content-center mt-4">
                             <Button variant="primary" type="submit" className="mx-2">Save</Button>
                             <Button variant="dark" onClick={hendleFinalClose} className="mx-2">Close</Button>
@@ -189,16 +249,21 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
                             >
                                 Delete
                             </Button>
+                        </div> */}
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <div className="d-flex justify-content-end mb-4">
+                            <Button variant={initialData?.key ? "outline-primary" : "primary"} type="submit" className="mx-2">{initialData?.key ? "Applica" : "Crea Lista"}</Button>
                         </div>
-                    </Form>
-                </Modal.Body>
+                    </Modal.Footer>
+                </Form>
             </Modal>
-            <DeleteConfirmationModal
+            {/* <DeleteConfirmationModal
                 show={showDeleteConfirmation}
                 handleClose={handleCancelDelete}
                 handleConfirm={handleConfirmDelete}
                 itemType="list item"
-            />
+            /> */}
         </>
     );
 };

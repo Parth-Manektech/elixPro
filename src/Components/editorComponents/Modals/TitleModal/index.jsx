@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
@@ -188,26 +188,40 @@ const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, 
     };
     return (
         <>
-            <Modal show={show} onHide={handleFinalClose} size="lg" centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>Add Title</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <Form onSubmit={handleSubmit(onSubmit)}>
+            <Modal show={show} onHide={handleFinalClose} size="xl" >
+                <Form onSubmit={handleSubmit(onSubmit)}>
+                    <Modal.Header closeButton>
+                        <Modal.Title className="fs-5"> <span>{initialData?.title ? "Modifica" : "Nuova"}</span> <span className="fw-bold">Categoria {titleModalType === 'liste' ? "lista" : "azione"}</span></Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body className="mx-3">
+                        <Col lg={12}>
+                            <div className="modal-sezione">
+                                <span className="modal-sezione-titolo">Dati</span>
+                                <div className="modal-sezione-line"></div>
+                            </div>
+                        </Col>
                         <Form.Group controlId="formTitle" className="mb-3">
-                            <Form.Label>Title</Form.Label>
-                            <Controller
-                                name="title"
-                                control={control}
-                                rules={{ required: "Title is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.title} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    Nome
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="title"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Control placeholder="Inserisci la nome" type="text" {...field} isInvalid={!!errors.title} />
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
+
+
                         </Form.Group>
 
-                        <div className="d-flex justify-content-center mt-4">
+                        {/* <div className="d-flex justify-content-center mt-4">
                             <Button variant="primary" type="submit" className="mx-2">Save</Button>
                             <Button variant="dark" onClick={handleFinalClose} className="mx-2">Close</Button>
                             {initialData && (
@@ -220,9 +234,15 @@ const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, 
                                     Delete
                                 </Button>
                             )}
+                        </div> */}
+
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <div className="d-flex justify-content-end mb-4">
+                            <Button variant={initialData?.title ? "outline-primary" : "primary"} type="submit" className="mx-2">{initialData?.title ? "Applica" : `Crea Categoria ${titleModalType === 'liste' ? "lista" : "azione"}`}</Button>
                         </div>
-                    </Form>
-                </Modal.Body>
+                    </Modal.Footer>
+                </Form>
             </Modal>
 
             <DeleteConfirmationModal

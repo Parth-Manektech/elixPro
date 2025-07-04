@@ -1,23 +1,20 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
-const DeleteConfirmationModal = ({ show, handleClose, handleConfirm, itemType }) => {
+const DeleteConfirmationModal = ({ show, handleClose, handleConfirm, itemMessages, itemName, itemType }) => {
     return (
-        <Modal show={show} onHide={handleClose} size='lg' centered>
+        <Modal show={show} onHide={handleClose} size='xl' centered className='detele-Modal'>
             <Modal.Header closeButton>
-                <Modal.Title>Confirm Deletion</Modal.Title>
+                <Modal.Title className='fs-5'>Elimina <span className='fw-bold'>{itemType}</span></Modal.Title>
             </Modal.Header>
-            <Modal.Body className='fs-2 fw-bold text-center'>
-                Are you sure you want to delete this {itemType}?
+            <Modal.Body className='fs-6 text-center w-100'>
+                {itemMessages} <br /><span className='fw-bold'>{itemName}</span>?
             </Modal.Body>
-            <div className='d-flex justify-content-center gap-3 mb-3'>
-                <Button variant="secondary" onClick={handleClose}>
-                    Cancel
+            <Modal.Footer className='d-flex justify-content-center mb-3'>
+                <Button variant="outline-danger" onClick={handleConfirm}>
+                    Elimina {itemType}
                 </Button>
-                <Button variant="danger" onClick={handleConfirm}>
-                    Delete
-                </Button>
-            </div>
+            </Modal.Footer>
         </Modal>
     );
 };

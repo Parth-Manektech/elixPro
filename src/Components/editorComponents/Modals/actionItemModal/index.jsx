@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 import Select from 'react-select';
+import CustomSelect from "../../../CustomAutoSelect";
+import CustomMultiSelect from "../../../CustomMultiSelect";
 
 
 const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
-    const { control, handleSubmit, formState: { errors }, reset } = useForm({
-        defaultValues: initialData || {
+    const { control, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
+        defaultValues: { ...initialData, moveToList: initialData?.moveToList?.split(',').map(item => item.trim()), doNotMoveToList: initialData?.doNotMoveToList?.split(',').map(item => item.trim()) } || {
             key: "",
             title: "",
-            type: "",
-            moveToList: "",
+            type: "button",
+            moveToList: [],
             status: "",
-            doNotMoveToList: "",
+            doNotMoveToList: [],
             behaviourTag: "",
             config: "",
             notifica: "",
@@ -22,9 +24,48 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             developerNotes: ""
         }
     });
+
+
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+    const [isPassaAOnly, setIsPassaAOnly] = useState(false)
+
+
+    const behaviourValueOptions = [
+        { value: 'aggiungiSchedaAlFascicolo', label: 'aggiungiSchedaAlFascicolo' }, //no
+        { value: 'apriProcessoEsterno', label: 'apriProcessoEsterno' },//n
+        { value: 'clonaModulo', label: 'clonaModulo' },//y
+        { value: 'generaPdfDaTemplate', label: 'generaPdfDaTemplate' },//n
+        { value: 'passaABasic', label: 'passaABasic' },//y
+        { value: 'passaAConFirmaDigitale', label: 'passaAConFirmaDigitale' },//y
+        { value: 'passaAConMotivazione', label: 'passaAConMotivazione' },//y
+        { value: 'passaAConMotivazioneAnnullandoFirmaDigitale', label: 'passaAConMotivazioneAnnullandoFirmaDigitale' },//y
+        { value: 'riapriConMotivazione', label: 'riapriConMotivazione' },//y
+    ];
+
+    useEffect(() => {
+        if (watch("behaviourTag") !== "aggiungiSchedaAlFascicolo" && watch("behaviourTag") !== "apriProcessoEsterno" && watch("behaviourTag") !== "generaPdfDaTemplate" && !!watch("behaviourTag")) {
+            setIsPassaAOnly(true)
+        } else {
+            setIsPassaAOnly(false)
+            setValue("moveToList", []);
+            setValue("status", "");
+            setValue("doNotMoveToList", []);
+        }
+    }, [watch('behaviourTag'), show])
+    // console.log('isPassaAOnly', isPassaAOnly, watch('behaviourTag'))
+
+    const validationRules = {
+        required: 'Campo obbligatorio',
+    };
+
+    const validationRulesmulti = {
+        validate: (value) =>
+            Array.isArray(value) && value.length > 0 ? true : 'Campo obbligatorio',
+    };
+
 
     const listOptions = MainData?.filter(item => item.ruolo && item.liste).flatMap(item =>
         item.liste.flatMap(liste =>
@@ -34,12 +75,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             }))
         )
     );
-    const bihaviourtagOptions = [
-        { value: "passaAConMotivazione", label: "passaAConMotivazione" },
-        { value: "aggiungiSchedaAlFascicolo", label: "aggiungiSchedaAlFascicolo" },
-        { value: "apriProcessoEsterno", label: "apriProcessoEsterno" },
-        { value: "riapriConMotivazione", label: "riapriConMotivazione" }
-    ]
+
 
     const getStatusOptions = () => {
         if (!MainData) return [];
@@ -156,15 +192,15 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
 
     useEffect(() => {
         if (initialData) {
-            reset(initialData);
+            reset({ ...initialData, moveToList: initialData?.moveToList?.split(',').map(item => item.trim()), doNotMoveToList: initialData?.doNotMoveToList?.split(',').map(item => item.trim()) });
         } else {
             reset({
                 key: "",
                 title: "",
-                type: "",
-                moveToList: "",
+                type: "button",
+                moveToList: [],
                 status: "",
-                doNotMoveToList: "",
+                doNotMoveToList: [],
                 behaviourTag: "",
                 config: "",
                 notifica: "",
@@ -175,20 +211,20 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
     }, [initialData, show, reset]);
 
     const onSubmit = (data) => {
-        console.log('data.status', data.moveToList.toString(), data.doNotMoveToList)
+
         const trimmedData = {
             ...data,
             key: data.key?.trim(),
             title: data.title?.trim(),
             type: data.type?.trim(),
-            moveToList: data?.moveToList?.toString() || "",
+            moveToList: data?.moveToList?.join(', ') || "",
             status: data.status?.trim(),
-            doNotMoveToList: data?.doNotMoveToList?.toString() || "",
+            doNotMoveToList: data?.doNotMoveToList?.join(', ') || "",
             behaviourTag: data.behaviourTag?.trim(),
             config: data.config?.trim(),
-            notifica: data.notifica?.trim(),
-            customerNotes: data.customerNotes?.trim(),
-            developerNotes: data.developerNotes?.trim()
+            notifica: data.config?.trim(),
+            customerNotes: data.customerNotes?.trim() || '',
+            developerNotes: data.developerNotes?.trim() || ''
         };
         handleAddActionItem(trimmedData);
         hendleFinalClose();
@@ -199,9 +235,9 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             key: "",
             title: "",
             type: "",
-            moveToList: "",
+            moveToList: [],
             status: "",
-            doNotMoveToList: "",
+            doNotMoveToList: [],
             behaviourTag: "",
             config: "",
             notifica: "",
@@ -209,6 +245,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             developerNotes: ""
         });
         handleClose();
+
     }
 
 
@@ -226,169 +263,165 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
         setShowDeleteConfirmation(false);
     };
 
-    const filterSuggestions = (value) => {
-        const inputValue = value.trim().toLowerCase();
-        if (inputValue === "" || value === undefined) {
-            // Show all status options when input is focused or empty
-            setSuggestions([...getStatusOptions()]);
-            setShowSuggestions(true);
-        } else {
-            // Filter suggestions based on typing
-            const filtered = getStatusOptions().filter(option =>
-                option.toLowerCase().includes(inputValue)
-            );
-            setSuggestions(filtered);
-            setShowSuggestions(true);
-        }
+    const statusOptions = () => {
+        return getStatusOptions()?.map((e) => {
+            return {
+                value: e,
+                label: e
+            }
+        })
     };
 
     return (
         <>
-            <Modal show={show} onHide={hendleFinalClose} size="lg" centered>
-                <Modal.Header closeButton></Modal.Header>
-                <Modal.Body>
-                    <Form onSubmit={handleSubmit(onSubmit)}>
+            <Modal show={show} onHide={hendleFinalClose} size="xl">
+                <Form onSubmit={handleSubmit(onSubmit)}>
+                    <Modal.Header closeButton className="fs-5">{initialData?.key ? "Modifica" : "Nuova"}&nbsp;<span className="fw-bold">Azione</span> </Modal.Header>
+                    <Modal.Body className="mx-3">
+
+                        <Col lg={12} className="mt-2">
+                            <div className="modal-sezione">
+                                <span className="modal-sezione-titolo">Dati</span>
+                                <div className="modal-sezione-line"></div>
+                            </div>
+                        </Col>
+
                         <Form.Group controlId="formKey" className="mb-3">
-                            <Form.Label>Key</Form.Label>
-                            <Controller
-                                name="key"
-                                control={control}
-                                rules={{ required: "Key is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.key} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.key?.message}</Form.Control.Feedback>
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    Key
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="key"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Control type="text" placeholder="Inserisci la key" {...field} isInvalid={!!errors.key} />
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.key?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
                         </Form.Group>
 
                         <Form.Group controlId="formTitle" className="mb-3">
-                            <Form.Label>Title</Form.Label>
-                            <Controller
-                                name="title"
-                                control={control}
-                                rules={{ required: "Title is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.title} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    nome
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="title"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Control type="text" placeholder="Inserisci la nome" {...field} isInvalid={!!errors.title} />
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
                         </Form.Group>
+
+                        <Col lg={12}>
+                            <div className="modal-sezione">
+                                <span className="modal-sezione-titolo">Impostazioni</span>
+                                <div className="modal-sezione-line"></div>
+                            </div>
+                        </Col>
+
 
                         <Form.Group controlId="formType" className="mb-3">
-                            <Form.Label>Type</Form.Label>
-                            <Controller
-                                name="type"
-                                control={control}
-                                rules={{ required: "Type is required" }}
-                                render={({ field }) => (
-                                    <Form.Control type="text" {...field} isInvalid={!!errors.type} />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">{errors.type?.message}</Form.Control.Feedback>
-                        </Form.Group>
-
-                        <Form.Group controlId="formMoveToList" className="mb-3">
-                            <Form.Label>Move to List</Form.Label>
-                            <Controller
-                                name={"moveToList"}
-                                control={control}
-                                render={({ field: { onChange, value } }) => (
-                                    <Select
-                                        placeholder="Select List..."
-                                        isMulti
-                                        options={listOptions}
-                                        value={listOptions.filter(option => value?.includes(option.value))}
-                                        onChange={(selectedOptions) => {
-                                            const selectedValues = selectedOptions
-                                                ? selectedOptions.map(option => option.value)
-                                                : [];
-                                            onChange(selectedValues);
-                                        }}
-                                        className="basic-multi-select"
-                                        classNamePrefix="select"
-                                    />
-                                )}
-                            />
-                        </Form.Group>
-
-
-
-
-                        <Form.Group controlId="formSetToStatus" className="mb-3 position-relative">
-                            <Form.Label>Set To Status</Form.Label>
-                            <Controller
-                                name="status"
-                                control={control}
-                                render={({ field }) => (
-                                    <>
-                                        <Form.Control
-                                            type="text"
-                                            {...field}
-                                            autocomplete="off"
-                                            placeholder="Type a status or use suggestions..."
-                                            onChange={(e) => {
-                                                field.onChange(e.target.value);
-                                                filterSuggestions(e.target.value); // Filter suggestions as user types
-                                            }}
-                                            onFocus={() => filterSuggestions(field.value || "")} // Show all suggestions on focus
-                                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Hide suggestions after blur
-                                        />
-                                        {showSuggestions && suggestions.length > 0 && (
-                                            <ul
-                                                className="dropdown-menu show w-100"
-                                                style={{
-                                                    position: "absolute",
-                                                    zIndex: 1000,
-                                                    maxHeight: "200px",
-                                                    overflowY: "auto"
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    {"Tipo (to-be-removed)"}
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="type"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Select
+                                                {...field}
+                                                value={field.value}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value);
                                                 }}
+                                                aria-label="select type"
+                                                isInvalid={!!errors.type}
                                             >
-                                                {suggestions.map((suggestion, index) => (
-                                                    <li
-                                                        key={index}
-                                                        className="dropdown-item"
-                                                        style={{ cursor: "pointer" }}
-                                                        onMouseDown={() => {
-                                                            field.onChange(suggestion);
-                                                            setShowSuggestions(false);
-                                                        }}
-                                                    >
-                                                        {suggestion}
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                                <option value="button">button</option>
+                                            </Form.Select>
                                         )}
-                                    </>
-                                )}
-                            />
-                        </Form.Group>
-
-                        <Form.Group controlId="formDoNotMoveToList" className="mb-3">
-                            <Form.Label>Do Not Move to List</Form.Label>
-
-                            <Controller
-                                name={"doNotMoveToList"}
-                                control={control}
-                                render={({ field: { onChange, value } }) => (
-                                    <Select
-                                        placeholder="Select List..."
-                                        isMulti
-                                        options={listOptions}
-                                        value={listOptions.filter(option => value?.includes(option.value))}
-                                        onChange={(selectedOptions) => {
-                                            const selectedValues = selectedOptions
-                                                ? selectedOptions.map(option => option.value)
-                                                : [];
-                                            onChange(selectedValues);
-                                        }}
-                                        className="basic-multi-select"
-                                        classNamePrefix="select"
                                     />
-                                )}
-                            />
+                                    <Form.Control.Feedback type="invalid">{errors.type?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
+
                         </Form.Group>
 
-                        <Form.Group controlId="formBehaviorTag" className="mb-3">
+                        <CustomSelect
+                            options={behaviourValueOptions}
+                            control={control}
+                            errors={errors}
+                            fieldName="behaviourTag"
+                            placeholder="Seleziona il tipo di behaviour"
+                            label="Behaviour"
+                            rules={validationRules}
+                        />
+                        {
+                            isPassaAOnly && (<>
+
+
+                                <Col lg={12} className="mt-4">
+                                    <div className="modal-sezione">
+                                        <span className="modal-sezione-titolo">{"PASSA A (only)"}</span>
+                                        <div className="modal-sezione-line"></div>
+                                    </div>
+                                </Col>
+                                <div className="mb-2">
+                                    <CustomMultiSelect
+                                        options={listOptions}
+                                        control={control}
+                                        errors={errors}
+                                        fieldName="moveToList"
+                                        placeholder="Seleziona la/e lista/e di destinazione"
+                                        label="Sposta nella Lista"
+                                        rules={validationRulesmulti}
+                                    />
+                                </div>
+                                <div className="mb-2">
+                                    <CustomSelect
+                                        options={statusOptions()}
+                                        control={control}
+                                        errors={errors}
+                                        fieldName="status"
+                                        placeholder="Seleziona lo stato di destinazione"
+                                        label="Sposta nello Stato"
+                                        rules={validationRules}
+                                    />
+                                </div>
+
+                                <div className="mb-2">
+                                    <CustomMultiSelect
+                                        options={listOptions}
+                                        control={control}
+                                        errors={errors}
+                                        fieldName="doNotMoveToList"
+                                        placeholder="Seleziona la/e lista/e dacui non spostare"
+                                        label="Non spostare dalla Lista"
+                                        rules={validationRulesmulti}
+                                    />
+                                </div>
+
+                            </>)
+                        }
+
+
+
+                        {/* <Form.Group controlId="formBehaviorTag" className="mb-3">
                             <Form.Label>Behavior Tag</Form.Label>
                             <Controller
                                 name={"behaviourTag"}
@@ -413,45 +446,32 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                             <Form.Control.Feedback type="invalid">
                                 {errors.behaviourTag?.message}
                             </Form.Control.Feedback>
-                        </Form.Group>
+                        </Form.Group> */}
+                        <Col lg={12} className="mt-3">
+                            <div className="modal-sezione">
+                                <span className="modal-sezione-titolo">Avanzate</span>
+                                <div className="modal-sezione-line"></div>
+                            </div>
+                        </Col>
 
                         <Form.Group controlId="formConfig" className="mb-3">
-                            <Form.Label>Config</Form.Label>
-                            <Controller
-                                name="config"
-                                control={control}
-                                render={({ field }) => <Form.Control type="text" {...field} />}
-                            />
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    Config + Notifica
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="config"
+                                        control={control}
+                                        render={({ field }) => <Form.Control as="textarea" rows={3} {...field} />}
+                                    />
+                                </Col>
+                            </Row>
                         </Form.Group>
 
-                        <Form.Group controlId="formNotifica" className="mb-3">
-                            <Form.Label>Notifica</Form.Label>
-                            <Controller
-                                name="notifica"
-                                control={control}
-                                render={({ field }) => <Form.Control type="text" {...field} />}
-                            />
-                        </Form.Group>
 
-                        <Form.Group controlId="formCustomerNotes" className="mb-3">
-                            <Form.Label>Customer Notes</Form.Label>
-                            <Controller
-                                name="customerNotes"
-                                control={control}
-                                render={({ field }) => <Form.Control as="textarea" rows={3} {...field} />}
-                            />
-                        </Form.Group>
 
-                        <Form.Group controlId="formDeveloperNotes" className="mb-3">
-                            <Form.Label>Developer Notes</Form.Label>
-                            <Controller
-                                name="developerNotes"
-                                control={control}
-                                render={({ field }) => <Form.Control as="textarea" rows={3} {...field} />}
-                            />
-                        </Form.Group>
-
-                        <div className="d-flex justify-content-center mt-4">
+                        {/* <div className="d-flex justify-content-center mt-4">
                             <Button variant="primary" type="submit" className="mx-2">Save</Button>
                             <Button variant="dark" onClick={hendleFinalClose} className="mx-2">Close</Button>
                             <Button
@@ -462,9 +482,14 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                             >
                                 Delete
                             </Button>
+                        </div> */}
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <div className="d-flex justify-content-end mb-4">
+                            <Button variant={initialData?.key ? "outline-primary" : "primary"} type="submit" className="mx-2">{initialData?.key ? "Applica" : "Crea Azione"}</Button>
                         </div>
-                    </Form>
-                </Modal.Body>
+                    </Modal.Footer>
+                </Form>
             </Modal>
             <DeleteConfirmationModal
                 show={showDeleteConfirmation}
