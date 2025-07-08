@@ -1,25 +1,31 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowMove, LayersIcon, PlusIcon, ThreeDotsIcon } from '../../../../Assets/SVGs';
 import { Dropdown } from 'react-bootstrap';
 import CloneListModal from '../../Modals/CloneListModal';
 import DeleteListModal from '../../Modals/DeleteListModal';
 import CloneListItemModal from '../../Modals/CloneListItemModal';
 import DeleteListItemModal from '../../Modals/DeleteListItemModal';
+import { drawSelectedElementArrows } from '../../../../utils/arrowUtils';
 
 function ListSection({
     liste,
     roleName,
     openListItemModal,
     openTitleItemModal,
-    drawConnections,
     setHoveredStatus,
     setHoveredAction,
     MainData,
     draggingItem,
     setDraggingItem,
+    containerRef,
     setEpWorkflowjson,
     refsMap,
-    isEditMode
+    isEditMode,
+    selectedElement,
+    setSelectedElement,
+    clearLeaderLines,
+    createLeaderLine,
+    leaderLinesRef
 }) {
     const [cloneListModalShow, setCloneListModalShow] = useState(false);
     const [deleteListModalShow, setDeleteListModalShow] = useState(false);
@@ -31,33 +37,182 @@ function ListSection({
     const [listItemToDelete, setListItemToDelete] = useState(null);
     const [listTitleForItem, setListTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
-
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
+
+
+
+    const updateLeaderLines = () => {
+        leaderLinesRef.current.forEach(line => line.position());
+    };
+
+    // Replace handleListMouseHover
     const handleListMouseHover = (listItemKey) => {
         setHoveredStatus(null);
         setHoveredAction(null);
+        clearLeaderLines();
+
+        const isElementVisible = (id) => {
+            const element = document.getElementById(id);
+            return element && element.offsetParent !== null;
+        };
+
         const workflowIndex = MainData.length - 1;
-        const connections = [];
         if (MainData[workflowIndex]?.workflowmapping) {
             MainData[workflowIndex].workflowmapping.forEach((wf) => {
-                if (wf.listeDestinazione.includes(listItemKey)) {
-                    connections.push({ startId: wf.keyAzione, endId: listItemKey, color: 'red' });
+                if (
+                    wf.listeDestinazione.includes(listItemKey) &&
+                    isElementVisible(wf.keyAzione) &&
+                    isElementVisible(listItemKey)
+                ) {
+                    createLeaderLine(
+                        wf.keyAzione,
+                        listItemKey,
+                        'rgba(41, 115, 147, 0.25)',
+                        'behind',
+                        'arrow2',
+                        false,
+                        containerRef
+                    );
                 }
-                if (wf.doNotlisteDestinazione.includes(listItemKey)) {
-                    connections.push({ startId: wf.keyAzione, endId: listItemKey, color: 'gray' });
+                if (
+                    wf.doNotlisteDestinazione.includes(listItemKey) &&
+                    isElementVisible(wf.keyAzione) &&
+                    isElementVisible(listItemKey)
+                ) {
+                    createLeaderLine(
+                        wf.keyAzione,
+                        listItemKey,
+                        'rgba(202, 138, 4, 0.25)',
+                        'square',
+                        'square',
+                        false,
+                        containerRef
+                    );
                 }
             });
         }
-        drawConnections(connections);
+
+        // Redraw selected element arrows with visibility check
+        if (selectedElement) {
+            drawSelectedElementArrows(
+                selectedElement,
+                MainData,
+                createLeaderLine,
+                containerRef,
+                refsMap // Pass refsMap
+            );
+        }
     };
 
+    // Update handleMouseLeave
     const handleMouseLeave = (listItemKey) => {
         if (!refsMap.current[listItemKey]) return;
         setHoveredStatus(null);
         setHoveredAction(null);
-        drawConnections([]);
+        clearLeaderLines();
+
+        // Redraw selected element arrows
+        if (selectedElement) {
+            drawSelectedElementArrows(
+                selectedElement,
+                MainData,
+                createLeaderLine,
+                containerRef
+            );
+        }
     };
+
+    // Update handleListItemClick
+    // Replace handleListItemClick
+    const handleListItemClick = (listItemKey, listTitle) => {
+        const newSelectedElement = { type: 'list', roleName, listTitle, itemKey: listItemKey };
+        if (
+            selectedElement?.type === 'list' &&
+            selectedElement.itemKey === listItemKey &&
+            selectedElement.listTitle === listTitle &&
+            selectedElement.roleName === roleName
+        ) {
+            setSelectedElement(null);
+            clearLeaderLines();
+        } else {
+            setSelectedElement(newSelectedElement);
+            setHoveredStatus(null);
+            setHoveredAction(null);
+            clearLeaderLines();
+
+            const isElementVisible = (id) => {
+                const element = document.getElementById(id);
+                return element && element.offsetParent !== null;
+            };
+
+            const workflowIndex = MainData.length - 1;
+            if (MainData[workflowIndex]?.workflowmapping) {
+                MainData[workflowIndex].workflowmapping.forEach((wf) => {
+                    if (
+                        wf.listeDestinazione.includes(listItemKey) &&
+                        isElementVisible(wf.keyAzione) &&
+                        isElementVisible(listItemKey)
+                    ) {
+                        createLeaderLine(
+                            wf.keyAzione,
+                            listItemKey,
+                            'rgba(41, 115, 147, 1)',
+                            'behind',
+                            'arrow2',
+                            true,
+                            containerRef
+                        );
+                    }
+                    if (
+                        wf.doNotlisteDestinazione.includes(listItemKey) &&
+                        isElementVisible(wf.keyAzione) &&
+                        isElementVisible(listItemKey)
+                    ) {
+                        createLeaderLine(
+                            wf.keyAzione,
+                            listItemKey,
+                            'rgba(202, 138, 4, 1)',
+                            'square',
+                            'square',
+                            true,
+                            containerRef
+                        );
+                    }
+                });
+            }
+        }
+    };
+
+    // Update useEffect
+    useEffect(() => {
+        const container = containerRef.current;
+        const updateLeaderLines = () => {
+            leaderLinesRef.current.forEach((line) => line.position());
+        };
+
+        if (container) {
+            container.addEventListener('scroll', updateLeaderLines);
+        }
+
+        // Redraw arrows when selectedElement changes
+        if (selectedElement?.type === 'list' && selectedElement.roleName === roleName) {
+            // clearLeaderLines();
+            drawSelectedElementArrows(
+                selectedElement,
+                MainData,
+                createLeaderLine,
+                containerRef,
+                refsMap // Pass refsMap
+            );
+        }
+
+        return () => {
+            if (container) {
+                container.removeEventListener('scroll', updateLeaderLines);
+            }
+        };
+    }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleListDragStart = (e, listTitle) => {
         if (!isEditMode) {
@@ -264,21 +419,28 @@ function ListSection({
                         {listeItem?.listArray?.map((listArrayItem) => (
                             <div
                                 key={listArrayItem.key}
+                                ref={(el) => (refsMap.current[listArrayItem.key] = el)}
+                                id={listArrayItem?.key}
                                 className={`listeArrayItem ${dropTarget?.type === 'list' && dropTarget?.itemKey === listArrayItem.key && dropTarget?.listTitle === listeItem.title ? 'drop-target' : ''}`}
                                 onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
                                 onMouseLeave={() => handleMouseLeave(listArrayItem?.key)}
+                                onClick={() => handleListItemClick(listArrayItem?.key, listeItem.title)}
                                 draggable={isEditMode}
                                 onDragStart={(e) => handleListItemDragStart(e, listeItem.title, listArrayItem.key)}
                                 onDragOver={(e) => handleListItemDragOver(e, listeItem.title, listArrayItem.key)}
                                 onDragLeave={handleListItemDragLeave}
                                 onDrop={(e) => handleListItemDrop(e, listeItem.title, listArrayItem.key)}
+                                style={{
+                                    backgroundColor: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
+                                    color: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '',
+                                }}
                             >
-                                <div className='w-100 d-flex justify-content-between align-items-center' ref={(el) => (refsMap.current[listArrayItem.key] = el)} id={listArrayItem?.key}>
+                                <div className='w-100 d-flex justify-content-between align-items-center' >
                                     <div className='d-flex align-items-center gap-2'>
                                         {isEditMode && (
                                             <>
                                                 <span className='d-flex align-items-center cursor-move ms-1'>
-                                                    <ArrowMove fill="#495057" width={20} height={20} />
+                                                    <ArrowMove fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
                                                 </span>
                                                 <span className='vr-line'></span>
                                             </>
@@ -288,7 +450,7 @@ function ListSection({
                                     <div className="d-flex align-items-center justify-content-center mx-2">
                                         {isEditMode && <Dropdown>
                                             <Dropdown.Toggle className="role_menu">
-                                                <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
+                                                <ThreeDotsIcon fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu>
                                                 <Dropdown.Item onClick={(e) => { e.stopPropagation(); openListItemModal(roleName, listeItem.title, listArrayItem) }}>

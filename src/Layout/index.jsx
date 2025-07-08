@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Header from '../Components/Header';
 import Loader from '../Components/Loader';
 import Sidebar from '../Components/Sidebar';
@@ -8,6 +8,8 @@ import useMediaQuery from '../utils/customHooks/mediaQuery';
 export default function MainLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+
 
   return (
     <div className="main-layout">
@@ -28,12 +30,12 @@ export default function MainLayout({ children }) {
         {/* Sidebar - always rendered, visibility controlled by classes */}
         <div
           className={`sidebar_container ${isMobile
-              ? sidebarOpen
-                ? 'sidebar_mobile_open'
-                : 'sidebar_mobile_closed'
-              : sidebarOpen
-                ? 'sidebar_small'
-                : 'sidebar_big'
+            ? sidebarOpen
+              ? 'sidebar_mobile_open'
+              : 'sidebar_mobile_closed'
+            : sidebarOpen
+              ? 'sidebar_small'
+              : 'sidebar_big'
             }`}
         >
           <Sidebar

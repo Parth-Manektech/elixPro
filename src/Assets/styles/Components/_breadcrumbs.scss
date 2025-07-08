@@ -1,9 +1,12 @@
 .breadcrumbs {
     height: 100%;
     width: 100%;
+    position: relative;
+    z-index: 1000 !important;
 
     .breadcrumb {
         margin: 0px;
+        z-index: 1000 !important;
 
         li {
             padding-left: 10px;

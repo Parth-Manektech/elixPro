@@ -86,6 +86,7 @@ export const getRoleForElement = (MainData, elementId) => {
 
 // Toggles status visibility for a role
 export const toggleStatusVisibility = (roleName, status, setShownStatuses) => {
+    // console.log(roleName, status, setShownStatuses);
     setShownStatuses((prev) => {
         const newStatuses = { ...prev };
         if (newStatuses[roleName] === status) {

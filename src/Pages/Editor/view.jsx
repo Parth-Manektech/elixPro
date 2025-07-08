@@ -1,5 +1,6 @@
 
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import LeaderLine from 'leader-line-new';
 
 import DeleteConfirmationModal from '../../Components/DeleteConfirmationModal';
 import ListItemModal from '../../Components/editorComponents/Modals/ListItemModal';
@@ -42,13 +43,53 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     const [cloneRoleModalShow, setCloneRoleModalShow] = useState(false);
     const [roleToClone, setRoleToClone] = useState(null);
     const [visibleRoles, setVisibleRoles] = useState({});
+    const [selectedElement, setSelectedElement] = useState(null);
 
     const [isEditMode, setIsEditMode] = useState(false)
+    const leaderLinesRef = useRef([]);
+
+    const clearLeaderLines = () => {
+        leaderLinesRef.current.forEach(line => line.remove());
+        leaderLinesRef.current = [];
+    };
 
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const refsMap = useRef({});
     const dropdownToggleRefs = useRef({});
+
+    const createLeaderLine = (startId, endId, color, startPlug, endPlug, isSelected = false, containerRef) => {
+        const startElement = refsMap.current[startId];
+        const endElement = refsMap.current[endId];
+        if (startElement && endElement && containerRef.current) {
+            const startRect = startElement.getBoundingClientRect();
+            const endRect = endElement.getBoundingClientRect();
+            const containerRect = containerRef.current.getBoundingClientRect();
+
+            const startX = startRect.left - containerRect.left + startRect.width / 2;
+            const endX = endRect.left - containerRect.left + endRect.width / 2;
+
+            const startSocket = startX < endX ? 'right' : 'left';
+            const endSocket = startX < endX ? 'left' : 'right';
+
+            const line = new LeaderLine(startElement, endElement, {
+                color: isSelected ? color.replace('0.25', '1') : color,
+                startPlug: startPlug,
+                endPlug: endPlug,
+                arcDrift: 1,
+                path: 'fluid',
+                size: 2,
+                endPlugSize: 2,
+                startPlugSize: 2,
+                gradient: true,
+                container: containerRef.current,
+                zIndex: 1,
+                startSocket: startSocket,
+                endSocket: endSocket,
+            });
+            leaderLinesRef.current.push(line);
+        }
+    };
 
     const drawConnections = useCallback(
         (connections) => {
@@ -214,7 +255,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                 className="editor-visualization"
                 style={{ position: 'relative', width: '100%', overflow: 'auto' }}
             >
-                <MainCanvas
+                {/* <MainCanvas
                     canvasRef={canvasRef}
                     containerRef={containerRef}
                     canvasSize={canvasSize}
@@ -224,7 +265,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                     collapsedCards={collapsedCards}
                     refsMap={refsMap}
                     drawConnections={drawConnections}
-                />
+                /> */}
                 <div
                     className="d-flex justify-content-around flex-wrap"
                     style={{
@@ -269,7 +310,13 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                                 hoveredAction={hoveredAction}
                                 updateCanvasSize={updateCanvasSize}
                                 zoomLevel={zoomLevel}
+                                containerRef={containerRef}
                                 isEditMode={isEditMode}
+                                setSelectedElement={setSelectedElement}
+                                selectedElement={selectedElement}
+                                clearLeaderLines={clearLeaderLines}
+                                createLeaderLine={createLeaderLine}
+                                leaderLinesRef={leaderLinesRef}
                             />
                         ) : null
                     )}

@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ViewOpenEyeIcon, ViewClosedEyeIcon, SlidersIcon, ArrowMove, ThreeDotsIcon, PlusIcon } from '../../../../Assets/SVGs';
 import { toggleStatusVisibility } from '../../ViewComponentUtility';
 import { Dropdown } from 'react-bootstrap';
 import CloneStatusModal from '../../Modals/CloneStatusModal';
 import DeleteStatusModal from '../../Modals/DeleteStatusModal';
+import { drawSelectedElementArrows } from '../../../../utils/arrowUtils';
 
 function StatusSection({
     pulsantiAttivi,
@@ -11,7 +12,6 @@ function StatusSection({
     shownStatus,
     setShownStatuses,
     openStatusItemModal,
-    drawConnections,
     setHoveredStatus,
     setHoveredAction,
     MainData,
@@ -20,7 +20,13 @@ function StatusSection({
     hoveredStatus,
     refsMap,
     setEpWorkflowjson,
-    isEditMode
+    isEditMode,
+    containerRef,
+    selectedElement,
+    setSelectedElement,
+    clearLeaderLines,
+    createLeaderLine,
+    leaderLinesRef
 }) {
     const [cloneStatusModalShow, setCloneStatusModalShow] = useState(false);
     const [deleteStatusModalShow, setDeleteStatusModalShow] = useState(false);
@@ -29,27 +35,155 @@ function StatusSection({
     const [dropTarget, setDropTarget] = useState(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
+
+
+    const updateLeaderLines = () => {
+        leaderLinesRef.current.forEach(line => line.position());
+    };
+
+    // Update handleStatusMouseHover
+    // Replace handleStatusMouseHover
     const handleStatusMouseHover = (statusItemKey) => {
         setHoveredStatus({ role: roleName, status: statusItemKey });
         setHoveredAction(null);
+        clearLeaderLines();
+
+        const isElementVisible = (id) => {
+            const element = document.getElementById(id);
+            return element && element.offsetParent !== null;
+        };
+
         const workflowIndex = MainData.length - 1;
-        const connections = [];
         if (MainData[workflowIndex]?.workflowmapping) {
             MainData[workflowIndex].workflowmapping.forEach((wf) => {
-                if (wf.statoDestinazione === statusItemKey) {
-                    connections.push({ startId: wf.keyAzione, endId: statusItemKey, color: 'blue' });
+                if (
+                    wf.statoDestinazione === statusItemKey &&
+                    isElementVisible(wf.keyAzione) &&
+                    isElementVisible(statusItemKey)
+                ) {
+                    createLeaderLine(
+                        wf.keyAzione,
+                        statusItemKey,
+                        'rgba(14, 165, 233, 0.25)',
+                        'behind',
+                        'arrow2',
+                        false,
+                        containerRef
+                    );
                 }
             });
         }
-        drawConnections(connections);
+
+        // Redraw selected element arrows with visibility check
+        if (selectedElement) {
+            drawSelectedElementArrows(
+                selectedElement,
+                MainData,
+                createLeaderLine,
+                containerRef,
+                refsMap // Pass refsMap
+            );
+        }
     };
 
+    // Update handleMouseLeave
     const handleMouseLeave = (statusItemKey) => {
         if (!refsMap.current[statusItemKey]) return;
         setHoveredStatus(null);
         setHoveredAction(null);
-        drawConnections([]);
+        clearLeaderLines();
+
+        // Redraw selected element arrows
+        if (selectedElement) {
+            drawSelectedElementArrows(
+                selectedElement,
+                MainData,
+                createLeaderLine,
+                containerRef
+            );
+        }
     };
+
+    // Update handleStatusClick
+    // Replace handleStatusClick
+    const handleStatusClick = (statusItemKey) => {
+
+        toggleStatusVisibility(roleName, statusItemKey, setShownStatuses);
+
+
+        const newSelectedElement = { type: 'status', roleName, statusItemKey };
+        if (
+            selectedElement?.type === 'status' &&
+            selectedElement.statusItemKey === statusItemKey &&
+            selectedElement.roleName === roleName
+        ) {
+            setSelectedElement(null);
+            clearLeaderLines();
+        } else {
+            setSelectedElement(newSelectedElement);
+            setHoveredStatus(null);
+            setHoveredAction(null);
+            clearLeaderLines();
+
+            const isElementVisible = (id) => {
+                const element = document.getElementById(id);
+                return element && element.offsetParent !== null;
+            };
+
+            const workflowIndex = MainData.length - 1;
+            if (MainData[workflowIndex]?.workflowmapping) {
+                MainData[workflowIndex].workflowmapping.forEach((wf) => {
+                    if (
+                        wf.statoDestinazione === statusItemKey &&
+                        isElementVisible(wf.keyAzione) &&
+                        isElementVisible(statusItemKey)
+                    ) {
+                        createLeaderLine(
+                            wf.keyAzione,
+                            statusItemKey,
+                            'rgba(124, 195, 225, 1)',
+                            'behind',
+                            'arrow2',
+                            true,
+                            containerRef
+                        );
+                    }
+                });
+            }
+        }
+    };
+
+    // Update useEffect
+    // Replace useEffect
+    useEffect(() => {
+        const container = containerRef.current;
+        const updateLeaderLines = () => {
+            leaderLinesRef.current.forEach((line) => line.position());
+        };
+
+        if (container) {
+            container.addEventListener('scroll', updateLeaderLines);
+        }
+
+        // Redraw arrows when selectedElement changes
+        if (selectedElement?.type === 'status' && selectedElement.roleName === roleName) {
+            // Removed: clearLeaderLines();
+            drawSelectedElementArrows(
+                selectedElement,
+                MainData,
+                createLeaderLine,
+                containerRef,
+                refsMap // Pass refsMap
+            );
+        }
+
+        return () => {
+            if (container) {
+                container.removeEventListener('scroll', updateLeaderLines);
+            }
+        };
+    }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
+
 
     const handleStatusDragStart = (e, statusItemKey) => {
         if (!isEditMode) {
@@ -141,6 +275,7 @@ function StatusSection({
                         id={StatusItem}
                         onMouseEnter={() => handleStatusMouseHover(StatusItem)}
                         onMouseLeave={() => handleMouseLeave(StatusItem)}
+                        onClick={() => handleStatusClick(StatusItem)}
                         draggable={isEditMode}
                         onDragStart={(e) => handleStatusDragStart(e, StatusItem)}
                         onDragOver={(e) => handleStatusDragOver(e, StatusItem)}
@@ -148,28 +283,28 @@ function StatusSection({
                         onDrop={(e) => handleStatusDrop(e, StatusItem)}
                         key={StatusItem}
                         style={{
-                            fontWeight: shownStatus === StatusItem ? 'bold' : 'normal',
+                            backgroundColor: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? '#343a40' : '',
+                            color: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '',
                             cursor: 'pointer',
                         }}
                     >
                         <div className='d-flex align-items-center gap-2'>
                             {isEditMode && (
                                 <>
-                                    <span className='d-flex align-items-center cursor-move ms-1'>
-                                        <ArrowMove fill="#495057" width={20} height={20} />
+                                    <span className='d-flex align-items-center cursor
+
+-move ms-1'>
+                                        <ArrowMove fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
                                     </span>
                                     <span className='vr-line'></span>
                                 </>
                             )}
-
-                            <span>
-                                {StatusItem}{' '}
-                            </span>
+                            <span>{StatusItem}</span>
                         </div>
                         <div className="d-flex align-items-center justify-content-center mx-2">
                             {isEditMode && <Dropdown>
                                 <Dropdown.Toggle className="role_menu">
-                                    <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
+                                    <ThreeDotsIcon fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu>
                                     <Dropdown.Item onClick={(e) => { e.stopPropagation(); openStatusItemModal(roleName, StatusItem) }}>
@@ -192,22 +327,8 @@ function StatusSection({
                                 </Dropdown.Menu>
                             </Dropdown>}
                         </div>
-                        {/* {hoveredStatus?.role === roleName && hoveredStatus?.status === StatusItem && (
-                            <span
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleStatusVisibility(roleName, StatusItem, setShownStatuses);
-                                }}
-                                style={{ marginLeft: '5px', cursor: 'pointer' }}
-                            >
-                                {shownStatus === StatusItem ? <ViewOpenEyeIcon /> : <ViewClosedEyeIcon />}
-                            </span>
-                        )} */}
                     </span>
                 ))}
-            {/* <span onClick={() => openStatusItemModal(roleName)}>
-                <RoundPlusIcon className="cursor-pointer" height={20} width={20} />
-            </span> */}
             {isEditMode && <div className='d-flex justify-content-center mt-1'>
                 <span
                     className="StatusItemTitle text-center"

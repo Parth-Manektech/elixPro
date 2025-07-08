@@ -542,7 +542,7 @@ const Editor = () => {
                 activeKey={activeKey}
                 onSelect={(k) => setActiveKey(k)}
                 id="uncontrolled-tab-example "
-                className="mb-2"
+                className="Editor_Tab"
             >
                 <Tab eventKey="code" title="CODE">
                     <main className="container mb-4">

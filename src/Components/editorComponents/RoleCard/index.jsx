@@ -35,7 +35,13 @@ function RoleCard({
     hoveredAction,
     updateCanvasSize,
     zoomLevel,
-    isEditMode
+    isEditMode,
+    containerRef,
+    selectedElement,
+    setSelectedElement,
+    clearLeaderLines,
+    createLeaderLine,
+    leaderLinesRef
 }) {
     const roleName = element.ruolo.nome;
     const top = element.layout?.top || 0;
@@ -342,6 +348,12 @@ function RoleCard({
                             setEpWorkflowjson={setEpWorkflowjson}
                             refsMap={refsMap}
                             isEditMode={isEditMode}
+                            containerRef={containerRef}
+                            selectedElement={selectedElement}
+                            setSelectedElement={setSelectedElement}
+                            clearLeaderLines={clearLeaderLines}
+                            createLeaderLine={createLeaderLine}
+                            leaderLinesRef={leaderLinesRef}
                         />
                         <StatusSection
                             pulsantiAttivi={element.pulsantiAttivi}
@@ -359,6 +371,12 @@ function RoleCard({
                             hoveredStatus={hoveredStatus}
                             refsMap={refsMap}
                             isEditMode={isEditMode}
+                            containerRef={containerRef}
+                            selectedElement={selectedElement}
+                            setSelectedElement={setSelectedElement}
+                            clearLeaderLines={clearLeaderLines}
+                            createLeaderLine={createLeaderLine}
+                            leaderLinesRef={leaderLinesRef}
                         />
                         <ActionSection
                             azioni={element.azioni}
@@ -377,6 +395,12 @@ function RoleCard({
                             hoveredAction={hoveredAction}
                             refsMap={refsMap}
                             isEditMode={isEditMode}
+                            containerRef={containerRef}
+                            selectedElement={selectedElement}
+                            setSelectedElement={setSelectedElement}
+                            clearLeaderLines={clearLeaderLines}
+                            createLeaderLine={createLeaderLine}
+                            leaderLinesRef={leaderLinesRef}
                         />
                     </div>
                 </Card.Body>

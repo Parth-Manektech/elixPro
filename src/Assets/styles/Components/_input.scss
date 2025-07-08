@@ -1,3 +1,5 @@
+@import '../helper/Variables';
+
 .coustomFileInputFile {
     border: 1px solid #ced4da;
     border-radius: 5px;
@@ -73,4 +75,48 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+.enable-action-for-status-checkbox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.enable-action-for-status-checkbox input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid $--bs-gray-700;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.enable-action-for-status-checkbox input[type="checkbox"]:checked {
+    background-color: $--bs-gray-800;
+    border-color: $--bs-gray-800;
+}
+
+.enable-action-for-status-checkbox input[type="checkbox"]::after {
+    content: "✓";
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.2s ease;
+}
+
+.enable-action-for-status-checkbox input[type="checkbox"]:checked::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.enable-action-for-status-checkbox input[type="checkbox"]:not(:checked):hover {
+    background-color: $--bs-gray-100;
 }

@@ -28,6 +28,7 @@
         height: 100%;
         overflow: auto;
         background-color: #F8F9FA;
+        z-index: 1000;
     }
 
 
@@ -35,6 +36,7 @@
         height: 70px;
         width: 100%;
         border-bottom: 2px solid #21252964;
+        z-index: 1000 !important;
     }
 
     .main_container_mobile {
@@ -50,7 +52,10 @@
         .breadcrums_container {
             height: 70px;
             width: 100%;
+            background-color: #f8f9fa;
+            position: relative;
             border-bottom: 2px solid #21252964;
+            z-index: 1000 !important;
         }
 
         .page_container_mobile {
@@ -61,6 +66,9 @@
         .page_container {
             height: calc(100vh - 156px);
             overflow: auto;
+            // position: relative;
+            z-index: 10000;
+            background: #f8f9fa;
         }
     }
 }
@@ -87,6 +95,7 @@
 /* Sidebar styles */
 .sidebar_container {
     transition: all 0.3s ease;
+    z-index: 1000s;
 }
 
 .sidebar_big {
@@ -121,10 +130,10 @@
     /* Hide main content when sidebar is open on mobile */
 }
 
-.page_container,
-.page_container_mobile {
-    padding: 5px;
-}
+// .page_container,
+// .page_container_mobile {
+//     padding: 5px;
+// }
 
 /* Mobile-specific adjustments */
 @media (max-width: 767px) {

@@ -133,3 +133,14 @@ canvas {
 .cutomZindex {
     z-index: 100000000000;
 }
+
+.leader-line {
+    z-index: 1;
+}
+
+.Editor_Tab {
+    z-index: 1000 !important;
+    background-color: #f8f9fa !important;
+    position: relative !important;
+    padding: 5px 0px;
+}
