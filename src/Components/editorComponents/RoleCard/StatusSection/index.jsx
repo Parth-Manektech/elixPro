@@ -37,6 +37,7 @@ function StatusSection({
     const [statusToDelete, setStatusToDelete] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
+    const dragStartSourceRefStatus = useRef(null);
 
     const updateLeaderLines = () => {
         leaderLinesRef.current.forEach(line => line.position());
@@ -188,7 +189,8 @@ function StatusSection({
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleStatusDragStart = (e, statusItemKey) => {
-        if (!isEditMode) {
+        const actualClickedElement = dragStartSourceRefStatus.current;
+        if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMoveStatus") {
             e.preventDefault();
             return;
         }
@@ -309,6 +311,9 @@ function StatusSection({
                         onDragLeave={handleStatusDragLeave}
                         onDrop={(e) => handleStatusDrop(e, StatusItem, roleName)}
                         key={StatusItem}
+                        onMouseDown={(e) => {
+                            dragStartSourceRefStatus.current = e.target;
+                        }}
                         style={{
                             backgroundColor: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? '#343a40' : '',
                             color: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '',
@@ -318,8 +323,8 @@ function StatusSection({
                         <div className='d-flex align-items-center gap-2'>
                             {isEditMode && (
                                 <>
-                                    <span className='d-flex align-items-center cursor-move ms-1'>
-                                        <ArrowMove fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
+                                    <span className='ArrowMoveStatus d-flex align-items-center cursor-move ms-1'>
+                                        <ArrowMove className='ArrowMoveStatus' fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
                                     </span>
                                     <span className='vr-line'></span>
                                 </>

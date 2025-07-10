@@ -39,6 +39,7 @@ function ListSection({
     const [listTitleForItem, setListTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
     const [listKeys, setListKeys] = useState([])
+    const dragStartSourceRef = useRef(null);
 
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
@@ -206,7 +207,9 @@ function ListSection({
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleListDragStart = (e, listTitle) => {
-        if (!isEditMode) {
+        const actualClickedElement = dragStartSourceRef.current;
+
+        if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMovelistGroup") {
             e.preventDefault();
             return;
         }
@@ -288,10 +291,13 @@ function ListSection({
     };
 
     const handleListItemDragStart = (e, listTitle, itemKey) => {
-        if (!isEditMode) {
+
+        const actualClickedElement = dragStartSourceRef.current;
+        if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMovelist") {
             e.preventDefault();
             return;
         }
+
         setDraggingItem({ type: 'list', facultyName: roleName, listTitle, itemKey });
         e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'list', itemKey, facultyName: roleName, listTitle }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
@@ -404,6 +410,7 @@ function ListSection({
             La Key non è univoca! Viene usata più volte.
         </Tooltip>
     );
+
     return (
         <div className="d-flex flex-column gap-2 column">
             <div className='d-flex justify-content-center align-item-center'>
@@ -418,47 +425,53 @@ function ListSection({
                     onDragStart={(e) => handleListDragStart(e, listeItem.title)}
                     onDragOver={(e) => handleListDragOver(e, listeItem.title, roleName)}
                     onDragLeave={handleListDragLeave}
+                    onMouseDown={(e) => {
+                        dragStartSourceRef.current = e.target;
+                    }}
                     onDrop={(e) => handleListDrop(e, listeItem.title, roleName)}
                 >
                     <div className="listeItemTitle">
                         <div className='d-flex align-items-center gap-2'>
                             {isEditMode && (
                                 <>
-                                    <span className='d-flex align-items-center cursor-move ms-1'>
-                                        <ArrowMove fill="#495057" width={20} height={20} />
-                                    </span>
+                                    <div className='ArrowMovelistGroup d-flex align-items-center cursor-move ms-1'>
+                                        <ArrowMove className='ArrowMovelistGroup' fill="#495057" width={20} height={20} />
+                                    </div>
                                     <span className='vr-line'></span>
                                 </>
                             )}
                             <span>{listeItem?.title}</span>
                         </div>
-                        <div className="d-flex align-items-center justify-content-center mx-2">
-                            {isEditMode && <Dropdown>
-                                <Dropdown.Toggle className="role_menu">
+                        <div className="d-flex align-items-center justify-content-center mx-2 DrpDownlistitem" >
+                            {isEditMode && <Dropdown >
+                                <Dropdown.Toggle className="role_menu" >
                                     <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu>
                                     <Dropdown.Item onClick={(e) => { e.stopPropagation(); openTitleItemModal(roleName, 'liste', { title: listeItem.title }) }}>
                                         <i className='bi bi-pencil me-2' /> Modifica
                                     </Dropdown.Item>
-                                    <Dropdown.Item onClick={(e) => {
-                                        e.stopPropagation();
-                                        setListToClone(listeItem);
-                                        setCloneListModalShow(true);
-                                    }}>
+                                    <Dropdown.Item
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setListToClone(listeItem);
+                                            setCloneListModalShow(true);
+                                        }}>
                                         <i className='bi bi-files me-2' /> Clona
                                     </Dropdown.Item>
-                                    <Dropdown.Item className='text-danger' onClick={(e) => {
-                                        e.stopPropagation();
-                                        setListToDelete(listeItem.title);
-                                        setDeleteListModalShow(true);
-                                    }}>
+                                    <Dropdown.Item
+                                        className='text-danger' onClick={(e) => {
+                                            e.stopPropagation();
+                                            setListToDelete(listeItem.title);
+                                            setDeleteListModalShow(true);
+                                        }}>
                                         <i className='bi bi-trash me-2' /> Elimina
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>}
                         </div>
                     </div>
+
                     <div className="listGroup">
                         {listeItem?.listArray?.map((listArrayItem) => {
                             const isDuplicateList = listKeys?.includes(listArrayItem?.key)
@@ -469,12 +482,15 @@ function ListSection({
                                 className={`listeArrayItem ${dropTarget?.type === 'list' && dropTarget?.itemKey === listArrayItem.key && dropTarget?.listTitle === listeItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                                 onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
                                 onMouseLeave={() => handleMouseLeave(listArrayItem?.key)}
-                                onClick={() => handleListItemClick(listArrayItem?.key, listeItem.title)}
+                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleListItemClick(listArrayItem?.key, listeItem.title) }}
                                 draggable={isEditMode}
                                 onDragStart={(e) => handleListItemDragStart(e, listeItem.title, listArrayItem.key)}
                                 onDragOver={(e) => handleListItemDragOver(e, listeItem.title, listArrayItem.key, roleName)}
                                 onDragLeave={handleListItemDragLeave}
                                 onDrop={(e) => handleListItemDrop(e, listeItem.title, listArrayItem.key, roleName)}
+                                onMouseDown={(e) => {
+                                    dragStartSourceRef.current = e.target;
+                                }}
                                 style={{
                                     backgroundColor: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
                                     color: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '',
@@ -484,37 +500,40 @@ function ListSection({
                                     <div className='d-flex align-items-center gap-2'>
                                         {isEditMode && (
                                             <>
-                                                <span className='d-flex align-items-center cursor-move ms-1'>
-                                                    <ArrowMove fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
+                                                <span className='ArrowMovelist d-flex align-items-center cursor-move ms-1'>
+                                                    <ArrowMove className='ArrowMovelist' fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
                                                 </span>
                                                 <span className='vr-line'></span>
                                             </>
                                         )}
                                         <span className='d-flex align-items-center gap-1'>{(isEditMode && isDuplicateList) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}{listArrayItem?.title}</span>
                                     </div>
-                                    <div className="d-flex align-items-center justify-content-center mx-2">
-                                        {isEditMode && <Dropdown>
-                                            <Dropdown.Toggle className="role_menu">
+                                    <div className="d-flex align-items-center justify-content-center mx-2" onClick={(e) => e.stopPropagation()}>
+                                        {isEditMode && <Dropdown >
+                                            <Dropdown.Toggle className="role_menu" >
                                                 <ThreeDotsIcon fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu>
-                                                <Dropdown.Item onClick={(e) => { e.stopPropagation(); openListItemModal(roleName, listeItem.title, listArrayItem) }}>
+                                                <Dropdown.Item
+                                                    onClick={(e) => { e.stopPropagation(); openListItemModal(roleName, listeItem.title, listArrayItem) }}>
                                                     <i className='bi bi-pencil me-2' /> Modifica
                                                 </Dropdown.Item>
-                                                <Dropdown.Item onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setListItemToClone(listArrayItem);
-                                                    setListTitleForItem(listeItem.title);
-                                                    setCloneListItemModalShow(true);
-                                                }}>
+                                                <Dropdown.Item
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setListItemToClone(listArrayItem);
+                                                        setListTitleForItem(listeItem.title);
+                                                        setCloneListItemModalShow(true);
+                                                    }}>
                                                     <i className='bi bi-files me-2' /> Clona
                                                 </Dropdown.Item>
-                                                <Dropdown.Item className='text-danger' onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setListItemToDelete(listArrayItem);
-                                                    setListTitleForItem(listeItem.title);
-                                                    setDeleteListItemModalShow(true);
-                                                }}>
+                                                <Dropdown.Item
+                                                    className='text-danger' onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setListItemToDelete(listArrayItem);
+                                                        setListTitleForItem(listeItem.title);
+                                                        setDeleteListItemModalShow(true);
+                                                    }}>
                                                     <i className='bi bi-trash me-2' /> Elimina
                                                 </Dropdown.Item>
                                             </Dropdown.Menu>
@@ -529,6 +548,7 @@ function ListSection({
                     </div>
                 </div>
             ))}
+
             {isEditMode && <div
                 className="liste text-center cursor-pointer"
                 onClick={() => openTitleItemModal(roleName, 'liste')}

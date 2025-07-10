@@ -44,6 +44,7 @@ function ActionSection({
     const [dropTarget, setDropTarget] = useState(null);
     const [actionkeys, setActionKeys] = useState([])
 
+    const dragStartSourceRefAction = useRef(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
     const updateLeaderLines = () => {
@@ -250,7 +251,8 @@ function ActionSection({
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleActionDragStart = (e, actionTitle) => {
-        if (!isEditMode) {
+        const actualClickedElement = dragStartSourceRefAction.current;
+        if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMoveactionGroup") {
             e.preventDefault();
             return;
         }
@@ -332,7 +334,8 @@ function ActionSection({
     };
 
     const handleActionItemDragStart = (e, actionTitle, itemKey) => {
-        if (!isEditMode) {
+        const actualClickedElement = dragStartSourceRefAction.current;
+        if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMoveAction") {
             e.preventDefault();
             return;
         }
@@ -462,14 +465,17 @@ function ActionSection({
                     onDragStart={(e) => handleActionDragStart(e, azioniItem.title)}
                     onDragOver={(e) => handleActionDragOver(e, azioniItem.title, roleName)}
                     onDragLeave={handleActionDragLeave}
+                    onMouseDown={(e) => {
+                        dragStartSourceRefAction.current = e.target;
+                    }}
                     onDrop={(e) => handleActionDrop(e, azioniItem.title, roleName)}
                 >
                     <div className="azioniItemTitle">
                         <div className='d-flex align-items-center gap-2'>
                             {isEditMode && (
                                 <>
-                                    <span className='d-flex align-items-center cursor-move ms-1'>
-                                        <ArrowMove fill="#495057" width={20} height={20} />
+                                    <span className='ArrowMoveactionGroup d-flex align-items-center cursor-move ms-1'>
+                                        <ArrowMove className='ArrowMoveactionGroup' fill="#495057" width={20} height={20} />
                                     </span>
                                     <span className='vr-line'></span>
                                 </>
@@ -520,6 +526,9 @@ function ActionSection({
                                     onDragStart={(e) => handleActionItemDragStart(e, azioniItem.title, item.key)}
                                     onDragOver={(e) => handleActionItemDragOver(e, azioniItem.title, item.key, roleName)}
                                     onDragLeave={handleActionItemDragLeave}
+                                    onMouseDown={(e) => {
+                                        dragStartSourceRefAction.current = e.target;
+                                    }}
                                     onDrop={(e) => handleActionItemDrop(e, azioniItem.title, item.key, roleName)}
                                     style={{
                                         backgroundColor: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
@@ -531,8 +540,8 @@ function ActionSection({
                                         <div className='d-flex align-items-center gap-2'>
                                             {isEditMode && (
                                                 <>
-                                                    <span className='d-flex align-items-center cursor-move ms-1'>
-                                                        <ArrowMove fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
+                                                    <span className='ArrowMoveAction d-flex align-items-center cursor-move ms-1'>
+                                                        <ArrowMove className='ArrowMoveAction' fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
                                                     </span>
                                                     <span className='vr-line'></span>
                                                 </>
