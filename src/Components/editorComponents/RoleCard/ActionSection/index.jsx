@@ -42,7 +42,7 @@ function ActionSection({
     const [actionItemToDelete, setActionItemToDelete] = useState(null);
     const [actionTitleForItem, setActionTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
-    const [actionkeys, setActionKeys] = useState([])
+    const [actionkeys, setActionKeys] = useState([]);
 
     const dragStartSourceRefAction = useRef(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
@@ -273,7 +273,7 @@ function ActionSection({
         setDropTarget(null);
     };
 
-    const handleActionDrop = (e, targetActionTitle, targetRoleName) => {
+    const handleActionDrop = (e, targetActionTitle, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
         if (!draggingItem || draggingItem.type !== 'actionGroup') {
@@ -314,13 +314,22 @@ function ActionSection({
                 const [movedAction] = sourceActionArray.splice(sourceIndex, 1);
                 data[sourceFacultyIndex].azioni = sourceActionArray;
 
-                const targetActionArray = [...(data[targetFacultyIndex].azioni || [])];
-                const targetIndex = targetActionArray.findIndex((action) => action.title === targetActionTitle);
+                // Initialize azioni array if it doesn't exist
+                if (!data[targetFacultyIndex].azioni) {
+                    data[targetFacultyIndex].azioni = [];
+                }
+                const targetActionArray = [...data[targetFacultyIndex].azioni];
 
-                if (targetIndex === -1) {
+                if (isLastPosition) {
+                    // Append to the end of the target action array
                     targetActionArray.push(movedAction);
                 } else {
-                    targetActionArray.splice(targetIndex, 0, movedAction);
+                    const targetIndex = targetActionArray.findIndex((action) => action.title === targetActionTitle);
+                    if (targetIndex === -1) {
+                        targetActionArray.push(movedAction);
+                    } else {
+                        targetActionArray.splice(targetIndex, 0, movedAction);
+                    }
                 }
                 data[targetFacultyIndex].azioni = targetActionArray;
 
@@ -356,7 +365,7 @@ function ActionSection({
         setDropTarget(null);
     };
 
-    const handleActionItemDrop = (e, targetActionTitle, targetKey, targetRoleName) => {
+    const handleActionItemDrop = (e, targetActionTitle, targetKey, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
         if (!draggingItem || draggingItem.type !== 'action') {
@@ -406,13 +415,22 @@ function ActionSection({
                 const [movedItem] = sourceActionArray.splice(sourceIndex, 1);
                 data[sourceFacultyIndex].azioni[sourceActionIndex].listArray = sourceActionArray;
 
-                const targetActionArray = [...(data[targetFacultyIndex].azioni[targetActionIndex].listArray || [])];
-                const targetIndex = targetActionArray.findIndex((item) => item.key === targetKey);
+                // Initialize listArray if it doesn't exist
+                if (!data[targetFacultyIndex].azioni[targetActionIndex].listArray) {
+                    data[targetFacultyIndex].azioni[targetActionIndex].listArray = [];
+                }
+                const targetActionArray = [...data[targetFacultyIndex].azioni[targetActionIndex].listArray];
 
-                if (targetIndex === -1) {
+                if (isLastPosition) {
+                    // Append to the end of the target action array
                     targetActionArray.push(movedItem);
                 } else {
-                    targetActionArray.splice(targetIndex, 0, movedItem);
+                    const targetIndex = targetActionArray.findIndex((item) => item.key === targetKey);
+                    if (targetIndex === -1) {
+                        targetActionArray.push(movedItem);
+                    } else {
+                        targetActionArray.splice(targetIndex, 0, movedItem);
+                    }
                 }
                 data[targetFacultyIndex].azioni[targetActionIndex].listArray = targetActionArray;
 
@@ -429,7 +447,6 @@ function ActionSection({
         const Allaction = [];
         MainData.forEach(item => {
             if (item.ruolo && item.ruolo.key !== element?.ruolo?.key) {
-                // Extract action keys from azioni[].listArray[].key
                 if (item.azioni && Array.isArray(item.azioni)) {
                     item.azioni.forEach(action => {
                         if (action.listArray && Array.isArray(action.listArray)) {
@@ -442,15 +459,16 @@ function ActionSection({
                     });
                 }
             }
-        })
-        setActionKeys(Allaction)
-    }, [MainData])
+        });
+        setActionKeys(Allaction);
+    }, [MainData, element]);
 
     const renderTooltip = (props) => (
         <Tooltip id="button-tooltip" {...props}>
             La Key non è univoca! Viene usata più volte.
         </Tooltip>
     );
+
     return (
         <div className="d-flex flex-column gap-2 column">
             <div className='d-flex justify-content-center align-item-center'>
@@ -483,36 +501,38 @@ function ActionSection({
                             <span>{azioniItem?.title}</span>
                         </div>
                         <div className="d-flex align-items-center justify-content-center mx-2">
-                            {isEditMode && <Dropdown>
-                                <Dropdown.Toggle className="role_menu">
-                                    <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item onClick={(e) => { e.stopPropagation(); openTitleItemModal(roleName, 'azioni', { title: azioniItem.title }) }}>
-                                        <i className='bi bi-pencil me-2' /> Modifica
-                                    </Dropdown.Item>
-                                    <Dropdown.Item onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActionToClone(azioniItem);
-                                        setCloneActionModalShow(true);
-                                    }}>
-                                        <i className='bi bi-files me-2' /> Clona
-                                    </Dropdown.Item>
-                                    <Dropdown.Item className='text-danger' onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActionToDelete(azioniItem.title);
-                                        setDeleteActionModalShow(true);
-                                    }}>
-                                        <i className='bi bi-trash me-2' /> Elimina
-                                    </Dropdown.Item>
-                                </Dropdown.Menu>
-                            </Dropdown>}
+                            {isEditMode && (
+                                <Dropdown>
+                                    <Dropdown.Toggle className="role_menu">
+                                        <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item onClick={(e) => { e.stopPropagation(); openTitleItemModal(roleName, 'azioni', { title: azioniItem.title }) }}>
+                                            <i className='bi bi-pencil me-2' /> Modifica
+                                        </Dropdown.Item>
+                                        <Dropdown.Item onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActionToClone(azioniItem);
+                                            setCloneActionModalShow(true);
+                                        }}>
+                                            <i className='bi bi-files me-2' /> Clona
+                                        </Dropdown.Item>
+                                        <Dropdown.Item className='text-danger' onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActionToDelete(azioniItem.title);
+                                            setDeleteActionModalShow(true);
+                                        }}>
+                                            <i className='bi bi-trash me-2' /> Elimina
+                                        </Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            )}
                         </div>
                     </div>
                     <div className="actiongroup">
                         {azioniItem?.listArray?.map((item) => {
                             const isAssociated = shownStatus && associatedActions[item.key];
-                            const isDuplicateAction = actionkeys?.includes(item?.key)
+                            const isDuplicateAction = actionkeys?.includes(item?.key);
                             return (
                                 <div
                                     key={item.key}
@@ -536,7 +556,7 @@ function ActionSection({
                                         border: (shownStatus && isAssociated && selectedElement?.type === 'status' && selectedElement.roleName === roleName) ? '3px solid black' : '2px solid #ced4da',
                                     }}
                                 >
-                                    <div className='w-100 d-flex justify-content-between align-items-center' >
+                                    <div className='w-100 d-flex justify-content-between align-items-center'>
                                         <div className='d-flex align-items-center gap-2'>
                                             {isEditMode && (
                                                 <>
@@ -546,60 +566,86 @@ function ActionSection({
                                                     <span className='vr-line'></span>
                                                 </>
                                             )}
-
-                                            <span className='d-flex align-items-center gap-1'>{(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}{item?.title}</span>
+                                            <span className='d-flex align-items-center gap-1'>
+                                                {(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
+                                                {item?.title}
+                                            </span>
                                             {(isEditMode && selectedElement?.type === 'status' && selectedElement.roleName === roleName) && (
-                                                <>
-                                                    <div className="enable-action-for-status-checkbox" title="Abilita/disabilita azione per lo stato attivo" onClick={(e) => { e.stopPropagation(); }} >
-                                                        <input type="checkbox" checked={shownStatus && isAssociated ? true : false} onChange={() => toggleActionVisibility(roleName, shownStatus, item.key, MainData, setEpWorkflowjson)} />
-                                                    </div>
-                                                </>
+                                                <div className="enable-action-for-status-checkbox" title="Abilita/disabilita azione per lo stato attivo" onClick={(e) => { e.stopPropagation(); }}>
+                                                    <input type="checkbox" checked={shownStatus && isAssociated ? true : false} onChange={() => toggleActionVisibility(roleName, shownStatus, item.key, MainData, setEpWorkflowjson)} />
+                                                </div>
                                             )}
                                         </div>
                                         <div className="d-flex align-items-center justify-content-center mx-2">
-                                            {isEditMode && <Dropdown>
-                                                <Dropdown.Toggle className="role_menu">
-                                                    <ThreeDotsIcon fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
-                                                </Dropdown.Toggle>
-                                                <Dropdown.Menu>
-                                                    <Dropdown.Item onClick={(e) => { e.stopPropagation(); openActionItemModal(roleName, azioniItem.title, item) }}>
-                                                        <i className='bi bi-pencil me-2' /> Modifica
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActionItemToClone(item);
-                                                        setActionTitleForItem(azioniItem.title);
-                                                        setCloneActionItemModalShow(true);
-                                                    }}>
-                                                        <i className='bi bi-files me-2' /> Clona
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item className='text-danger' onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActionItemToDelete(item);
-                                                        setActionTitleForItem(azioniItem.title);
-                                                        setDeleteActionItemModalShow(true);
-                                                    }}>
-                                                        <i className='bi bi-trash me-2' /> Elimina
-                                                    </Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>}
+                                            {isEditMode && (
+                                                <Dropdown>
+                                                    <Dropdown.Toggle className="role_menu">
+                                                        <ThreeDotsIcon fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
+                                                    </Dropdown.Toggle>
+                                                    <Dropdown.Menu>
+                                                        <Dropdown.Item onClick={(e) => { e.stopPropagation(); openActionItemModal(roleName, azioniItem.title, item) }}>
+                                                            <i className='bi bi-pencil me-2' /> Modifica
+                                                        </Dropdown.Item>
+                                                        <Dropdown.Item onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActionItemToClone(item);
+                                                            setActionTitleForItem(azioniItem.title);
+                                                            setCloneActionItemModalShow(true);
+                                                        }}>
+                                                            <i className='bi bi-files me-2' /> Clona
+                                                        </Dropdown.Item>
+                                                        <Dropdown.Item className='text-danger' onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActionItemToDelete(item);
+                                                            setActionTitleForItem(azioniItem.title);
+                                                            setDeleteActionItemModalShow(true);
+                                                        }}>
+                                                            <i className='bi bi-trash me-2' /> Elimina
+                                                        </Dropdown.Item>
+                                                    </Dropdown.Menu>
+                                                </Dropdown>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             );
                         })}
-                        {isEditMode && <span className='listeArrayItem' style={{ width: 'fit-content', padding: '6px 12px' }} onClick={() => openActionItemModal(roleName, azioniItem.title)}>
-                            <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
-                        </span>}
+                        {isEditMode && (
+                            <div
+                                style={{ width: '100%' }}
+                                className={`drop-target-last ${dropTarget?.type === 'action' && dropTarget?.actionTitle === azioniItem.title && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    if (draggingItem?.type === 'action') {
+                                        setDropTarget({ type: 'action', actionTitle: azioniItem.title, roleName, isLastPosition: true });
+                                    }
+                                }}
+                                onDragLeave={handleActionItemDragLeave}
+                                onDrop={(e) => handleActionItemDrop(e, azioniItem.title, null, roleName, true)}
+                            >
+                                <span className='listeArrayItem' style={{ width: 'fit-content', padding: '6px 12px', cursor: 'pointer' }} onClick={() => openActionItemModal(roleName, azioniItem.title)}>
+                                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             ))}
-            {isEditMode && <div
-                className="liste text-center"
-                onClick={() => openTitleItemModal(roleName, 'azioni')}
-            >
-                <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
-            </div>}
+            {isEditMode && (
+                <div
+                    className={`liste text-center drop-target-last ${dropTarget?.type === 'actionGroup' && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        if (draggingItem?.type === 'actionGroup') {
+                            setDropTarget({ type: 'actionGroup', roleName, isLastPosition: true });
+                        }
+                    }}
+                    onDragLeave={handleActionDragLeave}
+                    onDrop={(e) => handleActionDrop(e, null, roleName, true)}
+                >
+                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
+                </div>
+            )}
             <CloneActionModal
                 show={cloneActionModalShow}
                 handleClose={() => {

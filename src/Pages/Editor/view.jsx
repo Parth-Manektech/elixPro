@@ -418,7 +418,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                         transform: `scale(${zoomLevel})`,
                         transformOrigin: 'top left',
                         width: `${250 / zoomLevel}%`,
-                        height: `${280 / zoomLevel}%`,
+                        height: `${300 / zoomLevel}%`,
                     }}
                 >
                     {MainData?.map((element) =>

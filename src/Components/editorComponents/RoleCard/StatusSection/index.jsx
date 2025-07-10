@@ -43,7 +43,7 @@ function StatusSection({
         leaderLinesRef.current.forEach(line => line.position());
     };
 
-    const rulekey = element?.ruolo?.key
+    const rulekey = element?.ruolo?.key;
 
     const getStatusOptions = () => {
         if (!MainData) return [];
@@ -55,8 +55,6 @@ function StatusSection({
         });
         return Array.from(allStatuses);
     };
-
-    // console.log('getStatusOptions', rulekey, getStatusOptions())
 
     const handleStatusMouseHover = (statusItemKey) => {
         setHoveredStatus({ role: roleName, status: statusItemKey });
@@ -211,7 +209,7 @@ function StatusSection({
         setDropTarget(null);
     };
 
-    const handleStatusDrop = (e, targetStatusKey, targetRoleName) => {
+    const handleStatusDrop = (e, targetStatusKey, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
         if (!draggingItem || draggingItem.type !== 'status') {
@@ -252,20 +250,28 @@ function StatusSection({
                 const movedStatus = { [sourceStatusKey]: data[sourceFacultyIndex].pulsantiAttivi[sourceStatusKey] };
                 delete data[sourceFacultyIndex].pulsantiAttivi[sourceStatusKey];
 
-                const targetStatusArray = Object.keys(data[targetFacultyIndex].pulsantiAttivi || {});
-                const targetIndex = targetStatusArray.indexOf(targetStatusKey);
+                // Initialize pulsantiAttivi if it doesn't exist
+                if (!data[targetFacultyIndex].pulsantiAttivi) {
+                    data[targetFacultyIndex].pulsantiAttivi = {};
+                }
+                const targetStatusArray = Object.keys(data[targetFacultyIndex].pulsantiAttivi);
 
-                data[targetFacultyIndex].pulsantiAttivi = data[targetFacultyIndex].pulsantiAttivi || {};
-                if (targetIndex === -1) {
+                if (isLastPosition) {
+                    // Append to the end of the target status array
                     data[targetFacultyIndex].pulsantiAttivi[sourceStatusKey] = movedStatus[sourceStatusKey];
                 } else {
-                    const newTargetStatusArray = [...targetStatusArray];
-                    newTargetStatusArray.splice(targetIndex, 0, sourceStatusKey);
-                    const newPulsantiAttivi = {};
-                    newTargetStatusArray.forEach((key) => {
-                        newPulsantiAttivi[key] = data[targetFacultyIndex].pulsantiAttivi[key] || movedStatus[key];
-                    });
-                    data[targetFacultyIndex].pulsantiAttivi = newPulsantiAttivi;
+                    const targetIndex = targetStatusArray.indexOf(targetStatusKey);
+                    if (targetIndex === -1) {
+                        data[targetFacultyIndex].pulsantiAttivi[sourceStatusKey] = movedStatus[sourceStatusKey];
+                    } else {
+                        const newTargetStatusArray = [...targetStatusArray];
+                        newTargetStatusArray.splice(targetIndex, 0, sourceStatusKey);
+                        const newPulsantiAttivi = {};
+                        newTargetStatusArray.forEach((key) => {
+                            newPulsantiAttivi[key] = data[targetFacultyIndex].pulsantiAttivi[key] || movedStatus[key];
+                        });
+                        data[targetFacultyIndex].pulsantiAttivi = newPulsantiAttivi;
+                    }
                 }
 
                 return JSON.stringify(data);
@@ -292,83 +298,92 @@ function StatusSection({
             {pulsantiAttivi &&
                 Object.keys(pulsantiAttivi).map((StatusItem) => {
                     const isDublicate = getStatusOptions().includes(StatusItem);
-                    // console.log('isDublicate', isDublicate);
-
-                    // if (isDublicate) {
-                    //     setDuplicateCount(duplicateCount + 1)
-                    // }
-
-                    return (<span
-                        ref={(el) => (refsMap.current[StatusItem] = el)}
-                        className={`StatusItemTitle ${dropTarget?.type === 'status' && dropTarget?.statusItemKey === StatusItem && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
-                        id={StatusItem}
-                        onMouseEnter={() => handleStatusMouseHover(StatusItem)}
-                        onMouseLeave={() => handleMouseLeave(StatusItem)}
-                        onClick={() => handleStatusClick(StatusItem)}
-                        draggable={isEditMode}
-                        onDragStart={(e) => handleStatusDragStart(e, StatusItem)}
-                        onDragOver={(e) => handleStatusDragOver(e, StatusItem, roleName)}
-                        onDragLeave={handleStatusDragLeave}
-                        onDrop={(e) => handleStatusDrop(e, StatusItem, roleName)}
-                        key={StatusItem}
-                        onMouseDown={(e) => {
-                            dragStartSourceRefStatus.current = e.target;
-                        }}
-                        style={{
-                            backgroundColor: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? '#343a40' : '',
-                            color: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        <div className='d-flex align-items-center gap-2'>
-                            {isEditMode && (
-                                <>
-                                    <span className='ArrowMoveStatus d-flex align-items-center cursor-move ms-1'>
-                                        <ArrowMove className='ArrowMoveStatus' fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
-                                    </span>
-                                    <span className='vr-line'></span>
-                                </>
-                            )}
-
-                            <span className='d-flex align-items-center gap-1'>{(isEditMode && isDublicate) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}{StatusItem}</span>
-                        </div>
-                        <div className="d-flex align-items-center justify-content-center mx-2">
-                            {isEditMode && <Dropdown>
-                                <Dropdown.Toggle className="role_menu">
-                                    <ThreeDotsIcon fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item onClick={(e) => { e.stopPropagation(); openStatusItemModal(roleName, StatusItem) }}>
-                                        <i className='bi bi-pencil me-2' /> Modifica
-                                    </Dropdown.Item>
-                                    <Dropdown.Item onClick={(e) => {
-                                        e.stopPropagation();
-                                        setStatusToClone(StatusItem);
-                                        setCloneStatusModalShow(true);
-                                    }}>
-                                        <i className='bi bi-files me-2' /> Clona
-                                    </Dropdown.Item>
-                                    <Dropdown.Item className='text-danger' onClick={(e) => {
-                                        e.stopPropagation();
-                                        setStatusToDelete(StatusItem);
-                                        setDeleteStatusModalShow(true);
-                                    }}>
-                                        <i className='bi bi-trash me-2' /> Elimina
-                                    </Dropdown.Item>
-                                </Dropdown.Menu>
-                            </Dropdown>}
-                        </div>
-                    </span>)
+                    return (
+                        <span
+                            ref={(el) => (refsMap.current[StatusItem] = el)}
+                            className={`StatusItemTitle ${dropTarget?.type === 'status' && dropTarget?.statusItemKey === StatusItem && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
+                            id={StatusItem}
+                            onMouseEnter={() => handleStatusMouseHover(StatusItem)}
+                            onMouseLeave={() => handleMouseLeave(StatusItem)}
+                            onClick={() => handleStatusClick(StatusItem)}
+                            draggable={isEditMode}
+                            onDragStart={(e) => handleStatusDragStart(e, StatusItem)}
+                            onDragOver={(e) => handleStatusDragOver(e, StatusItem, roleName)}
+                            onDragLeave={handleStatusDragLeave}
+                            onDrop={(e) => handleStatusDrop(e, StatusItem, roleName)}
+                            key={StatusItem}
+                            onMouseDown={(e) => {
+                                dragStartSourceRefStatus.current = e.target;
+                            }}
+                            style={{
+                                backgroundColor: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? '#343a40' : '',
+                                color: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <div className='d-flex align-items-center gap-2'>
+                                {isEditMode && (
+                                    <>
+                                        <span className='ArrowMoveStatus d-flex align-items-center cursor-move ms-1'>
+                                            <ArrowMove className='ArrowMoveStatus' fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
+                                        </span>
+                                        <span className='vr-line'></span>
+                                    </>
+                                )}
+                                <span className='d-flex align-items-center gap-1'>
+                                    {(isEditMode && isDublicate) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
+                                    {StatusItem}
+                                </span>
+                            </div>
+                            <div className="d-flex align-items-center justify-content-center mx-2">
+                                {isEditMode && (
+                                    <Dropdown>
+                                        <Dropdown.Toggle className="role_menu">
+                                            <ThreeDotsIcon fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
+                                        </Dropdown.Toggle>
+                                        <Dropdown.Menu>
+                                            <Dropdown.Item onClick={(e) => { e.stopPropagation(); openStatusItemModal(roleName, StatusItem) }}>
+                                                <i className='bi bi-pencil me-2' /> Modifica
+                                            </Dropdown.Item>
+                                            <Dropdown.Item onClick={(e) => {
+                                                e.stopPropagation();
+                                                setStatusToClone(StatusItem);
+                                                setCloneStatusModalShow(true);
+                                            }}>
+                                                <i className='bi bi-files me-2' /> Clona
+                                            </Dropdown.Item>
+                                            <Dropdown.Item className='text-danger' onClick={(e) => {
+                                                e.stopPropagation();
+                                                setStatusToDelete(StatusItem);
+                                                setDeleteStatusModalShow(true);
+                                            }}>
+                                                <i className='bi bi-trash me-2' /> Elimina
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                )}
+                            </div>
+                        </span>
+                    );
                 })}
-            {isEditMode && <div className='d-flex justify-content-center mt-1'>
-                <span
-                    className="StatusItemTitle text-center"
-                    style={{ width: 'fit-content', padding: '6px 12px' }}
-                    onClick={() => openStatusItemModal(roleName)}
+            {isEditMode && (
+                <div
+                    className={`d-flex justify-content-center mt-1 drop-target-last ${dropTarget?.type === 'status' && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
+                    style={{ width: '100%' }}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        if (draggingItem?.type === 'status') {
+                            setDropTarget({ type: 'status', roleName, isLastPosition: true });
+                        }
+                    }}
+                    onDragLeave={handleStatusDragLeave}
+                    onDrop={(e) => handleStatusDrop(e, null, roleName, true)}
                 >
-                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
-                </span>
-            </div>}
+                    <span className='StatusItemTitle text-center' style={{ width: 'fit-content', padding: '6px 12px' }}>
+                        <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
+                    </span>
+                </div>
+            )}
             <CloneStatusModal
                 show={cloneStatusModalShow}
                 handleClose={() => {

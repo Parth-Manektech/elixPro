@@ -38,7 +38,7 @@ function ListSection({
     const [listItemToDelete, setListItemToDelete] = useState(null);
     const [listTitleForItem, setListTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
-    const [listKeys, setListKeys] = useState([])
+    const [listKeys, setListKeys] = useState([]);
     const dragStartSourceRef = useRef(null);
 
     const dragStartPosRef = useRef({ x: 0, y: 0 });
@@ -230,7 +230,7 @@ function ListSection({
         setDropTarget(null);
     };
 
-    const handleListDrop = (e, targetListTitle, targetRoleName) => {
+    const handleListDrop = (e, targetListTitle, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
         if (!draggingItem || draggingItem.type !== 'listGroup') {
@@ -271,13 +271,22 @@ function ListSection({
                 const [movedList] = sourceListArray.splice(sourceIndex, 1);
                 data[sourceFacultyIndex].liste = sourceListArray;
 
-                const targetListArray = [...(data[targetFacultyIndex].liste || [])];
-                const targetIndex = targetListArray.findIndex((list) => list.title === targetListTitle);
+                // Initialize liste array if it doesn't exist
+                if (!data[targetFacultyIndex].liste) {
+                    data[targetFacultyIndex].liste = [];
+                }
+                const targetListArray = [...data[targetFacultyIndex].liste];
 
-                if (targetIndex === -1) {
+                if (isLastPosition) {
+                    // Append to the end of the target list array
                     targetListArray.push(movedList);
                 } else {
-                    targetListArray.splice(targetIndex, 0, movedList);
+                    const targetIndex = targetListArray.findIndex((list) => list.title === targetListTitle);
+                    if (targetIndex === -1) {
+                        targetListArray.push(movedList);
+                    } else {
+                        targetListArray.splice(targetIndex, 0, movedList);
+                    }
                 }
                 data[targetFacultyIndex].liste = targetListArray;
 
@@ -291,7 +300,6 @@ function ListSection({
     };
 
     const handleListItemDragStart = (e, listTitle, itemKey) => {
-
         const actualClickedElement = dragStartSourceRef.current;
         if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMovelist") {
             e.preventDefault();
@@ -315,7 +323,7 @@ function ListSection({
         setDropTarget(null);
     };
 
-    const handleListItemDrop = (e, targetListTitle, targetKey, targetRoleName) => {
+    const handleListItemDrop = (e, targetListTitle, targetKey, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
         if (!draggingItem || draggingItem.type !== 'list') {
@@ -365,13 +373,22 @@ function ListSection({
                 const [movedItem] = sourceListArray.splice(sourceIndex, 1);
                 data[sourceFacultyIndex].liste[sourceListIndex].listArray = sourceListArray;
 
-                const targetListArray = [...(data[targetFacultyIndex].liste[targetListIndex].listArray || [])];
-                const targetIndex = targetListArray.findIndex((item) => item.key === targetKey);
+                // Initialize listArray if it doesn't exist
+                if (!data[targetFacultyIndex].liste[targetListIndex].listArray) {
+                    data[targetFacultyIndex].liste[targetListIndex].listArray = [];
+                }
+                const targetListArray = [...data[targetFacultyIndex].liste[targetListIndex].listArray];
 
-                if (targetIndex === -1) {
+                if (isLastPosition) {
+                    // Append to the end of the target list array
                     targetListArray.push(movedItem);
                 } else {
-                    targetListArray.splice(targetIndex, 0, movedItem);
+                    const targetIndex = targetListArray.findIndex((item) => item.key === targetKey);
+                    if (targetIndex === -1) {
+                        targetListArray.push(movedItem);
+                    } else {
+                        targetListArray.splice(targetIndex, 0, movedItem);
+                    }
                 }
                 data[targetFacultyIndex].liste[targetListIndex].listArray = targetListArray;
 
@@ -385,10 +402,9 @@ function ListSection({
     };
 
     useEffect(() => {
-        const AllList = []
+        const AllList = [];
         MainData.forEach(item => {
             if (item.ruolo && item.ruolo.key !== element?.ruolo?.key) {
-                // Extract list keys from liste[].listArray[].key
                 if (item.liste && Array.isArray(item.liste)) {
                     item.liste.forEach(list => {
                         if (list.listArray && Array.isArray(list.listArray)) {
@@ -401,9 +417,9 @@ function ListSection({
                     });
                 }
             }
-        })
-        setListKeys(AllList)
-    }, [MainData])
+        });
+        setListKeys(AllList);
+    }, [MainData, element]);
 
     const renderTooltip = (props) => (
         <Tooltip id="button-tooltip" {...props}>
@@ -443,119 +459,151 @@ function ListSection({
                             <span>{listeItem?.title}</span>
                         </div>
                         <div className="d-flex align-items-center justify-content-center mx-2 DrpDownlistitem" >
-                            {isEditMode && <Dropdown >
-                                <Dropdown.Toggle className="role_menu" >
-                                    <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu>
-                                    <Dropdown.Item onClick={(e) => { e.stopPropagation(); openTitleItemModal(roleName, 'liste', { title: listeItem.title }) }}>
-                                        <i className='bi bi-pencil me-2' /> Modifica
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setListToClone(listeItem);
-                                            setCloneListModalShow(true);
-                                        }}>
-                                        <i className='bi bi-files me-2' /> Clona
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                        className='text-danger' onClick={(e) => {
-                                            e.stopPropagation();
-                                            setListToDelete(listeItem.title);
-                                            setDeleteListModalShow(true);
-                                        }}>
-                                        <i className='bi bi-trash me-2' /> Elimina
-                                    </Dropdown.Item>
-                                </Dropdown.Menu>
-                            </Dropdown>}
+                            {isEditMode && (
+                                <Dropdown>
+                                    <Dropdown.Toggle className="role_menu">
+                                        <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item onClick={(e) => { e.stopPropagation(); openTitleItemModal(roleName, 'liste', { title: listeItem.title }) }}>
+                                            <i className='bi bi-pencil me-2' /> Modifica
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setListToClone(listeItem);
+                                                setCloneListModalShow(true);
+                                            }}>
+                                            <i className='bi bi-files me-2' /> Clona
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            className='text-danger' onClick={(e) => {
+                                                e.stopPropagation();
+                                                setListToDelete(listeItem.title);
+                                                setDeleteListModalShow(true);
+                                            }}>
+                                            <i className='bi bi-trash me-2' /> Elimina
+                                        </Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            )}
                         </div>
                     </div>
 
                     <div className="listGroup">
                         {listeItem?.listArray?.map((listArrayItem) => {
-                            const isDuplicateList = listKeys?.includes(listArrayItem?.key)
-                            return <div
-                                key={listArrayItem.key}
-                                ref={(el) => (refsMap.current[listArrayItem.key] = el)}
-                                id={listArrayItem?.key}
-                                className={`listeArrayItem ${dropTarget?.type === 'list' && dropTarget?.itemKey === listArrayItem.key && dropTarget?.listTitle === listeItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
-                                onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
-                                onMouseLeave={() => handleMouseLeave(listArrayItem?.key)}
-                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleListItemClick(listArrayItem?.key, listeItem.title) }}
-                                draggable={isEditMode}
-                                onDragStart={(e) => handleListItemDragStart(e, listeItem.title, listArrayItem.key)}
-                                onDragOver={(e) => handleListItemDragOver(e, listeItem.title, listArrayItem.key, roleName)}
-                                onDragLeave={handleListItemDragLeave}
-                                onDrop={(e) => handleListItemDrop(e, listeItem.title, listArrayItem.key, roleName)}
-                                onMouseDown={(e) => {
-                                    dragStartSourceRef.current = e.target;
-                                }}
-                                style={{
-                                    backgroundColor: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
-                                    color: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '',
-                                }}
-                            >
-                                <div className='w-100 d-flex justify-content-between align-items-center' >
-                                    <div className='d-flex align-items-center gap-2'>
-                                        {isEditMode && (
-                                            <>
-                                                <span className='ArrowMovelist d-flex align-items-center cursor-move ms-1'>
-                                                    <ArrowMove className='ArrowMovelist' fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
-                                                </span>
-                                                <span className='vr-line'></span>
-                                            </>
-                                        )}
-                                        <span className='d-flex align-items-center gap-1'>{(isEditMode && isDuplicateList) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}{listArrayItem?.title}</span>
-                                    </div>
-                                    <div className="d-flex align-items-center justify-content-center mx-2" onClick={(e) => e.stopPropagation()}>
-                                        {isEditMode && <Dropdown >
-                                            <Dropdown.Toggle className="role_menu" >
-                                                <ThreeDotsIcon fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
-                                            </Dropdown.Toggle>
-                                            <Dropdown.Menu>
-                                                <Dropdown.Item
-                                                    onClick={(e) => { e.stopPropagation(); openListItemModal(roleName, listeItem.title, listArrayItem) }}>
-                                                    <i className='bi bi-pencil me-2' /> Modifica
-                                                </Dropdown.Item>
-                                                <Dropdown.Item
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setListItemToClone(listArrayItem);
-                                                        setListTitleForItem(listeItem.title);
-                                                        setCloneListItemModalShow(true);
-                                                    }}>
-                                                    <i className='bi bi-files me-2' /> Clona
-                                                </Dropdown.Item>
-                                                <Dropdown.Item
-                                                    className='text-danger' onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setListItemToDelete(listArrayItem);
-                                                        setListTitleForItem(listeItem.title);
-                                                        setDeleteListItemModalShow(true);
-                                                    }}>
-                                                    <i className='bi bi-trash me-2' /> Elimina
-                                                </Dropdown.Item>
-                                            </Dropdown.Menu>
-                                        </Dropdown>}
+                            const isDuplicateList = listKeys?.includes(listArrayItem?.key);
+                            return (
+                                <div
+                                    key={listArrayItem.key}
+                                    ref={(el) => (refsMap.current[listArrayItem.key] = el)}
+                                    id={listArrayItem?.key}
+                                    className={`listeArrayItem ${dropTarget?.type === 'list' && dropTarget?.itemKey === listArrayItem.key && dropTarget?.listTitle === listeItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
+                                    onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
+                                    onMouseLeave={() => handleMouseLeave(listArrayItem?.key)}
+                                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleListItemClick(listArrayItem?.key, listeItem.title) }}
+                                    draggable={isEditMode}
+                                    onDragStart={(e) => handleListItemDragStart(e, listeItem.title, listArrayItem.key)}
+                                    onDragOver={(e) => handleListItemDragOver(e, listeItem.title, listArrayItem.key, roleName)}
+                                    onDragLeave={handleListItemDragLeave}
+                                    onDrop={(e) => handleListItemDrop(e, listeItem.title, listArrayItem.key, roleName)}
+                                    onMouseDown={(e) => {
+                                        dragStartSourceRef.current = e.target;
+                                    }}
+                                    style={{
+                                        backgroundColor: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
+                                        color: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '',
+                                    }}
+                                >
+                                    <div className='w-100 d-flex justify-content-between align-items-center'>
+                                        <div className='d-flex align-items-center gap-2'>
+                                            {isEditMode && (
+                                                <>
+                                                    <span className='ArrowMovelist d-flex align-items-center cursor-move ms-1'>
+                                                        <ArrowMove className='ArrowMovelist' fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
+                                                    </span>
+                                                    <span className='vr-line'></span>
+                                                </>
+                                            )}
+                                            <span className='d-flex align-items-center gap-1'>
+                                                {(isEditMode && isDuplicateList) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
+                                                {listArrayItem?.title}
+                                            </span>
+                                        </div>
+                                        <div className="d-flex align-items-center justify-content-center mx-2" onClick={(e) => e.stopPropagation()}>
+                                            {isEditMode && (
+                                                <Dropdown>
+                                                    <Dropdown.Toggle className="role_menu">
+                                                        <ThreeDotsIcon fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
+                                                    </Dropdown.Toggle>
+                                                    <Dropdown.Menu>
+                                                        <Dropdown.Item
+                                                            onClick={(e) => { e.stopPropagation(); openListItemModal(roleName, listeItem.title, listArrayItem) }}>
+                                                            <i className='bi bi-pencil me-2' /> Modifica
+                                                        </Dropdown.Item>
+                                                        <Dropdown.Item
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setListItemToClone(listArrayItem);
+                                                                setListTitleForItem(listeItem.title);
+                                                                setCloneListItemModalShow(true);
+                                                            }}>
+                                                            <i className='bi bi-files me-2' /> Clona
+                                                        </Dropdown.Item>
+                                                        <Dropdown.Item
+                                                            className='text-danger' onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setListItemToDelete(listArrayItem);
+                                                                setListTitleForItem(listeItem.title);
+                                                                setDeleteListItemModalShow(true);
+                                                            }}>
+                                                            <i className='bi bi-trash me-2' /> Elimina
+                                                        </Dropdown.Item>
+                                                    </Dropdown.Menu>
+                                                </Dropdown>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            );
                         })}
-                        {isEditMode && <span className='listeArrayItem' style={{ width: 'fit-content', padding: '6px 12px', cursor: 'pointer' }} onClick={() => openListItemModal(roleName, listeItem.title)}>
-                            <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
-                        </span>}
+
+                        {isEditMode && (
+                            <div
+                                style={{ width: '100%' }}
+                                className={` drop-target-last ${dropTarget?.type === 'list' && dropTarget?.listTitle === listeItem.title && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    if (draggingItem?.type === 'list') {
+                                        setDropTarget({ type: 'list', listTitle: listeItem.title, roleName, isLastPosition: true });
+                                    }
+                                }}
+                                onDragLeave={handleListItemDragLeave}
+                                onDrop={(e) => handleListItemDrop(e, listeItem.title, null, roleName, true)}
+                            >
+                                <span className='listeArrayItem' style={{ width: 'fit-content', padding: '6px 12px', cursor: 'pointer' }} onClick={() => openListItemModal(roleName, listeItem.title)}>
+                                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             ))}
-
-            {isEditMode && <div
-                className="liste text-center cursor-pointer"
-                onClick={() => openTitleItemModal(roleName, 'liste')}
-            >
-                <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
-            </div>}
-
+            {isEditMode && (
+                <div
+                    className={`liste text-center cursor-pointer drop-target-last ${dropTarget?.type === 'listGroup' && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        if (draggingItem?.type === 'listGroup') {
+                            setDropTarget({ type: 'listGroup', roleName, isLastPosition: true });
+                        }
+                    }}
+                    onDragLeave={handleListDragLeave}
+                    onDrop={(e) => handleListDrop(e, null, roleName, true)}
+                >
+                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
+                </div>
+            )}
             <CloneListModal
                 show={cloneListModalShow}
                 handleClose={() => {
