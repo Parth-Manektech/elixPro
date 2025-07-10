@@ -12,8 +12,9 @@ import CloneRoleModal from '../../Components/editorComponents/Modals/CloneRoleMo
 
 import { getRoleForElement, drawArrow, handleDeleteRole, handleCloneRoleSubmit } from '../../Components/editorComponents/ViewComponentUtility';
 import Toolbar from '../../Components/editorComponents/Toolbar';
-import MainCanvas from '../../Components/editorComponents/MainCanvas';
+// import MainCanvas from '../../Components/editorComponents/MainCanvas';
 import RoleCard from '../../Components/editorComponents/RoleCard';
+import { DuplicateErrorToast } from '../../utils/Toster';
 
 function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     const MainData = useMemo(() => (epWorkflowjson ? JSON.parse(epWorkflowjson) : []), [epWorkflowjson]);
@@ -44,6 +45,60 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     const [roleToClone, setRoleToClone] = useState(null);
     const [visibleRoles, setVisibleRoles] = useState({});
     const [selectedElement, setSelectedElement] = useState(null);
+
+    const [collapsedRoles, setCollapsedRoles] = useState([]); // Holds keys
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isRightBarOpen, setIsRightBarOpen] = useState(true);
+    const [duplicateCount, setDuplicateCount] = useState(0);
+
+
+
+    const handleCollapseCard = (role) => {
+        console.log('role', role);
+        setCollapsedCards((prev) => {
+            const newCollapsed = { ...prev };
+            delete newCollapsed[role.nome]; // Still use nome for collapsedCards if needed
+            return newCollapsed;
+        });
+        setCollapsedRoles((prev) => [...prev, role.key]);
+        setSelectedElement(null);
+        clearLeaderLines();
+    };
+
+    const handleExpandCard = (key) => {
+        setCollapsedCards((prev) => {
+            const newCollapsed = { ...prev };
+            const role = MainData.find((role) => role?.ruolo?.key === key);
+            if (role) delete newCollapsed[role.nome];
+            return newCollapsed;
+        });
+        setCollapsedRoles((prev) => prev.filter((r) => r !== key));
+        setSelectedElement(null);
+        clearLeaderLines();
+    };
+
+    const handleToggleAll = () => {
+        const allKeys = MainData.map((role) => role?.ruolo?.key).filter(Boolean);
+        if (collapsedRoles.length === 0 || collapsedRoles.length < allKeys.length) {
+            setCollapsedCards({});
+            setCollapsedRoles(allKeys);
+        } else {
+            setCollapsedCards({});
+            setCollapsedRoles([]);
+        }
+        setSelectedElement(null);
+        clearLeaderLines();
+    };
+
+    const filteredCollapsedRoles = useMemo(() => {
+        return MainData.filter((role) => collapsedRoles.includes(role?.ruolo?.key) && role?.ruolo?.nome.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [collapsedRoles, searchTerm, MainData]);
+
+    const toggleRightBar = () => {
+        setIsRightBarOpen((prev) => !prev);
+    };
+
 
     const [isEditMode, setIsEditMode] = useState(false)
     const leaderLinesRef = useRef([]);
@@ -92,51 +147,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     };
 
     const drawConnections = useCallback(
-        (connections) => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.scale(zoomLevel, zoomLevel);
-
-            const container = containerRef.current;
-            if (!container) return;
-
-            const containerRect = container.getBoundingClientRect();
-            const scrollLeft = container.scrollLeft;
-            const scrollTop = container.scrollTop;
-
-            connections.forEach(({ startId, endId, color }) => {
-                const startElement = refsMap.current[startId];
-                const endElement = refsMap.current[endId];
-                if (!startElement || !endElement) return;
-
-                const startRole = getRoleForElement(MainData, startId);
-                const endRole = getRoleForElement(MainData, endId);
-                if (collapsedCards[startRole] || collapsedCards[endRole]) return;
-
-                const startRect = startElement.getBoundingClientRect();
-                const endRect = endElement.getBoundingClientRect();
-
-                let fromX =
-                    startRect.left < endRect.left
-                        ? startRect.right - containerRect.left + scrollLeft
-                        : startRect.left - containerRect.left + scrollLeft;
-                const fromY = startRect.top + startRect.height / 2 - containerRect.top + scrollTop;
-                let toX =
-                    startRect.left < endRect.left
-                        ? endRect.left - containerRect.left + scrollLeft
-                        : endRect.right - containerRect.left + scrollLeft;
-                const toY = endRect.top + endRect.height / 2 - containerRect.top + scrollTop;
-
-                drawArrow(ctx, fromX / zoomLevel, fromY / zoomLevel, toX / zoomLevel, toY / zoomLevel, color, zoomLevel);
-            });
-
-            ctx.restore();
-        },
+        (connections) => { console.log('connections', connections) },
         [zoomLevel, collapsedCards, MainData]
     );
 
@@ -237,8 +248,153 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
         setCanvasSize((prev) => ({ ...prev }));
     };
 
+    useEffect(() => {
+        if (isEditMode) {
+            const result = findDuplicateKeys(MainData);
+            console.log(result.message); // "1 list key and 2 status keys and 0 action keys are duplicate"
+            console.log(result.result);
+            if (result?.result?.actionDuplicateCount > 0 || result?.result?.listDuplicateCount > 0 || result?.result?.statusDuplicateCount > 0) {
+                const TotalCount = result?.result?.actionDuplicateCount + result?.result?.listDuplicateCount + result?.result?.statusDuplicateCount
+                DuplicateErrorToast(`Sono stati rilevati ${TotalCount * 2} errori di key duplicata.`)
+            }
+        }
+    }, [isEditMode]);
+
+    function findDuplicateKeys(jsonData) {
+        // Initialize arrays to store keys
+        const listKeys = [];
+        const statusKeys = [];
+        const actionKeys = [];
+
+        // Helper function to count duplicates
+        const countDuplicates = (keysArray) => {
+            const keyCountMap = {};
+            keysArray.forEach(key => {
+                keyCountMap[key] = (keyCountMap[key] || 0) + 1;
+            });
+            const totalKeys = keysArray.length;
+            const uniqueKeys = new Set(keysArray).size;
+            return totalKeys - uniqueKeys; // Duplicates = total - unique
+        };
+
+        // Process each item in the JSON data
+        jsonData.forEach(item => {
+            if (item.ruolo) {
+                // Extract list keys from liste[].listArray[].key
+                if (item.liste && Array.isArray(item.liste)) {
+                    item.liste.forEach(list => {
+                        if (list.listArray && Array.isArray(list.listArray)) {
+                            list.listArray.forEach(listItem => {
+                                if (listItem.key) {
+                                    listKeys.push(listItem.key);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Extract status keys from pulsantiAttivi
+                if (item.pulsantiAttivi && typeof item.pulsantiAttivi === 'object') {
+                    Object.keys(item.pulsantiAttivi).forEach(statusKey => {
+                        statusKeys.push(statusKey);
+                    });
+                }
+
+                // Extract action keys from azioni[].listArray[].key
+                if (item.azioni && Array.isArray(item.azioni)) {
+                    item.azioni.forEach(action => {
+                        if (action.listArray && Array.isArray(action.listArray)) {
+                            action.listArray.forEach(actionItem => {
+                                if (actionItem.key) {
+                                    actionKeys.push(actionItem.key);
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+
+        // Count duplicates for each category
+        const listDuplicateCount = countDuplicates(listKeys);
+        const statusDuplicateCount = countDuplicates(statusKeys);
+        const actionDuplicateCount = countDuplicates(actionKeys);
+
+        // Create formatted message
+        const message = `${listDuplicateCount} list key${listDuplicateCount !== 1 ? 's' : ''} and ${statusDuplicateCount} status key${statusDuplicateCount !== 1 ? 's' : ''} and ${actionDuplicateCount} action key${actionDuplicateCount !== 1 ? 's' : ''} are duplicate`;
+
+        // Return result object
+        return {
+            message,
+            result: {
+                listDuplicateCount,
+                statusDuplicateCount,
+                actionDuplicateCount
+            }
+        };
+    }
+
+
     return (
-        <>
+        <div style={{ position: 'relative' }}>
+            <button
+                className="right-bar-toggle"
+                onClick={toggleRightBar}
+                style={{ right: isRightBarOpen ? "300px" : "15px" }}
+            >
+                <i className={`bi ${isRightBarOpen ? 'bi-chevron-right' : 'bi-chevron-left'}`}></i>
+            </button>
+
+
+            {isRightBarOpen && (
+                <div className="right-bar">
+                    <div className="right-bar-header">
+                        <h4>Ruoli</h4>
+                        <a
+                            href="#"
+                            className="filter-toggle-all-ruoli"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleToggleAll();
+                            }}
+                        >
+                            {collapsedRoles.length > 0 && collapsedRoles.length < MainData.length
+                                ? 'Collassa tutti'
+                                : 'Espandi tutti'}
+                        </a>
+                    </div>
+                    <input
+                        type="text"
+                        className="form-control mb-2"
+                        placeholder="Cerca ruolo..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <div className="collapsed-roles-container">
+                        {filteredCollapsedRoles.map((role) => {
+                            return (<div key={role?.ruolo?.key}
+                                style={{ backgroundColor: role.ruolo?.colore || '#6f42c1', }}
+                                className="collapsed-role">
+                                <div className='d-flex gap-2 align-items-center'>
+                                    <span className="drag-handle ms-2">
+                                        <i className="bi bi-arrows-move"></i>
+                                    </span>
+
+                                    <span className="vr-line bg-secondary"></span>
+                                    <span className="role-name">{role?.ruolo?.nome}</span>
+                                </div>
+
+
+                                <span
+                                    onClick={() => handleExpandCard(role?.ruolo?.key)}
+                                >
+                                    <i className="bi bi-arrows-angle-expand text-dark fw-bold"></i>
+                                </span>
+                            </div>)
+                        })}
+                    </div>
+                </div>
+            )}
             <Toolbar
                 openRoleModal={openRoleModal}
                 zoomLevel={zoomLevel}
@@ -255,17 +411,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                 className="editor-visualization"
                 style={{ position: 'relative', width: '100%', overflow: 'auto' }}
             >
-                {/* <MainCanvas
-                    canvasRef={canvasRef}
-                    containerRef={containerRef}
-                    canvasSize={canvasSize}
-                    setCanvasSize={setCanvasSize}
-                    zoomLevel={zoomLevel}
-                    MainData={MainData}
-                    collapsedCards={collapsedCards}
-                    refsMap={refsMap}
-                    drawConnections={drawConnections}
-                /> */}
                 <div
                     className="d-flex justify-content-around flex-wrap"
                     style={{
@@ -278,7 +423,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                 >
                     {MainData?.map((element) =>
                         element?.ruolo && visibleRoles[element.ruolo.nome] ? (
-                            <RoleCard
+                            !collapsedRoles.includes(element.ruolo.key) && (<RoleCard
                                 key={element.ruolo.nome}
                                 element={element}
                                 visibleRoles={visibleRoles}
@@ -317,10 +462,17 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                                 clearLeaderLines={clearLeaderLines}
                                 createLeaderLine={createLeaderLine}
                                 leaderLinesRef={leaderLinesRef}
-                            />
+                                onCollapse={handleCollapseCard}
+                                duplicateCount={duplicateCount}
+                                setDuplicateCount={setDuplicateCount}
+                            />)
                         ) : null
                     )}
+
+
                 </div>
+
+
                 <ListItemModal
                     show={listItemModalShow}
                     handleClose={() => {
@@ -365,6 +517,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                     setSelectedStatusItem={setSelectedStatusItem}
                     setStatusItemModalShow={setStatusItemModalShow}
                     shownStatuses={shownStatuses}
+
                     setShownStatuses={setShownStatuses}
                     initialData={selectedStatusItem ? { status: selectedStatusItem } : null}
                 />
@@ -439,7 +592,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                     itemType="Ruolo"
                 />
             </div>
-        </>
+        </div>
     );
 }
 

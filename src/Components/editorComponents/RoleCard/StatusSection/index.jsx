@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewOpenEyeIcon, ViewClosedEyeIcon, SlidersIcon, ArrowMove, ThreeDotsIcon, PlusIcon } from '../../../../Assets/SVGs';
 import { toggleStatusVisibility } from '../../ViewComponentUtility';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import CloneStatusModal from '../../Modals/CloneStatusModal';
 import DeleteStatusModal from '../../Modals/DeleteStatusModal';
 import { drawSelectedElementArrows } from '../../../../utils/arrowUtils';
@@ -9,6 +9,7 @@ import { drawSelectedElementArrows } from '../../../../utils/arrowUtils';
 function StatusSection({
     pulsantiAttivi,
     roleName,
+    element,
     shownStatus,
     setShownStatuses,
     openStatusItemModal,
@@ -26,7 +27,9 @@ function StatusSection({
     setSelectedElement,
     clearLeaderLines,
     createLeaderLine,
-    leaderLinesRef
+    leaderLinesRef,
+    duplicateCount,
+    setDuplicateCount
 }) {
     const [cloneStatusModalShow, setCloneStatusModalShow] = useState(false);
     const [deleteStatusModalShow, setDeleteStatusModalShow] = useState(false);
@@ -35,14 +38,25 @@ function StatusSection({
     const [dropTarget, setDropTarget] = useState(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
-
-
     const updateLeaderLines = () => {
         leaderLinesRef.current.forEach(line => line.position());
     };
 
-    // Update handleStatusMouseHover
-    // Replace handleStatusMouseHover
+    const rulekey = element?.ruolo?.key
+
+    const getStatusOptions = () => {
+        if (!MainData) return [];
+        const allStatuses = new Set();
+        MainData.forEach((element) => {
+            if (element.ruolo && element.pulsantiAttivi && element?.ruolo?.key !== rulekey) {
+                Object.keys(element.pulsantiAttivi).forEach((status) => allStatuses.add(status));
+            }
+        });
+        return Array.from(allStatuses);
+    };
+
+    // console.log('getStatusOptions', rulekey, getStatusOptions())
+
     const handleStatusMouseHover = (statusItemKey) => {
         setHoveredStatus({ role: roleName, status: statusItemKey });
         setHoveredAction(null);
@@ -74,26 +88,23 @@ function StatusSection({
             });
         }
 
-        // Redraw selected element arrows with visibility check
         if (selectedElement) {
             drawSelectedElementArrows(
                 selectedElement,
                 MainData,
                 createLeaderLine,
                 containerRef,
-                refsMap // Pass refsMap
+                refsMap
             );
         }
     };
 
-    // Update handleMouseLeave
     const handleMouseLeave = (statusItemKey) => {
         if (!refsMap.current[statusItemKey]) return;
         setHoveredStatus(null);
         setHoveredAction(null);
         clearLeaderLines();
 
-        // Redraw selected element arrows
         if (selectedElement) {
             drawSelectedElementArrows(
                 selectedElement,
@@ -104,12 +115,8 @@ function StatusSection({
         }
     };
 
-    // Update handleStatusClick
-    // Replace handleStatusClick
     const handleStatusClick = (statusItemKey) => {
-
         toggleStatusVisibility(roleName, statusItemKey, setShownStatuses);
-
 
         const newSelectedElement = { type: 'status', roleName, statusItemKey };
         if (
@@ -153,8 +160,6 @@ function StatusSection({
         }
     };
 
-    // Update useEffect
-    // Replace useEffect
     useEffect(() => {
         const container = containerRef.current;
         const updateLeaderLines = () => {
@@ -165,15 +170,13 @@ function StatusSection({
             container.addEventListener('scroll', updateLeaderLines);
         }
 
-        // Redraw arrows when selectedElement changes
         if (selectedElement?.type === 'status' && selectedElement.roleName === roleName) {
-            // Removed: clearLeaderLines();
             drawSelectedElementArrows(
                 selectedElement,
                 MainData,
                 createLeaderLine,
                 containerRef,
-                refsMap // Pass refsMap
+                refsMap
             );
         }
 
@@ -184,22 +187,21 @@ function StatusSection({
         };
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
-
     const handleStatusDragStart = (e, statusItemKey) => {
         if (!isEditMode) {
             e.preventDefault();
             return;
         }
         setDraggingItem({ type: 'status', facultyName: roleName, statusItemKey });
-        e.dataTransfer.setData('text/plain', JSON.stringify({ statusItemKey, facultyName: roleName }));
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'status', statusItemKey, facultyName: roleName }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
     };
 
-    const handleStatusDragOver = (e, statusItemKey) => {
+    const handleStatusDragOver = (e, statusItemKey, targetRoleName) => {
         e.preventDefault();
-        if (draggingItem?.type === 'status' && draggingItem?.facultyName === roleName) {
-            setDropTarget({ type: 'status', statusItemKey });
+        if (draggingItem?.type === 'status') {
+            setDropTarget({ type: 'status', statusItemKey, roleName: targetRoleName });
         }
     };
 
@@ -207,10 +209,10 @@ function StatusSection({
         setDropTarget(null);
     };
 
-    const handleStatusDrop = (e, targetStatusKey) => {
+    const handleStatusDrop = (e, targetStatusKey, targetRoleName) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!draggingItem || draggingItem.type !== 'status' || draggingItem.facultyName !== roleName) {
+        if (!draggingItem || draggingItem.type !== 'status') {
             setDraggingItem(null);
             setDropTarget(null);
             return;
@@ -219,8 +221,9 @@ function StatusSection({
         try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const sourceStatusKey = data.statusItemKey;
+            const sourceFacultyName = data.facultyName;
 
-            if (sourceStatusKey === targetStatusKey) {
+            if (sourceFacultyName === targetRoleName && sourceStatusKey === targetStatusKey) {
                 setDraggingItem(null);
                 setDropTarget(null);
                 return;
@@ -228,29 +231,40 @@ function StatusSection({
 
             setEpWorkflowjson((prevJson) => {
                 const data = JSON.parse(prevJson);
-                const facultyIndex = data.findIndex((item) => item.ruolo?.nome === roleName);
-                if (facultyIndex === -1) {
-                    console.error('Faculty not found:', roleName);
+                const sourceFacultyIndex = data.findIndex((item) => item.ruolo?.nome === sourceFacultyName);
+                const targetFacultyIndex = data.findIndex((item) => item.ruolo?.nome === targetRoleName);
+
+                if (sourceFacultyIndex === -1 || targetFacultyIndex === -1) {
+                    console.error('Faculty not found:', { sourceFacultyName, targetRoleName });
                     return prevJson;
                 }
 
-                const statusArray = Object.keys(data[facultyIndex].pulsantiAttivi || {});
-                const sourceIndex = statusArray.indexOf(sourceStatusKey);
-                const targetIndex = statusArray.indexOf(targetStatusKey);
+                const sourceStatusArray = Object.keys(data[sourceFacultyIndex].pulsantiAttivi || {});
+                const sourceIndex = sourceStatusArray.indexOf(sourceStatusKey);
 
-                if (sourceIndex === -1 || targetIndex === -1) {
-                    console.error('Status not found:', { sourceStatusKey, targetStatusKey });
+                if (sourceIndex === -1) {
+                    console.error('Source status not found:', sourceStatusKey);
                     return prevJson;
                 }
 
-                const [movedStatus] = statusArray.splice(sourceIndex, 1);
-                statusArray.splice(targetIndex, 0, movedStatus);
+                const movedStatus = { [sourceStatusKey]: data[sourceFacultyIndex].pulsantiAttivi[sourceStatusKey] };
+                delete data[sourceFacultyIndex].pulsantiAttivi[sourceStatusKey];
 
-                const newPulsantiAttivi = {};
-                statusArray.forEach((key) => {
-                    newPulsantiAttivi[key] = data[facultyIndex].pulsantiAttivi[key];
-                });
-                data[facultyIndex].pulsantiAttivi = newPulsantiAttivi;
+                const targetStatusArray = Object.keys(data[targetFacultyIndex].pulsantiAttivi || {});
+                const targetIndex = targetStatusArray.indexOf(targetStatusKey);
+
+                data[targetFacultyIndex].pulsantiAttivi = data[targetFacultyIndex].pulsantiAttivi || {};
+                if (targetIndex === -1) {
+                    data[targetFacultyIndex].pulsantiAttivi[sourceStatusKey] = movedStatus[sourceStatusKey];
+                } else {
+                    const newTargetStatusArray = [...targetStatusArray];
+                    newTargetStatusArray.splice(targetIndex, 0, sourceStatusKey);
+                    const newPulsantiAttivi = {};
+                    newTargetStatusArray.forEach((key) => {
+                        newPulsantiAttivi[key] = data[targetFacultyIndex].pulsantiAttivi[key] || movedStatus[key];
+                    });
+                    data[targetFacultyIndex].pulsantiAttivi = newPulsantiAttivi;
+                }
 
                 return JSON.stringify(data);
             });
@@ -261,6 +275,12 @@ function StatusSection({
         setDropTarget(null);
     };
 
+    const renderTooltip = (props) => (
+        <Tooltip id="button-tooltip" {...props}>
+            La Key non è univoca! Viene usata più volte.
+        </Tooltip>
+    );
+
     return (
         <div className="d-flex flex-column gap-1 column">
             <div className='d-flex justify-content-center align-item-center mt-1 mb-1'>
@@ -268,19 +288,26 @@ function StatusSection({
                 <span style={{ color: '#6c757d', margin: "-5px 0 0 0" }}>STATI</span>
             </div>
             {pulsantiAttivi &&
-                Object.keys(pulsantiAttivi).map((StatusItem) => (
-                    <span
+                Object.keys(pulsantiAttivi).map((StatusItem) => {
+                    const isDublicate = getStatusOptions().includes(StatusItem);
+                    // console.log('isDublicate', isDublicate);
+
+                    // if (isDublicate) {
+                    //     setDuplicateCount(duplicateCount + 1)
+                    // }
+
+                    return (<span
                         ref={(el) => (refsMap.current[StatusItem] = el)}
-                        className={`StatusItemTitle ${dropTarget?.type === 'status' && dropTarget?.statusItemKey === StatusItem ? 'drop-target' : ''}`}
+                        className={`StatusItemTitle ${dropTarget?.type === 'status' && dropTarget?.statusItemKey === StatusItem && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                         id={StatusItem}
                         onMouseEnter={() => handleStatusMouseHover(StatusItem)}
                         onMouseLeave={() => handleMouseLeave(StatusItem)}
                         onClick={() => handleStatusClick(StatusItem)}
                         draggable={isEditMode}
                         onDragStart={(e) => handleStatusDragStart(e, StatusItem)}
-                        onDragOver={(e) => handleStatusDragOver(e, StatusItem)}
+                        onDragOver={(e) => handleStatusDragOver(e, StatusItem, roleName)}
                         onDragLeave={handleStatusDragLeave}
-                        onDrop={(e) => handleStatusDrop(e, StatusItem)}
+                        onDrop={(e) => handleStatusDrop(e, StatusItem, roleName)}
                         key={StatusItem}
                         style={{
                             backgroundColor: selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? '#343a40' : '',
@@ -291,15 +318,14 @@ function StatusSection({
                         <div className='d-flex align-items-center gap-2'>
                             {isEditMode && (
                                 <>
-                                    <span className='d-flex align-items-center cursor
-
--move ms-1'>
+                                    <span className='d-flex align-items-center cursor-move ms-1'>
                                         <ArrowMove fill={selectedElement?.type === 'status' && selectedElement.statusItemKey === StatusItem && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
                                     </span>
                                     <span className='vr-line'></span>
                                 </>
                             )}
-                            <span>{StatusItem}</span>
+
+                            <span className='d-flex align-items-center gap-1'>{(isEditMode && isDublicate) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}{StatusItem}</span>
                         </div>
                         <div className="d-flex align-items-center justify-content-center mx-2">
                             {isEditMode && <Dropdown>
@@ -327,8 +353,8 @@ function StatusSection({
                                 </Dropdown.Menu>
                             </Dropdown>}
                         </div>
-                    </span>
-                ))}
+                    </span>)
+                })}
             {isEditMode && <div className='d-flex justify-content-center mt-1'>
                 <span
                     className="StatusItemTitle text-center"

@@ -41,7 +41,10 @@ function RoleCard({
     setSelectedElement,
     clearLeaderLines,
     createLeaderLine,
-    leaderLinesRef
+    leaderLinesRef,
+    onCollapse,
+    duplicateCount,
+    setDuplicateCount
 }) {
     const roleName = element.ruolo.nome;
     const top = element.layout?.top || 0;
@@ -50,6 +53,10 @@ function RoleCard({
     const dragStartPosRef = useRef({ x: 0, y: 0 });
     const resizingRoleRef = useRef(null);
     const originalPositionsRef = useRef({});
+
+    const handleCollapseClick = () => {
+        onCollapse(element?.ruolo);
+    };
 
     const handleRoleCardDragStart = (e) => {
         if (
@@ -271,6 +278,12 @@ function RoleCard({
 
 
                     <div className="d-flex gap-3 align-items-center justify-content-center">
+
+                        <span
+                            onClick={handleCollapseClick}
+                        >
+                            <i className="bi bi-arrows-angle-contract"></i>
+                        </span>
                         {isEditMode && <input
                             type="color"
                             className='ColorInput'
@@ -337,6 +350,7 @@ function RoleCard({
                         <ListSection
                             liste={element.liste}
                             roleName={roleName}
+                            element={element}
                             openListItemModal={openListItemModal}
                             openTitleItemModal={openTitleItemModal}
                             drawConnections={drawConnections}
@@ -357,6 +371,7 @@ function RoleCard({
                         />
                         <StatusSection
                             pulsantiAttivi={element.pulsantiAttivi}
+                            element={element}
                             roleName={roleName}
                             shownStatus={shownStatuses[roleName]}
                             setShownStatuses={setShownStatuses}
@@ -377,10 +392,13 @@ function RoleCard({
                             clearLeaderLines={clearLeaderLines}
                             createLeaderLine={createLeaderLine}
                             leaderLinesRef={leaderLinesRef}
+                            duplicateCount={duplicateCount}
+                            setDuplicateCount={setDuplicateCount}
                         />
                         <ActionSection
                             azioni={element.azioni}
                             roleName={roleName}
+                            element={element}
                             shownStatus={shownStatuses[roleName]}
                             associatedActions={associatedActions}
                             openActionItemModal={openActionItemModal}

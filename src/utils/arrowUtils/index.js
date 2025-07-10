@@ -1,5 +1,5 @@
-// arrowUtils.jssssss
-// Replace drawSelectedElementArrows in arrowUtils.js
+// arrowUtils.js
+
 export const drawSelectedElementArrows = (
     selectedElement,
     MainData,

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowMove, LayersIcon, PlusIcon, ThreeDotsIcon } from '../../../../Assets/SVGs';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import CloneListModal from '../../Modals/CloneListModal';
 import DeleteListModal from '../../Modals/DeleteListModal';
 import CloneListItemModal from '../../Modals/CloneListItemModal';
@@ -25,7 +25,8 @@ function ListSection({
     setSelectedElement,
     clearLeaderLines,
     createLeaderLine,
-    leaderLinesRef
+    leaderLinesRef,
+    element
 }) {
     const [cloneListModalShow, setCloneListModalShow] = useState(false);
     const [deleteListModalShow, setDeleteListModalShow] = useState(false);
@@ -37,16 +38,14 @@ function ListSection({
     const [listItemToDelete, setListItemToDelete] = useState(null);
     const [listTitleForItem, setListTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
+    const [listKeys, setListKeys] = useState([])
+
     const dragStartPosRef = useRef({ x: 0, y: 0 });
-
-
-
 
     const updateLeaderLines = () => {
         leaderLinesRef.current.forEach(line => line.position());
     };
 
-    // Replace handleListMouseHover
     const handleListMouseHover = (listItemKey) => {
         setHoveredStatus(null);
         setHoveredAction(null);
@@ -93,26 +92,23 @@ function ListSection({
             });
         }
 
-        // Redraw selected element arrows with visibility check
         if (selectedElement) {
             drawSelectedElementArrows(
                 selectedElement,
                 MainData,
                 createLeaderLine,
                 containerRef,
-                refsMap // Pass refsMap
+                refsMap
             );
         }
     };
 
-    // Update handleMouseLeave
     const handleMouseLeave = (listItemKey) => {
         if (!refsMap.current[listItemKey]) return;
         setHoveredStatus(null);
         setHoveredAction(null);
         clearLeaderLines();
 
-        // Redraw selected element arrows
         if (selectedElement) {
             drawSelectedElementArrows(
                 selectedElement,
@@ -123,8 +119,6 @@ function ListSection({
         }
     };
 
-    // Update handleListItemClick
-    // Replace handleListItemClick
     const handleListItemClick = (listItemKey, listTitle) => {
         const newSelectedElement = { type: 'list', roleName, listTitle, itemKey: listItemKey };
         if (
@@ -184,7 +178,6 @@ function ListSection({
         }
     };
 
-    // Update useEffect
     useEffect(() => {
         const container = containerRef.current;
         const updateLeaderLines = () => {
@@ -195,15 +188,13 @@ function ListSection({
             container.addEventListener('scroll', updateLeaderLines);
         }
 
-        // Redraw arrows when selectedElement changes
         if (selectedElement?.type === 'list' && selectedElement.roleName === roleName) {
-            // clearLeaderLines();
             drawSelectedElementArrows(
                 selectedElement,
                 MainData,
                 createLeaderLine,
                 containerRef,
-                refsMap // Pass refsMap
+                refsMap
             );
         }
 
@@ -220,15 +211,15 @@ function ListSection({
             return;
         }
         setDraggingItem({ type: 'listGroup', facultyName: roleName, listTitle });
-        e.dataTransfer.setData('text/plain', JSON.stringify({ listTitle, facultyName: roleName }));
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'listGroup', listTitle, facultyName: roleName }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
     };
 
-    const handleListDragOver = (e, listTitle) => {
+    const handleListDragOver = (e, listTitle, targetRoleName) => {
         e.preventDefault();
-        if (draggingItem?.type === 'listGroup' && draggingItem?.facultyName === roleName) {
-            setDropTarget({ type: 'listGroup', listTitle });
+        if (draggingItem?.type === 'listGroup') {
+            setDropTarget({ type: 'listGroup', listTitle, roleName: targetRoleName });
         }
     };
 
@@ -236,10 +227,10 @@ function ListSection({
         setDropTarget(null);
     };
 
-    const handleListDrop = (e, targetListTitle) => {
+    const handleListDrop = (e, targetListTitle, targetRoleName) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!draggingItem || draggingItem.type !== 'listGroup' || draggingItem.facultyName !== roleName) {
+        if (!draggingItem || draggingItem.type !== 'listGroup') {
             setDraggingItem(null);
             setDropTarget(null);
             return;
@@ -248,8 +239,9 @@ function ListSection({
         try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const sourceListTitle = data.listTitle;
+            const sourceFacultyName = data.facultyName;
 
-            if (sourceListTitle === targetListTitle) {
+            if (sourceFacultyName === targetRoleName && sourceListTitle === targetListTitle) {
                 setDraggingItem(null);
                 setDropTarget(null);
                 return;
@@ -257,24 +249,34 @@ function ListSection({
 
             setEpWorkflowjson((prevJson) => {
                 const data = JSON.parse(prevJson);
-                const facultyIndex = data.findIndex((item) => item.ruolo?.nome === roleName);
-                if (facultyIndex === -1) {
-                    console.error('Faculty not found:', roleName);
+                const sourceFacultyIndex = data.findIndex((item) => item.ruolo?.nome === sourceFacultyName);
+                const targetFacultyIndex = data.findIndex((item) => item.ruolo?.nome === targetRoleName);
+
+                if (sourceFacultyIndex === -1 || targetFacultyIndex === -1) {
+                    console.error('Faculty not found:', { sourceFacultyName, targetRoleName });
                     return prevJson;
                 }
 
-                const listArray = [...(data[facultyIndex].liste || [])];
-                const sourceIndex = listArray.findIndex((list) => list.title === sourceListTitle);
-                const targetIndex = listArray.findIndex((list) => list.title === targetListTitle);
+                const sourceListArray = [...(data[sourceFacultyIndex].liste || [])];
+                const sourceIndex = sourceListArray.findIndex((list) => list.title === sourceListTitle);
 
-                if (sourceIndex === -1 || targetIndex === -1) {
-                    console.error('List not found:', { sourceListTitle, targetListTitle });
+                if (sourceIndex === -1) {
+                    console.error('Source list not found:', sourceListTitle);
                     return prevJson;
                 }
 
-                const [movedList] = listArray.splice(sourceIndex, 1);
-                listArray.splice(targetIndex, 0, movedList);
-                data[facultyIndex].liste = listArray;
+                const [movedList] = sourceListArray.splice(sourceIndex, 1);
+                data[sourceFacultyIndex].liste = sourceListArray;
+
+                const targetListArray = [...(data[targetFacultyIndex].liste || [])];
+                const targetIndex = targetListArray.findIndex((list) => list.title === targetListTitle);
+
+                if (targetIndex === -1) {
+                    targetListArray.push(movedList);
+                } else {
+                    targetListArray.splice(targetIndex, 0, movedList);
+                }
+                data[targetFacultyIndex].liste = targetListArray;
 
                 return JSON.stringify(data);
             });
@@ -291,15 +293,15 @@ function ListSection({
             return;
         }
         setDraggingItem({ type: 'list', facultyName: roleName, listTitle, itemKey });
-        e.dataTransfer.setData('text/plain', JSON.stringify({ itemKey, facultyName: roleName, listTitle }));
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'list', itemKey, facultyName: roleName, listTitle }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
     };
 
-    const handleListItemDragOver = (e, listTitle, itemKey) => {
+    const handleListItemDragOver = (e, listTitle, itemKey, targetRoleName) => {
         e.preventDefault();
-        if (draggingItem?.type === 'list' && draggingItem?.facultyName === roleName && draggingItem?.listTitle === listTitle) {
-            setDropTarget({ type: 'list', listTitle, itemKey });
+        if (draggingItem?.type === 'list') {
+            setDropTarget({ type: 'list', listTitle, itemKey, roleName: targetRoleName });
         }
     };
 
@@ -307,10 +309,10 @@ function ListSection({
         setDropTarget(null);
     };
 
-    const handleListItemDrop = (e, listTitle, targetKey) => {
+    const handleListItemDrop = (e, targetListTitle, targetKey, targetRoleName) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!draggingItem || draggingItem.type !== 'list' || draggingItem.facultyName !== roleName || draggingItem.listTitle !== listTitle) {
+        if (!draggingItem || draggingItem.type !== 'list') {
             setDraggingItem(null);
             setDropTarget(null);
             return;
@@ -319,8 +321,10 @@ function ListSection({
         try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const sourceKey = data.itemKey;
+            const sourceFacultyName = data.facultyName;
+            const sourceListTitle = data.listTitle;
 
-            if (sourceKey === targetKey) {
+            if (sourceFacultyName === targetRoleName && sourceListTitle === targetListTitle && sourceKey === targetKey) {
                 setDraggingItem(null);
                 setDropTarget(null);
                 return;
@@ -328,28 +332,42 @@ function ListSection({
 
             setEpWorkflowjson((prevJson) => {
                 const data = JSON.parse(prevJson);
-                const facultyIndex = data.findIndex((item) => item.ruolo?.nome === roleName);
-                if (facultyIndex === -1) {
-                    console.error('Faculty not found:', roleName);
-                    return prevJson;
-                }
-                const listIndex = data[facultyIndex].liste?.findIndex((list) => list.title === listTitle);
-                if (listIndex === -1) {
-                    console.error('List not found:', listTitle);
-                    return prevJson;
-                }
-                const listArray = [...(data[facultyIndex].liste[listIndex].listArray || [])];
-                const oldIndex = listArray.findIndex((item) => item.key === sourceKey);
-                const newIndex = listArray.findIndex((item) => item.key === targetKey);
+                const sourceFacultyIndex = data.findIndex((item) => item.ruolo?.nome === sourceFacultyName);
+                const targetFacultyIndex = data.findIndex((item) => item.ruolo?.nome === targetRoleName);
 
-                if (oldIndex === -1 || newIndex === -1) {
-                    console.error('Item not found:', { sourceKey, targetKey });
+                if (sourceFacultyIndex === -1 || targetFacultyIndex === -1) {
+                    console.error('Faculty not found:', { sourceFacultyName, targetRoleName });
                     return prevJson;
                 }
 
-                const [movedItem] = listArray.splice(oldIndex, 1);
-                listArray.splice(newIndex, 0, movedItem);
-                data[facultyIndex].liste[listIndex].listArray = listArray;
+                const sourceListIndex = data[sourceFacultyIndex].liste?.findIndex((list) => list.title === sourceListTitle);
+                const targetListIndex = data[targetFacultyIndex].liste?.findIndex((list) => list.title === targetListTitle);
+
+                if (sourceListIndex === -1 || targetListIndex === -1) {
+                    console.error('List not found:', { sourceListTitle, targetListTitle });
+                    return prevJson;
+                }
+
+                const sourceListArray = [...(data[sourceFacultyIndex].liste[sourceListIndex].listArray || [])];
+                const sourceIndex = sourceListArray.findIndex((item) => item.key === sourceKey);
+
+                if (sourceIndex === -1) {
+                    console.error('Source item not found:', sourceKey);
+                    return prevJson;
+                }
+
+                const [movedItem] = sourceListArray.splice(sourceIndex, 1);
+                data[sourceFacultyIndex].liste[sourceListIndex].listArray = sourceListArray;
+
+                const targetListArray = [...(data[targetFacultyIndex].liste[targetListIndex].listArray || [])];
+                const targetIndex = targetListArray.findIndex((item) => item.key === targetKey);
+
+                if (targetIndex === -1) {
+                    targetListArray.push(movedItem);
+                } else {
+                    targetListArray.splice(targetIndex, 0, movedItem);
+                }
+                data[targetFacultyIndex].liste[targetListIndex].listArray = targetListArray;
 
                 return JSON.stringify(data);
             });
@@ -360,6 +378,32 @@ function ListSection({
         setDropTarget(null);
     };
 
+    useEffect(() => {
+        const AllList = []
+        MainData.forEach(item => {
+            if (item.ruolo && item.ruolo.key !== element?.ruolo?.key) {
+                // Extract list keys from liste[].listArray[].key
+                if (item.liste && Array.isArray(item.liste)) {
+                    item.liste.forEach(list => {
+                        if (list.listArray && Array.isArray(list.listArray)) {
+                            list.listArray.forEach(listItem => {
+                                if (listItem.key) {
+                                    AllList.push(listItem.key);
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        })
+        setListKeys(AllList)
+    }, [MainData])
+
+    const renderTooltip = (props) => (
+        <Tooltip id="button-tooltip" {...props}>
+            La Key non è univoca! Viene usata più volte.
+        </Tooltip>
+    );
     return (
         <div className="d-flex flex-column gap-2 column">
             <div className='d-flex justify-content-center align-item-center'>
@@ -368,13 +412,13 @@ function ListSection({
             </div>
             {liste?.map((listeItem) => (
                 <div
-                    className={`d-flex flex-column mx-1 liste ${dropTarget?.type === 'listGroup' && dropTarget?.listTitle === listeItem.title ? 'drop-target' : ''}`}
+                    className={`d-flex flex-column mx-1 liste ${dropTarget?.type === 'listGroup' && dropTarget?.listTitle === listeItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                     key={listeItem.title}
                     draggable={isEditMode}
                     onDragStart={(e) => handleListDragStart(e, listeItem.title)}
-                    onDragOver={(e) => handleListDragOver(e, listeItem.title)}
+                    onDragOver={(e) => handleListDragOver(e, listeItem.title, roleName)}
                     onDragLeave={handleListDragLeave}
-                    onDrop={(e) => handleListDrop(e, listeItem.title)}
+                    onDrop={(e) => handleListDrop(e, listeItem.title, roleName)}
                 >
                     <div className="listeItemTitle">
                         <div className='d-flex align-items-center gap-2'>
@@ -416,20 +460,21 @@ function ListSection({
                         </div>
                     </div>
                     <div className="listGroup">
-                        {listeItem?.listArray?.map((listArrayItem) => (
-                            <div
+                        {listeItem?.listArray?.map((listArrayItem) => {
+                            const isDuplicateList = listKeys?.includes(listArrayItem?.key)
+                            return <div
                                 key={listArrayItem.key}
                                 ref={(el) => (refsMap.current[listArrayItem.key] = el)}
                                 id={listArrayItem?.key}
-                                className={`listeArrayItem ${dropTarget?.type === 'list' && dropTarget?.itemKey === listArrayItem.key && dropTarget?.listTitle === listeItem.title ? 'drop-target' : ''}`}
+                                className={`listeArrayItem ${dropTarget?.type === 'list' && dropTarget?.itemKey === listArrayItem.key && dropTarget?.listTitle === listeItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                                 onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
                                 onMouseLeave={() => handleMouseLeave(listArrayItem?.key)}
                                 onClick={() => handleListItemClick(listArrayItem?.key, listeItem.title)}
                                 draggable={isEditMode}
                                 onDragStart={(e) => handleListItemDragStart(e, listeItem.title, listArrayItem.key)}
-                                onDragOver={(e) => handleListItemDragOver(e, listeItem.title, listArrayItem.key)}
+                                onDragOver={(e) => handleListItemDragOver(e, listeItem.title, listArrayItem.key, roleName)}
                                 onDragLeave={handleListItemDragLeave}
-                                onDrop={(e) => handleListItemDrop(e, listeItem.title, listArrayItem.key)}
+                                onDrop={(e) => handleListItemDrop(e, listeItem.title, listArrayItem.key, roleName)}
                                 style={{
                                     backgroundColor: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
                                     color: selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '',
@@ -445,7 +490,7 @@ function ListSection({
                                                 <span className='vr-line'></span>
                                             </>
                                         )}
-                                        <span>{listArrayItem?.title}</span>
+                                        <span className='d-flex align-items-center gap-1'>{(isEditMode && isDuplicateList) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}{listArrayItem?.title}</span>
                                     </div>
                                     <div className="d-flex align-items-center justify-content-center mx-2">
                                         {isEditMode && <Dropdown>
@@ -477,7 +522,7 @@ function ListSection({
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        })}
                         {isEditMode && <span className='listeArrayItem' style={{ width: 'fit-content', padding: '6px 12px', cursor: 'pointer' }} onClick={() => openListItemModal(roleName, listeItem.title)}>
                             <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
                         </span>}

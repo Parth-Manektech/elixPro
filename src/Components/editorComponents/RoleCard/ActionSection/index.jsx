@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewOpenEyeIcon, ViewClosedEyeIcon, GamePadIcon, ArrowMove, ThreeDotsIcon, PlusIcon } from '../../../../Assets/SVGs';
 import { toggleActionVisibility } from '../../ViewComponentUtility';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import CloneActionModal from '../../Modals/CloneActionModal';
 import DeleteActionModal from '../../Modals/DeleteActionModal';
 import CloneActionItemModal from '../../Modals/CloneActionItemModal';
@@ -29,7 +29,8 @@ function ActionSection({
     setSelectedElement,
     clearLeaderLines,
     createLeaderLine,
-    leaderLinesRef
+    leaderLinesRef,
+    element
 }) {
     const [cloneActionModalShow, setCloneActionModalShow] = useState(false);
     const [deleteActionModalShow, setDeleteActionModalShow] = useState(false);
@@ -41,14 +42,14 @@ function ActionSection({
     const [actionItemToDelete, setActionItemToDelete] = useState(null);
     const [actionTitleForItem, setActionTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
+    const [actionkeys, setActionKeys] = useState([])
+
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
     const updateLeaderLines = () => {
         leaderLinesRef.current.forEach(line => line.position());
     };
 
-    // Update handleActionMouseHover
-    // Replace handleActionMouseHover
     const handleActionMouseHover = (actionKey) => {
         setHoveredAction({ role: roleName, actionKey });
         setHoveredStatus(null);
@@ -115,25 +116,23 @@ function ActionSection({
             }
         }
 
-        // Redraw selected element arrows with visibility check
         if (selectedElement) {
             drawSelectedElementArrows(
                 selectedElement,
                 MainData,
                 createLeaderLine,
                 containerRef,
-                refsMap // Pass refsMap
+                refsMap
             );
         }
     };
-    // Update handleMouseLeave
+
     const handleMouseLeave = (actionKey) => {
         if (!refsMap.current[actionKey]) return;
         setHoveredStatus(null);
         setHoveredAction(null);
         clearLeaderLines();
 
-        // Redraw selected element arrows
         if (selectedElement) {
             drawSelectedElementArrows(
                 selectedElement,
@@ -143,9 +142,6 @@ function ActionSection({
             );
         }
     };
-
-    // Update handleActionItemClick
-    // Replace handleActionItemClick
 
     const handleActionItemClick = (actionKey, actionTitle) => {
         const newSelectedElement = { type: 'action', roleName, actionTitle, itemKey: actionKey };
@@ -226,7 +222,6 @@ function ActionSection({
         }
     };
 
-    // Replace useEffect
     useEffect(() => {
         const container = containerRef.current;
         const updateLeaderLines = () => {
@@ -237,15 +232,13 @@ function ActionSection({
             container.addEventListener('scroll', updateLeaderLines);
         }
 
-        // Redraw arrows when selectedElement changes
         if (selectedElement?.type === 'action' && selectedElement.roleName === roleName) {
-            // Removed: clearLeaderLines();
             drawSelectedElementArrows(
                 selectedElement,
                 MainData,
                 createLeaderLine,
                 containerRef,
-                refsMap // Pass refsMap
+                refsMap
             );
         }
 
@@ -256,23 +249,21 @@ function ActionSection({
         };
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
-
-
     const handleActionDragStart = (e, actionTitle) => {
         if (!isEditMode) {
             e.preventDefault();
             return;
         }
         setDraggingItem({ type: 'actionGroup', facultyName: roleName, actionTitle });
-        e.dataTransfer.setData('text/plain', JSON.stringify({ actionTitle, facultyName: roleName }));
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'actionGroup', actionTitle, facultyName: roleName }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
     };
 
-    const handleActionDragOver = (e, actionTitle) => {
+    const handleActionDragOver = (e, actionTitle, targetRoleName) => {
         e.preventDefault();
-        if (draggingItem?.type === 'actionGroup' && draggingItem?.facultyName === roleName) {
-            setDropTarget({ type: 'actionGroup', actionTitle });
+        if (draggingItem?.type === 'actionGroup') {
+            setDropTarget({ type: 'actionGroup', actionTitle, roleName: targetRoleName });
         }
     };
 
@@ -280,10 +271,10 @@ function ActionSection({
         setDropTarget(null);
     };
 
-    const handleActionDrop = (e, targetActionTitle) => {
+    const handleActionDrop = (e, targetActionTitle, targetRoleName) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!draggingItem || draggingItem.type !== 'actionGroup' || draggingItem.facultyName !== roleName) {
+        if (!draggingItem || draggingItem.type !== 'actionGroup') {
             setDraggingItem(null);
             setDropTarget(null);
             return;
@@ -292,8 +283,9 @@ function ActionSection({
         try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const sourceActionTitle = data.actionTitle;
+            const sourceFacultyName = data.facultyName;
 
-            if (sourceActionTitle === targetActionTitle) {
+            if (sourceFacultyName === targetRoleName && sourceActionTitle === targetActionTitle) {
                 setDraggingItem(null);
                 setDropTarget(null);
                 return;
@@ -301,24 +293,34 @@ function ActionSection({
 
             setEpWorkflowjson((prevJson) => {
                 const data = JSON.parse(prevJson);
-                const facultyIndex = data.findIndex((item) => item.ruolo?.nome === roleName);
-                if (facultyIndex === -1) {
-                    console.error('Faculty not found:', roleName);
+                const sourceFacultyIndex = data.findIndex((item) => item.ruolo?.nome === sourceFacultyName);
+                const targetFacultyIndex = data.findIndex((item) => item.ruolo?.nome === targetRoleName);
+
+                if (sourceFacultyIndex === -1 || targetFacultyIndex === -1) {
+                    console.error('Faculty not found:', { sourceFacultyName, targetRoleName });
                     return prevJson;
                 }
 
-                const actionArray = [...(data[facultyIndex].azioni || [])];
-                const sourceIndex = actionArray.findIndex((action) => action.title === sourceActionTitle);
-                const targetIndex = actionArray.findIndex((action) => action.title === targetActionTitle);
+                const sourceActionArray = [...(data[sourceFacultyIndex].azioni || [])];
+                const sourceIndex = sourceActionArray.findIndex((action) => action.title === sourceActionTitle);
 
-                if (sourceIndex === -1 || targetIndex === -1) {
-                    console.error('Action not found:', { sourceActionTitle, targetActionTitle });
+                if (sourceIndex === -1) {
+                    console.error('Source action not found:', sourceActionTitle);
                     return prevJson;
                 }
 
-                const [movedAction] = actionArray.splice(sourceIndex, 1);
-                actionArray.splice(targetIndex, 0, movedAction);
-                data[facultyIndex].azioni = actionArray;
+                const [movedAction] = sourceActionArray.splice(sourceIndex, 1);
+                data[sourceFacultyIndex].azioni = sourceActionArray;
+
+                const targetActionArray = [...(data[targetFacultyIndex].azioni || [])];
+                const targetIndex = targetActionArray.findIndex((action) => action.title === targetActionTitle);
+
+                if (targetIndex === -1) {
+                    targetActionArray.push(movedAction);
+                } else {
+                    targetActionArray.splice(targetIndex, 0, movedAction);
+                }
+                data[targetFacultyIndex].azioni = targetActionArray;
 
                 return JSON.stringify(data);
             });
@@ -335,15 +337,15 @@ function ActionSection({
             return;
         }
         setDraggingItem({ type: 'action', facultyName: roleName, actionTitle, itemKey });
-        e.dataTransfer.setData('text/plain', JSON.stringify({ itemKey, facultyName: roleName, actionTitle }));
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'action', itemKey, facultyName: roleName, actionTitle }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
     };
 
-    const handleActionItemDragOver = (e, actionTitle, itemKey) => {
+    const handleActionItemDragOver = (e, actionTitle, itemKey, targetRoleName) => {
         e.preventDefault();
-        if (draggingItem?.type === 'action' && draggingItem?.facultyName === roleName && draggingItem?.actionTitle === actionTitle) {
-            setDropTarget({ type: 'action', actionTitle, itemKey });
+        if (draggingItem?.type === 'action') {
+            setDropTarget({ type: 'action', actionTitle, itemKey, roleName: targetRoleName });
         }
     };
 
@@ -351,10 +353,10 @@ function ActionSection({
         setDropTarget(null);
     };
 
-    const handleActionItemDrop = (e, actionTitle, targetKey) => {
+    const handleActionItemDrop = (e, targetActionTitle, targetKey, targetRoleName) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!draggingItem || draggingItem.type !== 'action' || draggingItem.facultyName !== roleName || draggingItem.actionTitle !== actionTitle) {
+        if (!draggingItem || draggingItem.type !== 'action') {
             setDraggingItem(null);
             setDropTarget(null);
             return;
@@ -363,8 +365,10 @@ function ActionSection({
         try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const sourceKey = data.itemKey;
+            const sourceFacultyName = data.facultyName;
+            const sourceActionTitle = data.actionTitle;
 
-            if (sourceKey === targetKey) {
+            if (sourceFacultyName === targetRoleName && sourceActionTitle === targetActionTitle && sourceKey === targetKey) {
                 setDraggingItem(null);
                 setDropTarget(null);
                 return;
@@ -372,28 +376,42 @@ function ActionSection({
 
             setEpWorkflowjson((prevJson) => {
                 const data = JSON.parse(prevJson);
-                const facultyIndex = data.findIndex((item) => item.ruolo?.nome === roleName);
-                if (facultyIndex === -1) {
-                    console.error('Faculty not found:', roleName);
-                    return prevJson;
-                }
-                const actionIndex = data[facultyIndex].azioni?.findIndex((action) => action.title === actionTitle);
-                if (actionIndex === -1) {
-                    console.error('Action not found:', actionTitle);
-                    return prevJson;
-                }
-                const actionArray = [...(data[facultyIndex].azioni[actionIndex].listArray || [])];
-                const oldIndex = actionArray.findIndex((item) => item.key === sourceKey);
-                const newIndex = actionArray.findIndex((item) => item.key === targetKey);
+                const sourceFacultyIndex = data.findIndex((item) => item.ruolo?.nome === sourceFacultyName);
+                const targetFacultyIndex = data.findIndex((item) => item.ruolo?.nome === targetRoleName);
 
-                if (oldIndex === -1 || newIndex === -1) {
-                    console.error('Item not found:', { sourceKey, targetKey });
+                if (sourceFacultyIndex === -1 || targetFacultyIndex === -1) {
+                    console.error('Faculty not found:', { sourceFacultyName, targetRoleName });
                     return prevJson;
                 }
 
-                const [movedItem] = actionArray.splice(oldIndex, 1);
-                actionArray.splice(newIndex, 0, movedItem);
-                data[facultyIndex].azioni[actionIndex].listArray = actionArray;
+                const sourceActionIndex = data[sourceFacultyIndex].azioni?.findIndex((action) => action.title === sourceActionTitle);
+                const targetActionIndex = data[targetFacultyIndex].azioni?.findIndex((action) => action.title === targetActionTitle);
+
+                if (sourceActionIndex === -1 || targetActionIndex === -1) {
+                    console.error('Action not found:', { sourceActionTitle, targetActionTitle });
+                    return prevJson;
+                }
+
+                const sourceActionArray = [...(data[sourceFacultyIndex].azioni[sourceActionIndex].listArray || [])];
+                const sourceIndex = sourceActionArray.findIndex((item) => item.key === sourceKey);
+
+                if (sourceIndex === -1) {
+                    console.error('Source item not found:', sourceKey);
+                    return prevJson;
+                }
+
+                const [movedItem] = sourceActionArray.splice(sourceIndex, 1);
+                data[sourceFacultyIndex].azioni[sourceActionIndex].listArray = sourceActionArray;
+
+                const targetActionArray = [...(data[targetFacultyIndex].azioni[targetActionIndex].listArray || [])];
+                const targetIndex = targetActionArray.findIndex((item) => item.key === targetKey);
+
+                if (targetIndex === -1) {
+                    targetActionArray.push(movedItem);
+                } else {
+                    targetActionArray.splice(targetIndex, 0, movedItem);
+                }
+                data[targetFacultyIndex].azioni[targetActionIndex].listArray = targetActionArray;
 
                 return JSON.stringify(data);
             });
@@ -404,22 +422,47 @@ function ActionSection({
         setDropTarget(null);
     };
 
+    useEffect(() => {
+        const Allaction = [];
+        MainData.forEach(item => {
+            if (item.ruolo && item.ruolo.key !== element?.ruolo?.key) {
+                // Extract action keys from azioni[].listArray[].key
+                if (item.azioni && Array.isArray(item.azioni)) {
+                    item.azioni.forEach(action => {
+                        if (action.listArray && Array.isArray(action.listArray)) {
+                            action.listArray.forEach(actionItem => {
+                                if (actionItem.key) {
+                                    Allaction.push(actionItem.key);
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        })
+        setActionKeys(Allaction)
+    }, [MainData])
+
+    const renderTooltip = (props) => (
+        <Tooltip id="button-tooltip" {...props}>
+            La Key non è univoca! Viene usata più volte.
+        </Tooltip>
+    );
     return (
         <div className="d-flex flex-column gap-2 column">
             <div className='d-flex justify-content-center align-item-center'>
                 <GamePadIcon height={20} width={20} fill='#6c757d' className='d-flex justify-content-center align-item-center me-1' />
                 <span style={{ color: '#6c757d', margin: "-4px 0 0 0" }}>AZIONI</span>
             </div>
-
             {azioni?.map((azioniItem) => (
                 <div
-                    className={`d-flex flex-column azioni ${dropTarget?.type === 'actionGroup' && dropTarget?.actionTitle === azioniItem.title ? 'drop-target' : ''}`}
+                    className={`d-flex flex-column azioni ${dropTarget?.type === 'actionGroup' && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                     key={azioniItem.title}
                     draggable={isEditMode}
                     onDragStart={(e) => handleActionDragStart(e, azioniItem.title)}
-                    onDragOver={(e) => handleActionDragOver(e, azioniItem.title)}
+                    onDragOver={(e) => handleActionDragOver(e, azioniItem.title, roleName)}
                     onDragLeave={handleActionDragLeave}
-                    onDrop={(e) => handleActionDrop(e, azioniItem.title)}
+                    onDrop={(e) => handleActionDrop(e, azioniItem.title, roleName)}
                 >
                     <div className="azioniItemTitle">
                         <div className='d-flex align-items-center gap-2'>
@@ -463,20 +506,21 @@ function ActionSection({
                     <div className="actiongroup">
                         {azioniItem?.listArray?.map((item) => {
                             const isAssociated = shownStatus && associatedActions[item.key];
+                            const isDuplicateAction = actionkeys?.includes(item?.key)
                             return (
                                 <div
                                     key={item.key}
                                     id={item.key}
                                     ref={(el) => (refsMap.current[item.key] = el)}
-                                    className={`azioniArrayItem ${dropTarget?.type === 'action' && dropTarget?.itemKey === item.key && dropTarget?.actionTitle === azioniItem.title ? 'drop-target' : ''}`}
+                                    className={`azioniArrayItem ${dropTarget?.type === 'action' && dropTarget?.itemKey === item.key && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                                     onMouseEnter={() => handleActionMouseHover(item.key)}
                                     onMouseLeave={() => handleMouseLeave(item.key)}
                                     onClick={() => handleActionItemClick(item.key, azioniItem.title)}
                                     draggable={isEditMode}
                                     onDragStart={(e) => handleActionItemDragStart(e, azioniItem.title, item.key)}
-                                    onDragOver={(e) => handleActionItemDragOver(e, azioniItem.title, item.key)}
+                                    onDragOver={(e) => handleActionItemDragOver(e, azioniItem.title, item.key, roleName)}
                                     onDragLeave={handleActionItemDragLeave}
-                                    onDrop={(e) => handleActionItemDrop(e, azioniItem.title, item.key)}
+                                    onDrop={(e) => handleActionItemDrop(e, azioniItem.title, item.key, roleName)}
                                     style={{
                                         backgroundColor: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
                                         color: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '',
@@ -493,7 +537,8 @@ function ActionSection({
                                                     <span className='vr-line'></span>
                                                 </>
                                             )}
-                                            <span>{item?.title}</span>
+
+                                            <span className='d-flex align-items-center gap-1'>{(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}{item?.title}</span>
                                             {(isEditMode && selectedElement?.type === 'status' && selectedElement.roleName === roleName) && (
                                                 <>
                                                     <div className="enable-action-for-status-checkbox" title="Abilita/disabilita azione per lo stato attivo" onClick={(e) => { e.stopPropagation(); }} >
@@ -539,18 +584,13 @@ function ActionSection({
                         </span>}
                     </div>
                 </div>
-            ))
-            }
-
-            {
-                isEditMode && <div
-                    className="liste text-center"
-                    onClick={() => openTitleItemModal(roleName, 'azioni')}
-                >
-                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
-                </div>
-            }
-
+            ))}
+            {isEditMode && <div
+                className="liste text-center"
+                onClick={() => openTitleItemModal(roleName, 'azioni')}
+            >
+                <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
+            </div>}
             <CloneActionModal
                 show={cloneActionModalShow}
                 handleClose={() => {
@@ -563,7 +603,6 @@ function ActionSection({
                 setEpWorkflowjson={setEpWorkflowjson}
                 updateCanvasSize={() => { }}
             />
-
             <DeleteActionModal
                 show={deleteActionModalShow}
                 handleClose={() => {
@@ -576,7 +615,6 @@ function ActionSection({
                 setEpWorkflowjson={setEpWorkflowjson}
                 updateCanvasSize={() => { }}
             />
-
             <CloneActionItemModal
                 show={cloneActionItemModalShow}
                 handleClose={() => {
@@ -591,7 +629,6 @@ function ActionSection({
                 setEpWorkflowjson={setEpWorkflowjson}
                 updateCanvasSize={() => { }}
             />
-
             <DeleteActionItemModal
                 show={deleteActionItemModalShow}
                 handleClose={() => {
@@ -606,7 +643,7 @@ function ActionSection({
                 setEpWorkflowjson={setEpWorkflowjson}
                 updateCanvasSize={() => { }}
             />
-        </div >
+        </div>
     );
 }
 
