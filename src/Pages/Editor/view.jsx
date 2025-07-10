@@ -173,7 +173,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                     ...updatedRole,
                     ruolo: {
                         ...role.ruolo,
-                        colore: '#00ccff',
+                        colore: '#343a40',
                     },
                 };
             }
@@ -417,55 +417,56 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                         position: 'relative',
                         transform: `scale(${zoomLevel})`,
                         transformOrigin: 'top left',
-                        width: `${100 / zoomLevel}%`,
-                        height: `${100 / zoomLevel}%`,
+                        width: `${250 / zoomLevel}%`,
+                        height: `${280 / zoomLevel}%`,
                     }}
                 >
                     {MainData?.map((element) =>
                         element?.ruolo && visibleRoles[element.ruolo.nome] ? (
-                            !collapsedRoles.includes(element.ruolo.key) && (<RoleCard
-                                key={element.ruolo.nome}
-                                element={element}
-                                visibleRoles={visibleRoles}
-                                shownStatuses={shownStatuses}
-                                setShownStatuses={setShownStatuses}
-                                associatedActions={
-                                    shownStatuses[element.ruolo.nome] ? element.pulsantiAttivi?.[shownStatuses[element.ruolo.nome]] || {} : {}
-                                }
-                                collapsedCards={collapsedCards}
-                                draggingItem={draggingItem}
-                                setDraggingItem={setDraggingItem}
-                                setEpWorkflowjson={setEpWorkflowjson}
-                                MainData={MainData}
-                                openRoleModal={openRoleModal}
-                                handleCloneRole={handleCloneRole}
-                                setRoleToDelete={setRoleToDelete}
-                                setRoleDeleteConfirmation={setRoleDeleteConfirmation}
-                                setCollapsedCards={setCollapsedCards}
-                                openListItemModal={openListItemModal}
-                                openActionItemModal={openActionItemModal}
-                                openStatusItemModal={openStatusItemModal}
-                                openTitleItemModal={openTitleItemModal}
-                                drawConnections={drawConnections}
-                                setHoveredStatus={setHoveredStatus}
-                                setHoveredAction={setHoveredAction}
-                                refsMap={refsMap}
-                                dropdownToggleRefs={dropdownToggleRefs}
-                                hoveredStatus={hoveredStatus}
-                                hoveredAction={hoveredAction}
-                                updateCanvasSize={updateCanvasSize}
-                                zoomLevel={zoomLevel}
-                                containerRef={containerRef}
-                                isEditMode={isEditMode}
-                                setSelectedElement={setSelectedElement}
-                                selectedElement={selectedElement}
-                                clearLeaderLines={clearLeaderLines}
-                                createLeaderLine={createLeaderLine}
-                                leaderLinesRef={leaderLinesRef}
-                                onCollapse={handleCollapseCard}
-                                duplicateCount={duplicateCount}
-                                setDuplicateCount={setDuplicateCount}
-                            />)
+                            !collapsedRoles.includes(element.ruolo.key) && (
+                                <RoleCard
+                                    key={element.ruolo.nome}
+                                    element={element}
+                                    visibleRoles={visibleRoles}
+                                    shownStatuses={shownStatuses}
+                                    setShownStatuses={setShownStatuses}
+                                    associatedActions={
+                                        shownStatuses[element.ruolo.nome] ? element.pulsantiAttivi?.[shownStatuses[element.ruolo.nome]] || {} : {}
+                                    }
+                                    collapsedCards={collapsedCards}
+                                    draggingItem={draggingItem}
+                                    setDraggingItem={setDraggingItem}
+                                    setEpWorkflowjson={setEpWorkflowjson}
+                                    MainData={MainData}
+                                    openRoleModal={openRoleModal}
+                                    handleCloneRole={handleCloneRole}
+                                    setRoleToDelete={setRoleToDelete}
+                                    setRoleDeleteConfirmation={setRoleDeleteConfirmation}
+                                    setCollapsedCards={setCollapsedCards}
+                                    openListItemModal={openListItemModal}
+                                    openActionItemModal={openActionItemModal}
+                                    openStatusItemModal={openStatusItemModal}
+                                    openTitleItemModal={openTitleItemModal}
+                                    drawConnections={drawConnections}
+                                    setHoveredStatus={setHoveredStatus}
+                                    setHoveredAction={setHoveredAction}
+                                    refsMap={refsMap}
+                                    dropdownToggleRefs={dropdownToggleRefs}
+                                    hoveredStatus={hoveredStatus}
+                                    hoveredAction={hoveredAction}
+                                    updateCanvasSize={updateCanvasSize}
+                                    zoomLevel={zoomLevel}
+                                    containerRef={containerRef}
+                                    isEditMode={isEditMode}
+                                    setSelectedElement={setSelectedElement}
+                                    selectedElement={selectedElement}
+                                    clearLeaderLines={clearLeaderLines}
+                                    createLeaderLine={createLeaderLine}
+                                    leaderLinesRef={leaderLinesRef}
+                                    onCollapse={handleCollapseCard}
+                                    duplicateCount={duplicateCount}
+                                    setDuplicateCount={setDuplicateCount}
+                                />)
                         ) : null
                     )}
 

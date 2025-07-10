@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, Dropdown } from 'react-bootstrap';
 import { CardResizer, ArrowMove, ChevronDown, ChevronUp, ThreeDotsIcon } from '../../../Assets/SVGs';
 
@@ -53,6 +53,7 @@ function RoleCard({
     const dragStartPosRef = useRef({ x: 0, y: 0 });
     const resizingRoleRef = useRef(null);
     const originalPositionsRef = useRef({});
+    const [contrastColor, setContrastColor] = useState("")
 
     const handleCollapseClick = () => {
         onCollapse(element?.ruolo);
@@ -97,6 +98,8 @@ function RoleCard({
 
         let newTop = Math.max(0, parseInt(currentLayout.top) + deltaY);
         let newLeft = Math.max(0, parseInt(currentLayout.left) + deltaX);
+        let newWidth = currentLayout.width;
+        let newHeight = currentLayout.height;
 
         updatedData[roleIndex].layout = {
             ...currentLayout,
@@ -105,7 +108,10 @@ function RoleCard({
         };
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
+        updateCanvasSize({
+            top: newTop + newHeight + 100,
+            left: newLeft + newWidth + 100,
+        });
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
     };
 
@@ -224,12 +230,25 @@ function RoleCard({
         resizingRoleRef.current = null;
         updateCanvasSize();
     };
-
-
+    useEffect(() => {
+        function isColorLight(hexColor) {
+            const hex = hexColor.replace("#", "");
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+            return luminance > 140;
+        }
+        const isLight = isColorLight(element.ruolo?.colore ? element.ruolo?.colore : "#343a40");
+        if (isLight) {
+            setContrastColor("#212529")
+        } else {
+            setContrastColor("#f8f9fa")
+        }
+    }, [MainData])
     return (
         <div
             key={roleName}
-
             className="mb-3 d-flex justify-content-between flex-wrap Editor_Card"
             style={{
                 position: 'absolute',
@@ -245,7 +264,7 @@ function RoleCard({
                 <Card.Header
                     style={{
                         position: 'relative',
-                        backgroundColor: element.ruolo?.colore || '#6f42c1',
+                        backgroundColor: element.ruolo?.colore || '#343a40',
                     }}
                     className='d-flex align-items-center justify-content-between'
                 >
@@ -257,10 +276,10 @@ function RoleCard({
                             onDragEnd={handleRoleCardDrop}
                             onDragOver={handleRoleCardDragOver}
                         >
-                            <ArrowMove width={25} height={25} />
+                            <ArrowMove width={25} height={25} fill={contrastColor} />
                         </span>
-                        <span className='vr-line' style={{ backgroundColor: '#212529' }}></span>
-                        <span>
+                        <span className='vr-line' style={{ backgroundColor: contrastColor }}></span>
+                        <span style={{ color: contrastColor }}>
                             {element.ruolo.nome}
                         </span>
                         <span
@@ -272,7 +291,7 @@ function RoleCard({
                                 });
                             }}
                         >
-                            {collapsedCards[roleName] ? <ChevronDown height={20} width={20} /> : <ChevronUp height={20} width={20} />}
+                            {collapsedCards[roleName] ? <ChevronDown height={20} width={20} fill={contrastColor} /> : <ChevronUp height={20} width={20} fill={contrastColor} />}
                         </span>
                     </div>
 
@@ -282,7 +301,7 @@ function RoleCard({
                         <span
                             onClick={handleCollapseClick}
                         >
-                            <i className="bi bi-arrows-angle-contract"></i>
+                            <i className="bi bi-arrows-angle-contract" style={{ color: contrastColor }}></i>
                         </span>
                         {isEditMode && <input
                             type="color"
@@ -307,7 +326,7 @@ function RoleCard({
 
                         {isEditMode && <Dropdown>
                             <Dropdown.Toggle className="role_menu" ref={(el) => (dropdownToggleRefs.current[roleName] = el)}>
-                                <ThreeDotsIcon className='mb-1' height={20} width={20} />
+                                <ThreeDotsIcon fill={contrastColor} className='mb-1' height={20} width={20} />
                             </Dropdown.Toggle>
                             <Dropdown.Menu className='darshan'>
                                 <Dropdown.Item

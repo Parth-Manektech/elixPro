@@ -63,9 +63,21 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                 descrizione: data.descrizione.trim() || "",
                 listaDefault: data.listaDefault.trim() || "list__starter",
                 key: data.key.trim(),
-                colore: initialData?.colore || "#8ba6c1"
+                colore: initialData?.colore || "#343a40"
             },
-            liste: [],
+            liste: [
+                {
+                    "listArray": [
+                        {
+                            "key": "list__starter",
+                            "title": "Lista starter (da rinominare)",
+                            "type": "button",
+                            "isDetailAllowed": "false"
+                        }
+                    ],
+                    "title": "Categoria starter (da rinominare)"
+                }
+            ],
             azioni: [],
             pulsantiAttivi: {},
             sezioni: "",
