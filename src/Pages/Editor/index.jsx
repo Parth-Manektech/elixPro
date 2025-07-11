@@ -237,7 +237,7 @@ const Editor = () => {
         const FlowJson = JSON.stringify(ePWorkFlowJson);
 
         setEpWorkflowjson(FlowJson);
-        localStorage.setItem("ePWorkFlow", ePWorkFlowJson)
+        localStorage.setItem("ePWorkFlow", FlowJson)
         const FinalNormalJson = prettyFormat(sData?.Json, 'json');
         const FinalconfigJSJson = prettyFormat(sData?.configJavascript, 'js');
         const FinalnotifyJSJson = prettyFormat(sData?.notifyJavascript, 'js');
