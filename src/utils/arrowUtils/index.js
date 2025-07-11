@@ -86,38 +86,44 @@ export const drawSelectedElementArrows = (
                     containerRef
                 );
             }
-            wf.listeDestinazione.forEach((listId) => {
-                if (
-                    isElementVisible(selectedElement.itemKey) &&
-                    isElementVisible(listId)
-                ) {
-                    createLeaderLine(
-                        selectedElement.itemKey,
-                        listId,
-                        "rgba(41, 115, 147, 1)",
-                        "behind",
-                        "arrow2",
-                        true,
-                        containerRef
-                    );
-                }
-            });
-            wf.doNotlisteDestinazione.forEach((listId) => {
-                if (
-                    isElementVisible(selectedElement.itemKey) &&
-                    isElementVisible(listId)
-                ) {
-                    createLeaderLine(
-                        selectedElement.itemKey,
-                        listId,
-                        "rgba(202, 138, 4, 1)",
-                        "square",
-                        "square",
-                        true,
-                        containerRef
-                    );
-                }
-            });
+            if (wf.listeDestinazione) {
+                wf.listeDestinazione.forEach((listId) => {
+                    if (
+                        isElementVisible(selectedElement.itemKey) &&
+                        isElementVisible(listId)
+                    ) {
+                        createLeaderLine(
+                            selectedElement.itemKey,
+                            listId,
+                            "rgba(41, 115, 147, 1)",
+                            "behind",
+                            "arrow2",
+                            true,
+                            containerRef
+                        );
+                    }
+                });
+            }
+
+            if (wf.doNotlisteDestinazione) {
+                wf.doNotlisteDestinazione.forEach((listId) => {
+                    if (
+                        isElementVisible(selectedElement.itemKey) &&
+                        isElementVisible(listId)
+                    ) {
+                        createLeaderLine(
+                            selectedElement.itemKey,
+                            listId,
+                            "rgba(202, 138, 4, 1)",
+                            "square",
+                            "square",
+                            true,
+                            containerRef
+                        );
+                    }
+                });
+            }
+
         }
     }
 };
@@ -204,30 +210,35 @@ export const drawHoverArrows = (
                 );
                 if (line) leaderLinesRef.current.push({ line, type: "hover" });
             }
-            wf.listeDestinazione.forEach((listId) => {
-                const line = createLeaderLine(
-                    itemKey,
-                    listId,
-                    "rgba(41, 115, 147, 0.25)",
-                    "behind",
-                    "arrow2",
-                    false,
-                    containerRef
-                );
-                if (line) leaderLinesRef.current.push({ line, type: "hover" });
-            });
-            wf.doNotlisteDestinazione.forEach((listId) => {
-                const line = createLeaderLine(
-                    itemKey,
-                    listId,
-                    "rgba(202, 138, 4, 0.25)",
-                    "square",
-                    "square",
-                    false,
-                    containerRef
-                );
-                if (line) leaderLinesRef.current.push({ line, type: "hover" });
-            });
+            if (wf.listeDestinazione) {
+                wf.listeDestinazione.forEach((listId) => {
+                    const line = createLeaderLine(
+                        itemKey,
+                        listId,
+                        "rgba(41, 115, 147, 0.25)",
+                        "behind",
+                        "arrow2",
+                        false,
+                        containerRef
+                    );
+                    if (line) leaderLinesRef.current.push({ line, type: "hover" });
+                });
+            }
+            if (wf.doNotlisteDestinazione) {
+                wf.doNotlisteDestinazione.forEach((listId) => {
+                    const line = createLeaderLine(
+                        itemKey,
+                        listId,
+                        "rgba(202, 138, 4, 0.25)",
+                        "square",
+                        "square",
+                        false,
+                        containerRef
+                    );
+                    if (line) leaderLinesRef.current.push({ line, type: "hover" });
+                });
+            }
+
         }
     }
 };

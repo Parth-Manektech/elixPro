@@ -56,6 +56,14 @@ function StatusSection({
         return Array.from(allStatuses);
     };
 
+    const getStatusTitle = (statusKey) => {
+        const workflowIndex = MainData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
+        if (workflowIndex !== -1 && MainData[workflowIndex].ajWFStatiName?.[statusKey]) {
+            return MainData[workflowIndex].ajWFStatiName[statusKey].title;
+        }
+        return statusKey; // Fallback to key if title not found
+    };
+
     const handleStatusMouseHover = (statusItemKey) => {
         setHoveredStatus({ role: roleName, status: statusItemKey });
         setHoveredAction(null);
@@ -332,7 +340,7 @@ function StatusSection({
                                 )}
                                 <span className='d-flex align-items-center gap-1'>
                                     {(isEditMode && isDublicate) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
-                                    {StatusItem}
+                                    {getStatusTitle(StatusItem)}
                                 </span>
                             </div>
                             <div className="d-flex align-items-center justify-content-center mx-2">
@@ -379,7 +387,7 @@ function StatusSection({
                     onDragLeave={handleStatusDragLeave}
                     onDrop={(e) => handleStatusDrop(e, null, roleName, true)}
                 >
-                    <span className='StatusItemTitle text-center' style={{ width: 'fit-content', padding: '6px 12px' }}>
+                    <span className='StatusItemTitle text-center' style={{ width: 'fit-content', padding: '6px 12px' }} onClick={() => openStatusItemModal(roleName)}>
                         <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
                     </span>
                 </div>

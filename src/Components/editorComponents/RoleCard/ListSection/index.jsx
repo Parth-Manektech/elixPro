@@ -600,6 +600,7 @@ function ListSection({
                     }}
                     onDragLeave={handleListDragLeave}
                     onDrop={(e) => handleListDrop(e, null, roleName, true)}
+                    onClick={() => openTitleItemModal(roleName, 'liste')}
                 >
                     <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
                 </div>

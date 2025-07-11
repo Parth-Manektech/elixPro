@@ -109,7 +109,7 @@ const Editor = () => {
         formData.append("excelFile", data?.xlsFile);
         NewWorkFlow();
         try {
-            fetch("http://localhost:8080/elixPro/rest/generateJson", {
+            fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateJson", {
                 method: "POST",
                 body: formData,
             })
@@ -138,12 +138,12 @@ const Editor = () => {
         }
     }
 
-    // http://efapi601.extttt.ovh.anthesi.com:8080/
-    // httppp://localhost:8080/
+    // http://efapi601.ext.ovh.anthesi.com:8080/
+    // httppp://localllllhost:8080/
 
     const processAllCodeSegment = (ePWorkFlowJson) => {
         try {
-            fetch("http://localhost:8080/elixPro/rest/generateBaseCode", {
+            fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generateBaseCode", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
@@ -408,7 +408,7 @@ const Editor = () => {
 
     const DownloadFile = () => {
         const temp = JSON.parse(watch('ePWorkFlowJSONPreview'))
-        fetch("http://localhost:8080/elixPro/rest/download/excel", {
+        fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/download/excel", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -499,7 +499,7 @@ const Editor = () => {
 
     const generateEPWorkflow = (Json, Java, JS) => {
         setisLoading(true)
-        fetch("http://localhost:8080/elixPro/rest/generate/configToWorkflowJson", {
+        fetch("http://efapi601.ext.ovh.anthesi.com:8080/elixPro/rest/generate/configToWorkflowJson", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"

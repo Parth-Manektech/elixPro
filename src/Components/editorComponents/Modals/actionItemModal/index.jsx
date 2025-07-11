@@ -9,8 +9,9 @@ import CustomMultiSelect from "../../../CustomMultiSelect";
 
 
 const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
+    // console.log('initialData?.moveToList', initialData?.moveToList)
     const { control, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
-        defaultValues: { ...initialData, moveToList: initialData?.moveToList?.split(',').map(item => item.trim()), doNotMoveToList: initialData?.doNotMoveToList?.split(',').map(item => item.trim()) } || {
+        defaultValues: { ...initialData, moveToList: initialData?.moveToList?.length ? initialData?.moveToList?.split(',').map(item => item.trim()) : [], doNotMoveToList: initialData?.doNotMoveToList?.length ? initialData?.doNotMoveToList?.split(',').map(item => item.trim()) : [] } || {
             key: "",
             title: "",
             type: "button",
@@ -141,11 +142,8 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                 if (wf.keyAzione === oldKey) {
                     wf.keyAzione = newKey;
                 }
-                wf.listeDestinazione = wf.listeDestinazione.map(key => key === oldKey ? newKey : key);
-                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key);
-                if (wf.statoDestinazione === oldKey) {
-                    wf.statoDestinazione = newKey;
-                }
+                wf.listeDestinazione = wf.listeDestinazione ? wf.listeDestinazione.map(key => key === oldKey ? newKey : key) : wf.listeDestinazione;
+                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione ? wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key) : wf.doNotlisteDestinazione;
             });
 
             updatedData.forEach((faculty, index) => {
@@ -165,22 +163,22 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
         }
 
         const actionKey = data.key;
-        const moveToListKeys = data.moveToList ? data.moveToList.split(',').map(key => key.trim()).filter(key => key) : [];
-        // console.log('moveToListKeys', moveToListKeys)
-        const doNotMoveToListKeys = data.doNotMoveToList ? data.doNotMoveToList.split(',').map(key => key.trim()).filter(key => key) : [];
+
+        const moveToListKeys = data?.moveToList?.length ? data.moveToList.split(',').map(key => key.trim()).filter(key => key) : "";
+        const doNotMoveToListKeys = data.doNotMoveToList?.length ? data.doNotMoveToList.split(',').map(key => key.trim()).filter(key => key) : "";
 
         let workflowItemIndex = updatedData[workflowIndex].workflowmapping.findIndex((wf) => wf.keyAzione === actionKey);
         if (workflowItemIndex === -1) {
             updatedData[workflowIndex].workflowmapping.push({
                 keyAzione: actionKey,
                 behaviour: data.behaviourTag || '',
-                statoDestinazione: data.status || null,
+                statoDestinazione: data.status || '',
                 listeDestinazione: moveToListKeys,
                 doNotlisteDestinazione: doNotMoveToListKeys
             });
         } else {
             const existingWorkflow = updatedData[workflowIndex].workflowmapping[workflowItemIndex];
-            existingWorkflow.statoDestinazione = data.status || existingWorkflow.statoDestinazione || null;
+            existingWorkflow.statoDestinazione = data.status || '';
             existingWorkflow.listeDestinazione = moveToListKeys || [];
             existingWorkflow.doNotlisteDestinazione = doNotMoveToListKeys;
         }
@@ -192,7 +190,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
 
     useEffect(() => {
         if (initialData) {
-            reset({ ...initialData, moveToList: initialData?.moveToList?.split(',').map(item => item.trim()), doNotMoveToList: initialData?.doNotMoveToList?.split(',').map(item => item.trim()) });
+            reset({ ...initialData, moveToList: initialData?.moveToList?.length ? initialData?.moveToList?.split(',').map(item => item.trim()) : [], doNotMoveToList: initialData?.doNotMoveToList?.length ? initialData?.doNotMoveToList?.split(',').map(item => item.trim()) : [] });
         } else {
             reset({
                 key: "",
@@ -217,9 +215,9 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             key: data.key?.trim(),
             title: data.title?.trim(),
             type: data.type?.trim(),
-            moveToList: data?.moveToList?.join(', ') || "",
-            status: data.status?.trim(),
-            doNotMoveToList: data?.doNotMoveToList?.join(', ') || "",
+            moveToList: data?.moveToList?.join(', ') || [],
+            status: data.status?.trim() || '',
+            doNotMoveToList: data?.doNotMoveToList?.join(', ') || [],
             behaviourTag: data.behaviourTag?.trim(),
             config: data.config?.trim(),
             notifica: data.config?.trim(),
@@ -389,7 +387,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                                         fieldName="moveToList"
                                         placeholder="Seleziona la/e lista/e di destinazione"
                                         label="Sposta nella Lista"
-                                        rules={validationRulesmulti}
+                                        rules={{}}
                                     />
                                 </div>
                                 <div className="mb-2">
@@ -400,7 +398,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                                         fieldName="status"
                                         placeholder="Seleziona lo stato di destinazione"
                                         label="Sposta nello Stato"
-                                        rules={validationRules}
+                                        rules={{}}
                                     />
                                 </div>
 
@@ -412,7 +410,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                                         fieldName="doNotMoveToList"
                                         placeholder="Seleziona la/e lista/e dacui non spostare"
                                         label="Non spostare dalla Lista"
-                                        rules={validationRulesmulti}
+                                        rules={{}}
                                     />
                                 </div>
 

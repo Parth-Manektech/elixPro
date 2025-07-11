@@ -5,36 +5,41 @@ import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty, selectedStatusItem, setEpWorkflowjson, setSelectedStatusItem, setStatusItemModalShow, shownStatuses, setShownStatuses }) => {
-
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
-        defaultValues: initialData || { status: "" }
+        defaultValues: initialData || { status: "", title: "" }
     });
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
-
     useEffect(() => {
-        reset(initialData || { status: "" });
+        reset(initialData || { status: "", title: "" });
     }, [initialData, reset, show]);
 
     const handleAddStatusItem = (data) => {
         const updatedData = initializeWorkflowMapping([...MainData]);
         const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
-        const workflowIndex = updatedData.length - 1;
+        const workflowIndex = updatedData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
 
         // Ensure pulsantiAttivi exists
         if (!updatedData[facultyIndex].pulsantiAttivi) {
             updatedData[facultyIndex].pulsantiAttivi = {};
         }
 
+        // Ensure ajWFStatiName exists
+        if (!updatedData[workflowIndex].ajWFStatiName) {
+            updatedData[workflowIndex].ajWFStatiName = {};
+        }
+
         const newStatus = data.status.trim();
+        const newTitle = data.title.trim();
         const currentPulsanti = updatedData[facultyIndex].pulsantiAttivi;
+        const ajWFStatiName = updatedData[workflowIndex].ajWFStatiName;
 
         if (selectedStatusItem) {
             // Update existing status
             const oldStatus = selectedStatusItem;
             const oldValue = currentPulsanti[oldStatus] || {};
 
-            // Create a new object to maintain key order
+            // Update pulsantiAttivi
             const updatedPulsanti = {};
             Object.keys(currentPulsanti).forEach((key) => {
                 if (key === oldStatus) {
@@ -43,8 +48,22 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                     updatedPulsanti[key] = currentPulsanti[key];
                 }
             });
-
             updatedData[facultyIndex].pulsantiAttivi = updatedPulsanti;
+
+            // Update ajWFStatiName
+            if (ajWFStatiName[oldStatus]) {
+                const updatedStatiName = {};
+                Object.keys(ajWFStatiName).forEach((key) => {
+                    if (key === oldStatus) {
+                        updatedStatiName[newStatus] = { value: newStatus, title: newTitle };
+                    } else {
+                        updatedStatiName[key] = ajWFStatiName[key];
+                    }
+                });
+                updatedData[workflowIndex].ajWFStatiName = updatedStatiName;
+            } else {
+                updatedData[workflowIndex].ajWFStatiName[newStatus] = { value: newStatus, title: newTitle };
+            }
 
             // Update workflow mappings
             updatedData[workflowIndex].workflowmapping.forEach((wf) => {
@@ -79,8 +98,10 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
             Object.keys(currentPulsanti).forEach((key) => {
                 updatedPulsanti[key] = currentPulsanti[key];
             });
-
             updatedData[facultyIndex].pulsantiAttivi = updatedPulsanti;
+
+            // Add to ajWFStatiName
+            updatedData[workflowIndex].ajWFStatiName[newStatus] = { value: newStatus, title: newTitle };
         }
 
         setEpWorkflowjson(JSON.stringify(updatedData));
@@ -92,16 +113,24 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
         if (!selectedStatusItem) return;
         const updatedData = initializeWorkflowMapping([...MainData]);
         const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
-        const workflowIndex = updatedData.length - 1;
+        const workflowIndex = updatedData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
 
+        // Remove from pulsantiAttivi
         delete updatedData[facultyIndex].pulsantiAttivi[selectedStatusItem];
 
+        // Remove from ajWFStatiName
+        if (updatedData[workflowIndex].ajWFStatiName?.[selectedStatusItem]) {
+            delete updatedData[workflowIndex].ajWFStatiName[selectedStatusItem];
+        }
+
+        // Update workflow mappings
         updatedData[workflowIndex].workflowmapping.forEach((wf) => {
             if (wf.statoDestinazione === selectedStatusItem) {
                 wf.statoDestinazione = null;
             }
         });
 
+        // Update shownStatuses
         if (shownStatuses[currentFaculty] === selectedStatusItem) {
             setShownStatuses(prev => {
                 const newStatuses = { ...prev };
@@ -117,11 +146,12 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
 
     const onSubmit = (data) => {
         const trimmedData = {
-            status: data.status.trim()
+            status: data.status.trim(),
+            title: data.title.trim()
         };
         handleAddStatusItem(trimmedData);
         handleClose();
-        reset({ status: "" });
+        reset({ status: "", title: "" });
     };
 
     const handleDeleteClick = () => {
@@ -130,30 +160,23 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
 
     const handleConfirmDelete = () => {
         handleDeleteStatusItem();
-
         setShowDeleteConfirmation(false);
         handlefinalclose();
     };
 
     const handlefinalclose = () => {
-        reset({ status: "" });
+        reset({ status: "", title: "" });
         handleClose();
-    }
-
-    const handleCancelDelete = () => {
-        setShowDeleteConfirmation(false);
     };
-
 
     return (
         <>
             <Modal show={show} onHide={handlefinalclose} size="xl">
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Modal.Header closeButton>
-                        <Modal.Title className="fs-5">{initialData?.status ? "Modifica" : "Nuovo"}&nbsp;<span className="fw-bold">Stato</span></Modal.Title>
+                        <Modal.Title className="fs-5">{initialData?.status ? "Modifica" : "Nuovo"} <span className="fw-bold">Stato</span></Modal.Title>
                     </Modal.Header>
                     <Modal.Body className="mx-3">
-
                         <Col lg={12} className="mt-2">
                             <div className="modal-sezione">
                                 <span className="modal-sezione-titolo">Dati</span>
@@ -172,7 +195,7 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                                         control={control}
                                         rules={{ required: "Campo obbligatorio" }}
                                         render={({ field }) => (
-                                            <Form.Control type="text" {...field} isInvalid={!!errors.status} />
+                                            <Form.Control type="text" {...field} isInvalid={!!errors.status} placeholder="Inserisci la key" />
                                         )}
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.status?.message}</Form.Control.Feedback>
@@ -180,18 +203,24 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                             </Row>
                         </Form.Group>
 
-                        {/* <div className="d-flex justify-content-center mt-4">
-                            <Button variant="primary" type="submit" className="mx-2">Save</Button>
-                            <Button variant="dark" onClick={handlefinalclose} className="mx-2">Close</Button>
-                            <Button
-                                variant="danger"
-                                className="mx-2"
-                                onClick={handleDeleteClick}
-                                disabled={!initialData} // Disabled if adding new item
-                            >
-                                Delete
-                            </Button>
-                        </div> */}
+                        <Form.Group controlId="formTitle" className="my-3">
+                            <Row lg={12}>
+                                <Col lg={3} className="d-flex justify-content-end align-items-center">
+                                    Titolo
+                                </Col>
+                                <Col lg={9}>
+                                    <Controller
+                                        name="title"
+                                        control={control}
+                                        rules={{ required: "Campo obbligatorio" }}
+                                        render={({ field }) => (
+                                            <Form.Control type="text" {...field} isInvalid={!!errors.title} placeholder="Inserisci il titolo" />
+                                        )}
+                                    />
+                                    <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
+                                </Col>
+                            </Row>
+                        </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
                         <div className="d-flex justify-content-end mb-4">
@@ -203,12 +232,11 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
 
             <DeleteConfirmationModal
                 show={showDeleteConfirmation}
-                handleClose={handleCancelDelete}
+                handleClose={() => { }}
                 handleConfirm={handleConfirmDelete}
                 itemType="status"
             />
         </>
-
     );
 };
 

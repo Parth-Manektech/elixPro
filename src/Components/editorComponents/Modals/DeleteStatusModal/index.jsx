@@ -2,6 +2,14 @@ import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
 function DeleteStatusModal({ show, handleClose, roleName, statusKey, MainData, setEpWorkflowjson, updateCanvasSize }) {
+    const getStatusTitle = (statusKey) => {
+        const workflowIndex = MainData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
+        if (workflowIndex !== -1 && MainData[workflowIndex].ajWFStatiName?.[statusKey]) {
+            return MainData[workflowIndex].ajWFStatiName[statusKey].title;
+        }
+        return statusKey; // Fallback to key if title not found
+    };
+
     const handleDelete = () => {
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === roleName);
@@ -50,7 +58,7 @@ function DeleteStatusModal({ show, handleClose, roleName, statusKey, MainData, s
             </Modal.Header>
             <Modal.Body className='text-center'>
                 Sei sicuro di voler eliminare lo Stato <br />
-                <span className='fw-bold'>{statusKey}</span>?
+                <span className='fw-bold'>{getStatusTitle(statusKey)}</span>?
             </Modal.Body>
             <Modal.Footer className='d-flex justify-content-center mb-3'>
                 <Button variant="outline-danger" onClick={handleDelete}>
@@ -58,7 +66,6 @@ function DeleteStatusModal({ show, handleClose, roleName, statusKey, MainData, s
                 </Button>
             </Modal.Footer>
         </Modal>
-
     );
 }
 

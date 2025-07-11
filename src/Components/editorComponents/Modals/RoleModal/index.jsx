@@ -189,7 +189,7 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
             <Form onSubmit={handleSubmit(onSubmit)}>
 
                 <Modal.Header className="fs-5" closeButton>
-                    {initialData?.nome ? `Modifica` : `Nuovo`} <span className="fw-bold">Ruolo</span>
+                    {initialData?.nome ? `Modifica` : `Nuovo`}&nbsp;<span className="fw-bold">Ruolo</span>
                 </Modal.Header>
 
                 <Modal.Body className="mx-3">

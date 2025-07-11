@@ -50,7 +50,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isRightBarOpen, setIsRightBarOpen] = useState(true);
     const [duplicateCount, setDuplicateCount] = useState(0);
-
+    const [contrastColorRole, setContrastColorRole] = useState("")
 
 
     const handleCollapseCard = (role) => {
@@ -108,6 +108,10 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
         leaderLinesRef.current = [];
     };
 
+    const updateLeaderLines = () => {
+        leaderLinesRef.current.forEach(line => line.position());
+    };
+
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const refsMap = useRef({});
@@ -155,7 +159,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
         let hasChanges = false;
         const updatedData = MainData.map((role, index) => {
             let updatedRole = { ...role };
-            if (!role.layout) {
+            if (!role.layout && role?.ruolo?.key) {
                 hasChanges = true;
                 updatedRole = {
                     ...updatedRole,
@@ -334,6 +338,18 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
         };
     }
 
+    function isColorLight(hexColor) {
+        const hex = hexColor.replace("#", "");
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+        return luminance > 140;
+    }
+
+    useEffect(() => {
+        updateLeaderLines()
+    }, [isEditMode, MainData])
 
     return (
         <div style={{ position: 'relative' }}>
@@ -372,23 +388,31 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                     />
                     <div className="collapsed-roles-container">
                         {filteredCollapsedRoles.map((role) => {
+                            let Color = '#fff'
+                            const isLight = isColorLight(role.ruolo?.colore ? role.ruolo?.colore : "#343a40");
+                            if (isLight) {
+                                Color = "#212529";
+                            } else {
+                                Color = "#f8f9fa";
+                            }
                             return (<div key={role?.ruolo?.key}
                                 style={{ backgroundColor: role.ruolo?.colore || '#6f42c1', }}
                                 className="collapsed-role">
                                 <div className='d-flex gap-2 align-items-center'>
                                     <span className="drag-handle ms-2">
-                                        <i className="bi bi-arrows-move"></i>
+                                        <i className="bi bi-arrows-move" style={{ color: Color }}></i>
                                     </span>
 
-                                    <span className="vr-line bg-secondary"></span>
-                                    <span className="role-name">{role?.ruolo?.nome}</span>
+                                    <span className="vr-line" style={{ backgroundColor: Color }}></span>
+                                    <span className="role-name" style={{ color: Color }}>{role?.ruolo?.nome}</span>
                                 </div>
 
 
                                 <span
                                     onClick={() => handleExpandCard(role?.ruolo?.key)}
+                                    style={{ cursor: 'pointer' }}
                                 >
-                                    <i className="bi bi-arrows-angle-expand text-dark fw-bold"></i>
+                                    <i className="bi bi-arrows-angle-expand fw-bold" style={{ color: Color }}></i>
                                 </span>
                             </div>)
                         })}

@@ -82,38 +82,43 @@ function ActionSection({
                         containerRef
                     );
                 }
-                wf.listeDestinazione.forEach((listId) => {
-                    if (
-                        isElementVisible(actionKey) &&
-                        isElementVisible(listId)
-                    ) {
-                        createLeaderLine(
-                            actionKey,
-                            listId,
-                            'rgba(41, 115, 147, 0.25)',
-                            'behind',
-                            'arrow2',
-                            false,
-                            containerRef
-                        );
-                    }
-                });
-                wf.doNotlisteDestinazione.forEach((listId) => {
-                    if (
-                        isElementVisible(actionKey) &&
-                        isElementVisible(listId)
-                    ) {
-                        createLeaderLine(
-                            actionKey,
-                            listId,
-                            'rgba(202, 138, 4, 0.25)',
-                            'square',
-                            'square',
-                            false,
-                            containerRef
-                        );
-                    }
-                });
+                if (wf?.listeDestinazione) {
+                    wf?.listeDestinazione?.forEach((listId) => {
+                        if (
+                            isElementVisible(actionKey) &&
+                            isElementVisible(listId)
+                        ) {
+                            createLeaderLine(
+                                actionKey,
+                                listId,
+                                'rgba(41, 115, 147, 0.25)',
+                                'behind',
+                                'arrow2',
+                                false,
+                                containerRef
+                            );
+                        }
+                    });
+                }
+
+                if (wf?.doNotlisteDestinazione) {
+                    wf?.doNotlisteDestinazione?.forEach((listId) => {
+                        if (
+                            isElementVisible(actionKey) &&
+                            isElementVisible(listId)
+                        ) {
+                            createLeaderLine(
+                                actionKey,
+                                listId,
+                                'rgba(202, 138, 4, 0.25)',
+                                'square',
+                                'square',
+                                false,
+                                containerRef
+                            );
+                        }
+                    });
+                }
             }
         }
 
@@ -186,38 +191,44 @@ function ActionSection({
                             containerRef
                         );
                     }
-                    wf.listeDestinazione.forEach((listId) => {
-                        if (
-                            isElementVisible(actionKey) &&
-                            isElementVisible(listId)
-                        ) {
-                            createLeaderLine(
-                                actionKey,
-                                listId,
-                                'rgba(41, 115, 147, 1)',
-                                'behind',
-                                'arrow2',
-                                true,
-                                containerRef
-                            );
-                        }
-                    });
-                    wf.doNotlisteDestinazione.forEach((listId) => {
-                        if (
-                            isElementVisible(actionKey) &&
-                            isElementVisible(listId)
-                        ) {
-                            createLeaderLine(
-                                actionKey,
-                                listId,
-                                'rgba(202, 138, 4, 1)',
-                                'square',
-                                'square',
-                                true,
-                                containerRef
-                            );
-                        }
-                    });
+                    if (wf?.listeDestinazione) {
+                        wf?.listeDestinazione?.forEach((listId) => {
+                            if (
+                                isElementVisible(actionKey) &&
+                                isElementVisible(listId)
+                            ) {
+                                createLeaderLine(
+                                    actionKey,
+                                    listId,
+                                    'rgba(41, 115, 147, 0.25)',
+                                    'behind',
+                                    'arrow2',
+                                    false,
+                                    containerRef
+                                );
+                            }
+                        });
+                    }
+
+                    if (wf?.doNotlisteDestinazione) {
+                        console.log('wf?.doNotlisteDestinazione', wf?.doNotlisteDestinazione)
+                        wf?.doNotlisteDestinazione?.forEach((listId) => {
+                            if (
+                                isElementVisible(actionKey) &&
+                                isElementVisible(listId)
+                            ) {
+                                createLeaderLine(
+                                    actionKey,
+                                    listId,
+                                    'rgba(202, 138, 4, 0.25)',
+                                    'square',
+                                    'square',
+                                    false,
+                                    containerRef
+                                );
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -642,6 +653,7 @@ function ActionSection({
                     }}
                     onDragLeave={handleActionDragLeave}
                     onDrop={(e) => handleActionDrop(e, null, roleName, true)}
+                    onClick={() => openTitleItemModal(roleName, 'azioni')}
                 >
                     <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
                 </div>
