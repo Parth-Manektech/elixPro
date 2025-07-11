@@ -57,8 +57,12 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
         );
 
         updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-            wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
-            wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
+            if (wf.listeDestinazione) {
+                wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
+            }
+            if (wf.doNotlisteDestinazione) {
+                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
+            }
         });
 
         updatedData[facultyIndex].azioni.forEach(action => {
@@ -93,8 +97,12 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
             updatedData[facultyIndex].liste[listIndex].listArray[itemIndex] = data;
 
             updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-                wf.listeDestinazione = wf.listeDestinazione.map(key => key === oldKey ? newKey : key);
-                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key);
+                if (wf.listeDestinazione) {
+                    wf.listeDestinazione = wf.listeDestinazione.map(key => key === oldKey ? newKey : key);
+                }
+                if (wf.doNotlisteDestinazione) {
+                    wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key);
+                }
             });
 
             updatedData[facultyIndex].azioni.forEach(action => {

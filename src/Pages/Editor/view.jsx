@@ -16,7 +16,7 @@ import Toolbar from '../../Components/editorComponents/Toolbar';
 import RoleCard from '../../Components/editorComponents/RoleCard';
 import { DuplicateErrorToast } from '../../utils/Toster';
 
-function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
+function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey }) {
     const MainData = useMemo(() => (epWorkflowjson ? JSON.parse(epWorkflowjson) : []), [epWorkflowjson]);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [shownStatuses, setShownStatuses] = useState({});
@@ -50,11 +50,10 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isRightBarOpen, setIsRightBarOpen] = useState(true);
     const [duplicateCount, setDuplicateCount] = useState(0);
-    const [contrastColorRole, setContrastColorRole] = useState("")
 
 
     const handleCollapseCard = (role) => {
-        console.log('role', role);
+
         setCollapsedCards((prev) => {
             const newCollapsed = { ...prev };
             delete newCollapsed[role.nome]; // Still use nome for collapsedCards if needed
@@ -255,8 +254,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     useEffect(() => {
         if (isEditMode) {
             const result = findDuplicateKeys(MainData);
-            console.log(result.message); // "1 list key and 2 status keys and 0 action keys are duplicate"
-            console.log(result.result);
             if (result?.result?.actionDuplicateCount > 0 || result?.result?.listDuplicateCount > 0 || result?.result?.statusDuplicateCount > 0) {
                 const TotalCount = result?.result?.actionDuplicateCount + result?.result?.listDuplicateCount + result?.result?.statusDuplicateCount
                 DuplicateErrorToast(`Sono stati rilevati ${TotalCount * 2} errori di key duplicata.`)
@@ -350,6 +347,10 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
     useEffect(() => {
         updateLeaderLines()
     }, [isEditMode, MainData])
+    useEffect(() => {
+        setSelectedElement(null);
+        clearLeaderLines()
+    }, [activeKey])
 
     return (
         <div style={{ position: 'relative' }}>

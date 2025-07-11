@@ -870,7 +870,7 @@ const Editor = () => {
                 </Tab>
 
                 <Tab eventKey="view" title="VIEW">
-                    <View epWorkflowjson={epWorkflowjson} setEpWorkflowjson={setEpWorkflowjson} hendelGenrateCode={hendelGenrateCode} />
+                    <View epWorkflowjson={epWorkflowjson} setEpWorkflowjson={setEpWorkflowjson} hendelGenrateCode={hendelGenrateCode} activeKey={activeKey} />
                 </Tab>
             </Tabs>
 

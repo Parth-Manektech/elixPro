@@ -142,8 +142,8 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                 if (wf.keyAzione === oldKey) {
                     wf.keyAzione = newKey;
                 }
-                wf.listeDestinazione = wf.listeDestinazione ? wf.listeDestinazione.map(key => key === oldKey ? newKey : key) : wf.listeDestinazione;
-                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione ? wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key) : wf.doNotlisteDestinazione;
+                wf.listeDestinazione = wf.listeDestinazione ? wf.listeDestinazione.map(key => key === oldKey ? newKey : key) : [];
+                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione ? wf.doNotlisteDestinazione.map(key => key === oldKey ? newKey : key) : [];
             });
 
             updatedData.forEach((faculty, index) => {
@@ -164,8 +164,8 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
 
         const actionKey = data.key;
 
-        const moveToListKeys = data?.moveToList?.length ? data.moveToList.split(',').map(key => key.trim()).filter(key => key) : "";
-        const doNotMoveToListKeys = data.doNotMoveToList?.length ? data.doNotMoveToList.split(',').map(key => key.trim()).filter(key => key) : "";
+        const moveToListKeys = data?.moveToList?.length ? data.moveToList.split(',').map(key => key.trim()).filter(key => key) : [];
+        const doNotMoveToListKeys = data.doNotMoveToList?.length ? data.doNotMoveToList.split(',').map(key => key.trim()).filter(key => key) : [];
 
         let workflowItemIndex = updatedData[workflowIndex].workflowmapping.findIndex((wf) => wf.keyAzione === actionKey);
         if (workflowItemIndex === -1) {
@@ -215,9 +215,9 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             key: data.key?.trim(),
             title: data.title?.trim(),
             type: data.type?.trim(),
-            moveToList: data?.moveToList?.join(', ') || [],
+            moveToList: data?.moveToList?.join(', ') || "",
             status: data.status?.trim() || '',
-            doNotMoveToList: data?.doNotMoveToList?.join(', ') || [],
+            doNotMoveToList: data?.doNotMoveToList?.join(', ') || "",
             behaviourTag: data.behaviourTag?.trim(),
             config: data.config?.trim(),
             notifica: data.config?.trim(),

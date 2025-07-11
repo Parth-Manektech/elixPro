@@ -5,19 +5,29 @@ import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty, selectedStatusItem, setEpWorkflowjson, setSelectedStatusItem, setStatusItemModalShow, shownStatuses, setShownStatuses }) => {
+    const getStatusTitle = (statusKey) => {
+        const workflowIndex = MainData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
+        if (workflowIndex !== -1 && MainData[workflowIndex].ajWFStatiName?.[statusKey]) {
+            return MainData[workflowIndex].ajWFStatiName[statusKey].title;
+        }
+        return statusKey; // Fallback to key if title not found
+    };
+    console.log('StatusModal initialData', initialData)
+    const OldData = { status: initialData?.status, title: getStatusTitle(initialData?.status) }
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
-        defaultValues: initialData || { status: "", title: "" }
+        defaultValues: OldData || { status: "", title: "" }
     });
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     useEffect(() => {
-        reset(initialData || { status: "", title: "" });
+        reset(OldData || { status: "", title: "" });
     }, [initialData, reset, show]);
 
     const handleAddStatusItem = (data) => {
         const updatedData = initializeWorkflowMapping([...MainData]);
         const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
-        const workflowIndex = updatedData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
+        const statiNameIndex = updatedData.findIndex((elem) => elem.ajWFStatiName);
+        const workflowIndex = updatedData.findIndex((elem) => elem.workflowmapping);
 
         // Ensure pulsantiAttivi exists
         if (!updatedData[facultyIndex].pulsantiAttivi) {
@@ -25,14 +35,14 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
         }
 
         // Ensure ajWFStatiName exists
-        if (!updatedData[workflowIndex].ajWFStatiName) {
-            updatedData[workflowIndex].ajWFStatiName = {};
+        if (statiNameIndex !== -1 && !updatedData[statiNameIndex].ajWFStatiName) {
+            updatedData[statiNameIndex].ajWFStatiName = {};
         }
 
         const newStatus = data.status.trim();
         const newTitle = data.title.trim();
         const currentPulsanti = updatedData[facultyIndex].pulsantiAttivi;
-        const ajWFStatiName = updatedData[workflowIndex].ajWFStatiName;
+        const ajWFStatiName = statiNameIndex !== -1 ? updatedData[statiNameIndex].ajWFStatiName : {};
 
         if (selectedStatusItem) {
             // Update existing status
@@ -51,26 +61,30 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
             updatedData[facultyIndex].pulsantiAttivi = updatedPulsanti;
 
             // Update ajWFStatiName
-            if (ajWFStatiName[oldStatus]) {
-                const updatedStatiName = {};
-                Object.keys(ajWFStatiName).forEach((key) => {
-                    if (key === oldStatus) {
-                        updatedStatiName[newStatus] = { value: newStatus, title: newTitle };
-                    } else {
-                        updatedStatiName[key] = ajWFStatiName[key];
-                    }
-                });
-                updatedData[workflowIndex].ajWFStatiName = updatedStatiName;
-            } else {
-                updatedData[workflowIndex].ajWFStatiName[newStatus] = { value: newStatus, title: newTitle };
+            if (statiNameIndex !== -1) {
+                if (ajWFStatiName[oldStatus]) {
+                    const updatedStatiName = {};
+                    Object.keys(ajWFStatiName).forEach((key) => {
+                        if (key === oldStatus) {
+                            updatedStatiName[newStatus] = { value: newStatus, title: newTitle };
+                        } else {
+                            updatedStatiName[key] = ajWFStatiName[key];
+                        }
+                    });
+                    updatedData[statiNameIndex].ajWFStatiName = updatedStatiName;
+                } else {
+                    updatedData[statiNameIndex].ajWFStatiName[newStatus] = { value: newStatus, title: newTitle };
+                }
             }
 
             // Update workflow mappings
-            updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-                if (wf.statoDestinazione === oldStatus) {
-                    wf.statoDestinazione = newStatus;
-                }
-            });
+            if (workflowIndex !== -1 && updatedData[workflowIndex].workflowmapping) {
+                updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+                    if (wf.statoDestinazione === oldStatus) {
+                        wf.statoDestinazione = newStatus;
+                    }
+                });
+            }
 
             // Update status in actions' listArray
             updatedData.forEach((role) => {
@@ -101,7 +115,9 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
             updatedData[facultyIndex].pulsantiAttivi = updatedPulsanti;
 
             // Add to ajWFStatiName
-            updatedData[workflowIndex].ajWFStatiName[newStatus] = { value: newStatus, title: newTitle };
+            if (statiNameIndex !== -1) {
+                updatedData[statiNameIndex].ajWFStatiName[newStatus] = { value: newStatus, title: newTitle };
+            }
         }
 
         setEpWorkflowjson(JSON.stringify(updatedData));
@@ -206,7 +222,7 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                         <Form.Group controlId="formTitle" className="my-3">
                             <Row lg={12}>
                                 <Col lg={3} className="d-flex justify-content-end align-items-center">
-                                    Titolo
+                                    Nome
                                 </Col>
                                 <Col lg={9}>
                                     <Controller
@@ -214,7 +230,7 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                                         control={control}
                                         rules={{ required: "Campo obbligatorio" }}
                                         render={({ field }) => (
-                                            <Form.Control type="text" {...field} isInvalid={!!errors.title} placeholder="Inserisci il titolo" />
+                                            <Form.Control type="text" {...field} isInvalid={!!errors.title} placeholder="Inserisci il Nome" />
                                         )}
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>

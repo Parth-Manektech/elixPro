@@ -29,8 +29,8 @@ function DeleteListModal({ show, handleClose, roleName, listTitle, MainData, set
         if (workflowIndex !== -1) {
             updatedData[workflowIndex].workflowmapping = updatedData[workflowIndex].workflowmapping.map((wf) => ({
                 ...wf,
-                listeDestinazione: wf.listeDestinazione.filter((key) => !listKeys.includes(key)),
-                doNotlisteDestinazione: wf.doNotlisteDestinazione.filter((key) => !listKeys.includes(key)),
+                listeDestinazione: wf.listeDestinazione ? wf.listeDestinazione.filter((key) => !listKeys.includes(key)) : [],
+                doNotlisteDestinazione: wf.doNotlisteDestinazion ? wf.doNotlisteDestinazione.filter((key) => !listKeys.includes(key)) : [],
             }));
         }
 

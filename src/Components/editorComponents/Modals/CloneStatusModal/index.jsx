@@ -63,6 +63,13 @@ const CloneStatusModal = ({ show, handleClose, roleName, statusToClone, MainData
         reset({ status: "", title: "" });
     };
 
+    const getStatusTitle = (statusKey) => {
+        const workflowIndex = MainData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
+        if (workflowIndex !== -1 && MainData[workflowIndex].ajWFStatiName?.[statusKey]) {
+            return MainData[workflowIndex].ajWFStatiName[statusKey].title;
+        }
+        return statusKey; // Fallback to key if title not found
+    };
     return (
         <Modal show={show} onHide={handleClose} size="xl">
             <Form onSubmit={handleSubmit(onSubmit)}>
@@ -73,6 +80,10 @@ const CloneStatusModal = ({ show, handleClose, roleName, statusToClone, MainData
                     <Row lg={12} className="my-2">
                         <Col lg={3} className="d-flex justify-content-end align-items-center">Key sorgente</Col>
                         <Col lg={9} style={{ color: "#212529bf" }}>{statusToClone}</Col>
+                    </Row>
+                    <Row lg={12} className="my-2">
+                        <Col lg={3} className="d-flex justify-content-end align-items-center">Nome sorgente</Col>
+                        <Col lg={9} style={{ color: "#212529bf" }}>{getStatusTitle(statusToClone)}</Col>
                     </Row>
                     <Col lg={12}>
                         <div className="modal-sezione">
@@ -108,7 +119,7 @@ const CloneStatusModal = ({ show, handleClose, roleName, statusToClone, MainData
                     <Form.Group controlId="formTitle" className="my-3">
                         <Row lg={12}>
                             <Col lg={3} className="d-flex justify-content-end align-items-center">
-                                Titolo
+                                Nome
                             </Col>
                             <Col lg={9}>
                                 <Controller
@@ -120,7 +131,7 @@ const CloneStatusModal = ({ show, handleClose, roleName, statusToClone, MainData
                                             type="text"
                                             {...field}
                                             isInvalid={!!errors.title}
-                                            placeholder="Inserisci il titolo"
+                                            placeholder="Inserisci il Nome"
                                         />
                                     )}
                                 />

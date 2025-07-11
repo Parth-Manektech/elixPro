@@ -587,7 +587,7 @@ function ActionSection({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="d-flex align-items-center justify-content-center mx-2">
+                                        <div className="d-flex align-items-center justify-content-center mx-2" onClick={(e) => e.stopPropagation()}>
                                             {isEditMode && (
                                                 <Dropdown>
                                                     <Dropdown.Toggle className="role_menu">
