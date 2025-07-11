@@ -153,8 +153,12 @@ const Editor = () => {
                 .then((response) => {
                     if (!response.ok) {
                         setisLoading(false)
-                        ErrorToast("Failed to process code segment.")
-                        throw new Error("Failed to process code segment.");
+                        const temp = response.json();
+                        temp.then((data) => {
+                            ErrorToast(data?.message || "Failed to process code segment.");
+                            localStorage.clear('ePWorkFlow');
+                        })
+                        return false
                     }
                     return response.json();
                 })
@@ -183,7 +187,8 @@ const Editor = () => {
                     console.error(error);
                 });
         } catch (error) {
-            console.error('catch', error);
+            // console.error('catch', error);
+            console.log('error', error)
             ErrorToast("Something went wrong please check")
             setisLoading(false)
         }
@@ -446,7 +451,7 @@ const Editor = () => {
             ErrorToast('Upload Workflow Java File')
         }
         if (!fileData?.js) {
-            ErrorToast('Upload Workflow js File')
+            ErrorToast('Upload Properties js File')
         }
     }
 
@@ -456,7 +461,7 @@ const Editor = () => {
             ErrorToast('Upload Normal JSON File')
         }
         if (!fileData?.js) {
-            ErrorToast('Upload config js File')
+            ErrorToast('Upload Properties js File')
         }
     }
 
@@ -756,78 +761,50 @@ const Editor = () => {
                                     <ReaddataInput name='javaPreview' control={control} />
                                 </Tab>
 
-                                <Tab eventKey="JavaScriptCode" title="JavaScript Code">
-                                    <Tab.Container defaultActiveKey="jsconfigPreview" id="uncontrolled-tab-example" className="mb-2">
-                                        <Nav variant="pills" className="d-flex flex-row justify-content-between  flex-wrap  gap-3 subJsBtn">
-                                            <div className='d-flex gap-2'>
-                                                <Nav.Item>
-                                                    <Nav.Link eventKey="jsconfigPreview">Config JS Code</Nav.Link>
-                                                </Nav.Item>
-                                                <Nav.Item>
-                                                    <Nav.Link eventKey="jsnotifyPreview">Notifica JS Code</Nav.Link>
-                                                </Nav.Item>
-                                            </div>
+                                <Tab eventKey="JavaScriptCode" title="Properties JS">
+                                    <div className='d-flex gap-3 align-items-center justify-content-end subUploadItems'>
+                                        <div className='d-flex justify-content-between align-items-center '>
+                                            <Controller
+                                                name='UJS'
+                                                control={mainControl}
+                                                render={({ field: { onChange } }) => (
+                                                    <div className='coustomFileInputFile cursor-pointer ' onClick={() => jsref.current.click()}>
+                                                        <Form.Control
+                                                            ref={jsref}
+                                                            type='file'
+                                                            placeholder='es. PPT'
+                                                            className='d-none'
+                                                            accept='.js'
+                                                            onChange={(e) => {
+                                                                const file = e.target.files[0];
+                                                                onChange(file);
 
-
-                                            <Tab.Content className='d-flex flex-row justify-content-between  flex-wrap  gap-3'>
-                                                <div className='d-flex justify-content-between align-items-center '>
-                                                    <Controller
-                                                        name='UJS'
-                                                        control={mainControl}
-                                                        render={({ field: { onChange } }) => (
-                                                            <div className='coustomFileInputFile cursor-pointer ' onClick={() => jsref.current.click()}>
-                                                                <Form.Control
-                                                                    ref={jsref}
-                                                                    type='file'
-                                                                    placeholder='es. PPT'
-                                                                    className='d-none'
-                                                                    accept='.js'
-                                                                    onChange={(e) => {
-                                                                        const file = e.target.files[0];
-                                                                        onChange(file);
-
-                                                                        if (file) {
-                                                                            const reader = new FileReader();
-                                                                            reader.onload = (event) => {
-                                                                                try {
-                                                                                    const JSData = event.target.result
-                                                                                    handleJSUpload(JSData);
-                                                                                    mainReset({ xlsFile: '' })
-                                                                                } catch (error) {
-                                                                                    ErrorToast("Uploaded configJS is not valid")
-                                                                                    console.error('Error parsing Normal JSON:', error);
-                                                                                }
-                                                                            };
-                                                                            reader.readAsText(file);
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onload = (event) => {
+                                                                        try {
+                                                                            const JSData = event.target.result
+                                                                            handleJSUpload(JSData);
+                                                                            mainReset({ xlsFile: '' })
+                                                                        } catch (error) {
+                                                                            ErrorToast("Uploaded Properties JS is not valid")
+                                                                            console.error('Error parsing Normal JSON:', error);
                                                                         }
-                                                                    }
-                                                                    }
-                                                                />
-                                                                <Button variant="outline-secondary"><UploadIcon height={18} width={18} className='mb-1' />&nbsp; Upload JS</Button>
-                                                            </div>
-                                                        )}
-                                                    />
-                                                </div>
-                                                <Tab.Pane eventKey="jsconfigPreview">
-                                                    <div className='subUploadbtns'>
-                                                        {<Button disabled={!watch('jsconfigPreview')} onClick={() => handleCopyCode(watch('jsconfigPreview'))} variant="outline-secondary"><CopyIcon height={18} width={18} className='mb-1' /> Copy Config JS</Button>}
-                                                        {<Button disabled={!watch('jsconfigPreview')} onClick={() => DownloadconfigJS(watch('jsconfigPreview'))} variant="success"><DownloadIcon height={18} width={18} className='mb-1' /> &nbsp;Download Config JS</Button>}
+                                                                    };
+                                                                    reader.readAsText(file);
+                                                                }
+                                                            }
+                                                            }
+                                                        />
+                                                        <Button variant="outline-secondary"><UploadIcon height={18} width={18} className='mb-1' />&nbsp; Upload Properties JS</Button>
                                                     </div>
-                                                </Tab.Pane>
-                                                <Tab.Pane eventKey="jsnotifyPreview">
-                                                    <div className='subUploadbtns'>
-                                                        {<Button disabled={!watch('jsnotifyPreview')} onClick={(e) => handleCopyCode(watch('jsnotifyPreview'))} variant="outline-secondary"><CopyIcon height={18} width={18} className='mb-1' /> Copy Notifica JS</Button>}
-                                                        {<Button disabled={!watch('jsnotifyPreview')} onClick={() => DownloadNotificaJS(watch('jsnotifyPreview'))} variant="success"><DownloadIcon height={18} width={18} className='mb-1' /> &nbsp;Download Notifica JS</Button>}
-                                                    </div>
-                                                </Tab.Pane>
-                                            </Tab.Content>
-                                        </Nav>
-
-                                        <Tab.Content>
-                                            <Tab.Pane eventKey="jsconfigPreview"><ReaddataInput name='jsconfigPreview' control={control} /></Tab.Pane>
-                                            <Tab.Pane eventKey="jsnotifyPreview"><ReaddataInput name='jsnotifyPreview' control={control} /></Tab.Pane>
-                                        </Tab.Content>
-                                    </Tab.Container>
+                                                )}
+                                            />
+                                        </div>
+                                        {<Button disabled={!watch('jsconfigPreview')} onClick={() => handleCopyCode(watch('jsconfigPreview'))} variant="outline-secondary"><CopyIcon height={18} width={18} className='mb-1' /> Copy Properties JS</Button>}
+                                        {<Button disabled={!watch('jsconfigPreview')} onClick={() => DownloadconfigJS(watch('jsconfigPreview'))} variant="success"><DownloadIcon height={18} width={18} className='mb-1' /> &nbsp;Download Properties JS</Button>}
+                                    </div>
+                                    <ReaddataInput name='jsconfigPreview' control={control} />
                                 </Tab>
 
                                 <Tab eventKey="SQLScript" title="SQL Script">

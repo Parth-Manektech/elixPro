@@ -306,6 +306,7 @@ function RoleCard({
                         {isEditMode && <input
                             type="color"
                             className='ColorInput'
+                            style={{ border: `1px solid ${contrastColor}` }}
                             value={element.ruolo?.colore || '#6f42c1'}
                             onChange={(e) => {
                                 const updatedData = [...MainData];

@@ -121,9 +121,10 @@
     padding: 0;
     margin-top: 5px;
     border-radius: 50%;
-    // border: 1px solid black;
-    // border: none;
     cursor: pointer;
+    appearance: none;
+    background-color: transparent;
+    display: block;
 }
 
 .resize-handle:hover {

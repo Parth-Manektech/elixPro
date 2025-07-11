@@ -164,8 +164,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode }) {
                 updatedRole = {
                     ...updatedRole,
                     layout: {
-                        top: index * 50,
-                        left: index * 50,
+                        top: 10,
+                        left: index * 780,
                         width: 768,
                         height: 637,
                     },
