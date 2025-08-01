@@ -126,6 +126,7 @@ function StatusSection({
         toggleStatusVisibility(roleName, statusItemKey, setShownStatuses);
 
         const newSelectedElement = { type: 'status', roleName, statusItemKey };
+        console.log('selectedElement', selectedElement)
         if (
             selectedElement?.type === 'status' &&
             selectedElement.statusItemKey === statusItemKey &&

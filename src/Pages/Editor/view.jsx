@@ -347,9 +347,12 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     useEffect(() => {
         updateLeaderLines()
     }, [isEditMode, MainData])
+
     useEffect(() => {
-        setSelectedElement(null);
-        clearLeaderLines()
+        if (activeKey === "code") {
+            setSelectedElement(null);
+            clearLeaderLines()
+        }
     }, [activeKey])
 
     return (

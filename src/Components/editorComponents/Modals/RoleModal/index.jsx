@@ -7,7 +7,6 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
     const { control, handleSubmit, formState: { errors }, reset, setValue } = useForm({
         defaultValues: initialData || { nome: "", descrizione: "", listaDefault: "", key: "" }
     });
-
     const [isSelectOpen, setIsSelectOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedOption, setSelectedOption] = useState(null);
@@ -50,13 +49,36 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                 value: 'list__starter'
             }]);
         }
-        // eslint-disable-next-line
     }, [initialData, reset]);
 
-    const handleAddRole = (data) => {
-        const updatedData = initializeWorkflowMapping([...MainData]);
-        const workflowIndex = updatedData.length - 1;
+    const validateKey = (value) => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return "Campo obbligatorio";
+        const existingKeys = MainData
+            .filter(elem => elem.ruolo && initialData?.type === "click")
+            .map(elem => elem.ruolo.key);
+        if (existingKeys.includes(trimmedValue)) {
+            return "La chiave esiste già. Inserire una chiave unica.";
+        }
+        return true;
+    };
 
+    const validateNome = (value) => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return "Campo obbligatorio";
+
+        const existingNomes = MainData
+            .filter(elem => elem.ruolo && initialData?.type === "click")
+            .map(elem => elem.ruolo.nome);
+        if (existingNomes.includes(trimmedValue)) {
+            return "Il nome esiste già. Inserire un nome unico.";
+        }
+        return true;
+    };
+
+    const handleAddRole = (data) => {
+        let updatedData = [...MainData];
+        const workflowIndex = updatedData.length ? (updatedData.length - 2) < 10 ? (updatedData.length - 2) * 30 : (updatedData.length - 2) * 10 : updatedData.length;
         const trimmedData = {
             ruolo: {
                 nome: data.nome.trim(),
@@ -83,14 +105,15 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
             sezioni: "",
             procedimentoTag: "",
             layout: {
-                top: workflowIndex * 50,
-                left: workflowIndex * 50,
+                top: workflowIndex + 70,
+                left: workflowIndex + 70,
                 width: 768,
                 height: 637
             }
         };
 
         if (initialData?.type !== "click") {
+            // Update existing role
             const roleIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === selectedRoleItem.nome);
             if (roleIndex !== -1) {
                 const existingRole = updatedData[roleIndex];
@@ -100,9 +123,12 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                 };
             }
         } else {
-            // updatedData.unshift(trimmedData);
-            updatedData.splice(workflowIndex, 0, trimmedData);
+            // Add new role at the beginning
+            updatedData.unshift(trimmedData);
         }
+
+        // Ensure ajWFStatiName and workflowmapping are in correct positions
+        updatedData = initializeWorkflowMapping(updatedData);
 
         setEpWorkflowjson(JSON.stringify(updatedData));
         setSelectedRoleItem(null);
@@ -187,7 +213,6 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
     return (
         <Modal show={show} onHide={onClose} size="xl">
             <Form onSubmit={handleSubmit(onSubmit)}>
-
                 <Modal.Header className="fs-5" closeButton>
                     {initialData?.nome ? `Modifica` : `Nuovo`}&nbsp;<span className="fw-bold">Ruolo</span>
                 </Modal.Header>
@@ -208,7 +233,10 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                                 <Controller
                                     name="key"
                                     control={control}
-                                    rules={{ required: "Campo obbligatorio" }}
+                                    rules={{
+                                        required: "Campo obbligatorio",
+                                        validate: validateKey
+                                    }}
                                     render={({ field }) => (
                                         <Form.Control
                                             placeholder="Inserisci la key"
@@ -231,7 +259,10 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                                 <Controller
                                     name="nome"
                                     control={control}
-                                    rules={{ required: "Campo obbligatorio" }}
+                                    rules={{
+                                        required: "Campo obbligatorio",
+                                        validate: validateNome
+                                    }}
                                     render={({ field }) => (
                                         <Form.Control
                                             type="text"
@@ -285,8 +316,6 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                             )}
                         />
                     </Form.Group>
-
-
                     <div className="form-group">
                         <Row lg={12}>
                             <Col lg={3} className="d-flex justify-content-end align-items-start mt-2">
@@ -366,15 +395,12 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
                                     )}
                                 </div>
                             </Col>
-
-
                         </Row>
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
                     <div className="d-flex justify-content-end mb-4">
                         <Button variant={initialData?.nome ? "outline-primary" : "primary"} type="submit" className="mx-2">{initialData?.nome ? "Applica" : "Crea Ruolo"}</Button>
-
                     </div>
                 </Modal.Footer>
             </Form>

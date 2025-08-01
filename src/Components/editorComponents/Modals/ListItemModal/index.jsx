@@ -10,6 +10,7 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
     });
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
+
     useEffect(() => {
         reset(initialData || { key: "", title: "", type: "button", isDetailAllowed: "true" });
     }, [initialData, reset, show]);
@@ -128,6 +129,27 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
         setListItemModalShow(false);
     };
 
+    const validateKey = (value) => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return "Campo obbligatorio";
+
+        const existingKeys = MainData
+            .filter(elem => elem.ruolo && elem.liste) // Filter roles with liste
+            .flatMap(elem =>
+                elem.liste.flatMap(list =>
+                    list.listArray
+                        .filter(item => item.key !== initialData?.key) // Exclude current item when editing
+                        .map(item => item.key)
+                )
+            );
+
+        if (existingKeys.includes(trimmedValue)) {
+            return "La chiave esiste già in una lista. Inserire una chiave unica.";
+        }
+
+        return true;
+    };
+
     return (
         <>
             <Modal show={show} onHide={hendleFinalClose} size="xl" >
@@ -151,15 +173,22 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
                                     <Controller
                                         name="key"
                                         control={control}
-                                        rules={{ required: "Campo obbligatorio" }}
+                                        rules={{
+                                            required: "Campo obbligatorio",
+                                            validate: validateKey
+                                        }}
                                         render={({ field }) => (
-                                            <Form.Control placeholder="Inserisci la key" type="text" {...field} isInvalid={!!errors.key} />
+                                            <Form.Control
+                                                placeholder="Inserisci la key"
+                                                type="text"
+                                                {...field}
+                                                isInvalid={!!errors.key}
+                                            />
                                         )}
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.key?.message}</Form.Control.Feedback>
                                 </Col>
                             </Row>
-
                         </Form.Group>
 
                         <Form.Group controlId="formTitle" className="mb-3">

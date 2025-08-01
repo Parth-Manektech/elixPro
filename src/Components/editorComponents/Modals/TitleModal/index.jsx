@@ -8,6 +8,7 @@ const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, 
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || { title: "" }
     });
+
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     useEffect(() => {
         reset(initialData || { title: "" });
@@ -186,6 +187,38 @@ const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, 
     const handleCancelDelete = () => {
         setShowDeleteConfirmation(false);
     };
+
+    const validateListTitle = (value) => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return "Campo obbligatorio";
+
+        const facultyIndex = MainData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        if (facultyIndex !== -1) {
+            const existingTitles = MainData[facultyIndex].liste
+                .filter(list => list.title !== initialData?.title)
+                .map(list => list.title);
+            if (existingTitles.includes(trimmedValue)) {
+                return "Il titolo della lista esiste già. Inserire un titolo unico.";
+            }
+        }
+        return true;
+    };
+
+    const validateActionTitle = (value) => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return "Campo obbligatorio";
+
+        const facultyIndex = MainData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
+        if (facultyIndex !== -1) {
+            const existingTitles = MainData[facultyIndex].azioni
+                .filter(action => action.title !== initialData?.title)
+                .map(action => action.title);
+            if (existingTitles.includes(trimmedValue)) {
+                return "Il titolo dell'azione esiste già. Inserire un titolo unico.";
+            }
+        }
+        return true;
+    };
     return (
         <>
             <Modal show={show} onHide={handleFinalClose} size="xl" >
@@ -209,16 +242,22 @@ const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, 
                                     <Controller
                                         name="title"
                                         control={control}
-                                        rules={{ required: "Campo obbligatorio" }}
+                                        rules={{
+                                            required: "Campo obbligatorio",
+                                            validate: titleModalType === 'liste' ? validateListTitle : validateActionTitle
+                                        }}
                                         render={({ field }) => (
-                                            <Form.Control placeholder="Inserisci la nome" type="text" {...field} isInvalid={!!errors.title} />
+                                            <Form.Control
+                                                placeholder="Inserisci la nome"
+                                                type="text"
+                                                {...field}
+                                                isInvalid={!!errors.title}
+                                            />
                                         )}
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
                                 </Col>
                             </Row>
-
-
                         </Form.Group>
 
                         {/* <div className="d-flex justify-content-center mt-4">

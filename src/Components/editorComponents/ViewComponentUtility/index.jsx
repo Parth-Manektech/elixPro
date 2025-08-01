@@ -1,10 +1,26 @@
 import { ErrorToast } from "../../../utils/Toster";
 
 export const initializeWorkflowMapping = (data) => {
-    if (!data.some(item => item.hasOwnProperty('workflowmapping'))) {
-        data.push({ workflowmapping: [] });
+    // Check if workflowmapping exists
+    const hasWorkflowMapping = data.some(item => item.hasOwnProperty('workflowmapping'));
+
+    // Check if ajWFStatiName exists
+    const hasAjWFStatiName = data.some(item => item.hasOwnProperty('ajWFStatiName'));
+
+    // Create a copy of the data array
+    let updatedData = [...data];
+
+    // If ajWFStatiName is missing, add it at the second-to-last position
+    if (!hasAjWFStatiName) {
+        updatedData.splice(updatedData.length - (hasWorkflowMapping ? 1 : 0), 0, { ajWFStatiName: {} });
     }
-    return data;
+
+    // If workflowmapping is missing, add it at the last position
+    if (!hasWorkflowMapping) {
+        updatedData.push({ workflowmapping: [] });
+    }
+
+    return updatedData;
 };
 
 
@@ -86,12 +102,10 @@ export const getRoleForElement = (MainData, elementId) => {
 
 // Toggles status visibility for a role
 export const toggleStatusVisibility = (roleName, status, setShownStatuses) => {
-    // console.log(roleName, status, setShownStatuses);
     setShownStatuses((prev) => {
         const newStatuses = { ...prev };
-        if (newStatuses[roleName] === status) {
-            delete newStatuses[roleName];
-        } else {
+        // Only update if the status is different or if no status is set for the role
+        if (newStatuses[roleName] !== status) {
             newStatuses[roleName] = status;
         }
         return newStatuses;

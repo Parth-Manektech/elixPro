@@ -20,7 +20,6 @@ const CloneRoleModal = ({ roleToClone, show, handleClose, onClone, initialNome }
         const option = roleToClone?.liste?.flatMap(l => l?.listArray || []) || [];
 
         if (roleToClone?.ruolo?.listaDefault) {
-            console.log('first', roleToClone?.ruolo?.listaDefault?.trim())
             setSelectedOption(roleToClone?.ruolo?.listaDefault?.trim());
         }
 

@@ -12,16 +12,33 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
         }
         return statusKey; // Fallback to key if title not found
     };
-    console.log('StatusModal initialData', initialData)
-    const OldData = { status: initialData?.status, title: getStatusTitle(initialData?.status) }
-    const { control, handleSubmit, formState: { errors }, reset } = useForm({
-        defaultValues: OldData || { status: "", title: "" }
+
+    const OldData = { status: initialData?.status || "", title: getStatusTitle(initialData?.status) || "" };
+    const { control, handleSubmit, formState: { errors }, reset, setError, clearErrors } = useForm({
+        defaultValues: OldData
     });
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     useEffect(() => {
-        reset(OldData || { status: "", title: "" });
+        reset(OldData);
     }, [initialData, reset, show]);
+
+    const validateStatusKey = (value) => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return "Campo obbligatorio";
+
+        const statiNameIndex = MainData.findIndex((elem) => elem.ajWFStatiName);
+        if (statiNameIndex !== -1 && MainData[statiNameIndex].ajWFStatiName) {
+            // Exclude current status key when editing
+            const existingKeys = Object.keys(MainData[statiNameIndex].ajWFStatiName).filter(
+                key => key !== initialData?.status
+            );
+            if (existingKeys.includes(trimmedValue)) {
+                return "La chiave esiste già. Inserire una chiave unica.";
+            }
+        }
+        return true;
+    };
 
     const handleAddStatusItem = (data) => {
         const updatedData = initializeWorkflowMapping([...MainData]);
@@ -108,10 +125,7 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
             }
         } else {
             // Add new status at the beginning
-            const updatedPulsanti = { [newStatus]: {} };
-            Object.keys(currentPulsanti).forEach((key) => {
-                updatedPulsanti[key] = currentPulsanti[key];
-            });
+            const updatedPulsanti = { [newStatus]: {}, ...currentPulsanti };
             updatedData[facultyIndex].pulsantiAttivi = updatedPulsanti;
 
             // Add to ajWFStatiName
@@ -140,11 +154,13 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
         }
 
         // Update workflow mappings
-        updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-            if (wf.statoDestinazione === selectedStatusItem) {
-                wf.statoDestinazione = null;
-            }
-        });
+        if (workflowIndex !== -1 && updatedData[workflowIndex].workflowmapping) {
+            updatedData[workflowIndex].workflowmapping.forEach((wf) => {
+                if (wf.statoDestinazione === selectedStatusItem) {
+                    wf.statoDestinazione = null;
+                }
+            });
+        }
 
         // Update shownStatuses
         if (shownStatuses[currentFaculty] === selectedStatusItem) {
@@ -182,6 +198,7 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
 
     const handlefinalclose = () => {
         reset({ status: "", title: "" });
+        setSelectedStatusItem(null);
         handleClose();
     };
 
@@ -209,9 +226,17 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                                     <Controller
                                         name="status"
                                         control={control}
-                                        rules={{ required: "Campo obbligatorio" }}
+                                        rules={{
+                                            required: "Campo obbligatorio",
+                                            validate: validateStatusKey
+                                        }}
                                         render={({ field }) => (
-                                            <Form.Control type="text" {...field} isInvalid={!!errors.status} placeholder="Inserisci la key" />
+                                            <Form.Control
+                                                type="text"
+                                                {...field}
+                                                isInvalid={!!errors.status}
+                                                placeholder="Inserisci la key"
+                                            />
                                         )}
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.status?.message}</Form.Control.Feedback>
@@ -230,7 +255,12 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                                         control={control}
                                         rules={{ required: "Campo obbligatorio" }}
                                         render={({ field }) => (
-                                            <Form.Control type="text" {...field} isInvalid={!!errors.title} placeholder="Inserisci il Nome" />
+                                            <Form.Control
+                                                type="text"
+                                                {...field}
+                                                isInvalid={!!errors.title}
+                                                placeholder="Inserisci il Nome"
+                                            />
                                         )}
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.title?.message}</Form.Control.Feedback>
@@ -240,7 +270,13 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
                     </Modal.Body>
                     <Modal.Footer>
                         <div className="d-flex justify-content-end mb-4">
-                            <Button variant={initialData?.status ? "outline-primary" : "primary"} type="submit" className="mx-2">{initialData?.status ? "Applica" : "Crea Stato"}</Button>
+                            <Button
+                                variant={initialData?.status ? "outline-primary" : "primary"}
+                                type="submit"
+                                className="mx-2"
+                            >
+                                {initialData?.status ? "Applica" : "Crea Stato"}
+                            </Button>
                         </div>
                     </Modal.Footer>
                 </Form>
@@ -248,7 +284,7 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
 
             <DeleteConfirmationModal
                 show={showDeleteConfirmation}
-                handleClose={() => { }}
+                handleClose={() => setShowDeleteConfirmation(false)}
                 handleConfirm={handleConfirmDelete}
                 itemType="status"
             />

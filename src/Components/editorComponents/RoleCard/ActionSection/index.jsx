@@ -211,7 +211,6 @@ function ActionSection({
                     }
 
                     if (wf?.doNotlisteDestinazione) {
-                        console.log('wf?.doNotlisteDestinazione', wf?.doNotlisteDestinazione)
                         wf?.doNotlisteDestinazione?.forEach((listId) => {
                             if (
                                 isElementVisible(actionKey) &&

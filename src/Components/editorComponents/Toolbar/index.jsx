@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Dropdown, Form } from 'react-bootstrap';
 import { CircleMinus, Circleplus, DownBar, SettingIcon } from '../../../Assets/SVGs';
+import { ErrorToast } from '../../../utils/Toster';
 
 function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisibleRoles, isEditMode, setIsEditMode, hendelGenrateCode }) {
     const [zoomCount, setZoomCount] = useState(1)
@@ -25,6 +26,10 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
             setZoomLevel(parseFloat(zValue.toFixed(10)));
         }
     }
+
+    const SalvaButton = () => {
+        hendelGenrateCode()
+    }
     return (
         <div className="toolbar d-flex justify-content-between align-items-center">
             <div className='d-flex justify-content-center gap-3'>
@@ -45,7 +50,7 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                         <div className='d-flex justify-content-between align-items-center px-3 py-2'>
                             <span>Ruoli</span>
                             <span
-                                style={{ cursor: 'pointer', fontWeight: 'bold' }}
+                                style={{ cursor: 'pointer', fontWeight: 'bold', textWrap: 'nowrap', marginLeft: '10px' }}
                                 className='onswitchtext'
                                 onClick={() => {
                                     const allVisible = Object.values(visibleRoles).every(Boolean);
@@ -121,7 +126,7 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                     <SettingIcon height={22} width={22} />
                 </span>
                 <span >
-                    <Button variant="primary" onClick={() => hendelGenrateCode()} disabled={!isEditMode}>Salva</Button>
+                    <Button variant="primary" onClick={SalvaButton} disabled={!isEditMode || !MainData?.length}>Salva</Button>
                 </span>
             </div>
 

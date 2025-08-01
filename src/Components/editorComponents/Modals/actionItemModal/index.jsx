@@ -9,7 +9,6 @@ import CustomMultiSelect from "../../../CustomMultiSelect";
 
 
 const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
-    // console.log('initialData?.moveToList', initialData?.moveToList)
     const { control, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
         defaultValues: { ...initialData, moveToList: initialData?.moveToList?.length ? initialData?.moveToList?.split(',').map(item => item.trim()) : [], doNotMoveToList: initialData?.doNotMoveToList?.length ? initialData?.doNotMoveToList?.split(',').map(item => item.trim()) : [] } || {
             key: "",
@@ -25,7 +24,6 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             developerNotes: ""
         }
     });
-
 
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -56,7 +54,6 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
             setValue("doNotMoveToList", []);
         }
     }, [watch('behaviourTag'), show])
-    // console.log('isPassaAOnly', isPassaAOnly, watch('behaviourTag'))
 
     const validationRules = {
         required: 'Campo obbligatorio',
@@ -270,6 +267,27 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
         })
     };
 
+    const validateKey = (value) => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) return "Campo obbligatorio";
+
+        const existingKeys = MainData
+            .filter(elem => elem.ruolo && elem.azioni) // Filter roles with azioni
+            .flatMap(elem =>
+                elem.azioni.flatMap(action =>
+                    action.listArray
+                        .filter(item => item.key !== initialData?.key) // Exclude current item when editing
+                        .map(item => item.key)
+                )
+            );
+
+        if (existingKeys.includes(trimmedValue)) {
+            return "La chiave esiste già in un'azione. Inserire una chiave unica.";
+        }
+
+        return true;
+    };
+
     return (
         <>
             <Modal show={show} onHide={hendleFinalClose} size="xl">
@@ -293,9 +311,17 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                                     <Controller
                                         name="key"
                                         control={control}
-                                        rules={{ required: "Campo obbligatorio" }}
+                                        rules={{
+                                            required: "Campo obbligatorio",
+                                            validate: validateKey
+                                        }}
                                         render={({ field }) => (
-                                            <Form.Control type="text" placeholder="Inserisci la key" {...field} isInvalid={!!errors.key} />
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Inserisci la key"
+                                                {...field}
+                                                isInvalid={!!errors.key}
+                                            />
                                         )}
                                     />
                                     <Form.Control.Feedback type="invalid">{errors.key?.message}</Form.Control.Feedback>
@@ -306,7 +332,7 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                         <Form.Group controlId="formTitle" className="mb-3">
                             <Row lg={12}>
                                 <Col lg={3} className="d-flex justify-content-end align-items-center">
-                                    nome
+                                    Nome
                                 </Col>
                                 <Col lg={9}>
                                     <Controller
@@ -433,7 +459,6 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
                                         isInvalid={!!errors.behaviourTag} // Show validation error styling
                                         value={bihaviourtagOptions.filter(option => value?.includes(option.value))}
                                         onChange={(selectedOptions) => {
-                                            console.log('selectedOptions', value)
                                             onChange(selectedOptions?.value);
                                         }}
                                         className="basic-multi-select"
