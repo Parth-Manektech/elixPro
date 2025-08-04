@@ -163,20 +163,57 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 updatedRole = {
                     ...updatedRole,
                     layout: {
-                        top: 10,
-                        left: index * 780,
+                        top: Math.floor(index / 3) * (637), // Increment top after every 3rd role with a 50px gap
+                        left: (index % 3) * 780, // Horizontal spacing for each role within a group of 3
                         width: 768,
                         height: 637,
                     },
                 };
             }
+            // Function to generate a random color
+            function generateRoleColor(index, total = 4) {
+                const excludedZones = [
+                    [0, 20], // evitiamo il rosso
+                    [70, 180], // evitiamo il verde
+                    [230, 300] // evitiamo il viola
+                ];
+
+                const safeHueRange = [];
+                for (let h = 0; h < 360; h++) {
+                    const inExcluded = excludedZones.some(([start, end]) => h >= start && h <= end);
+                    if (!inExcluded) safeHueRange.push(h);
+                }
+
+                const step = Math.floor(safeHueRange.length / total);
+                const hue = safeHueRange[(index * step) % safeHueRange.length];
+
+                const h = hue;
+                const s = 30; // saturazione tenue
+                const l = 65; // luminosità chiara
+
+                return hslToHex(h, s, l);
+            }
+            function hslToHex(h, s, l) {
+                s /= 100;
+                l /= 100;
+
+                const k = n => (n + h / 30) % 12;
+                const a = s * Math.min(l, 1 - l);
+                const f = n =>
+                    Math.round(255 * (l - a * Math.max(-1, Math.min(Math.min(k(n) - 3, 9 - k(n)), 1))));
+
+                return `#${f(0).toString(16).padStart(2, '0')}${f(8).toString(16).padStart(2, '0')}${f(4)
+                    .toString(16)
+                    .padStart(2, '0')}`;
+            }
+
             if (role.ruolo && !role.ruolo.colore) {
                 hasChanges = true;
                 updatedRole = {
                     ...updatedRole,
                     ruolo: {
                         ...role.ruolo,
-                        colore: '#343a40',
+                        colore: generateRoleColor(index, MainData?.length),
                     },
                 };
             }
@@ -345,7 +382,9 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     }
 
     useEffect(() => {
-        updateLeaderLines()
+        setTimeout(() => {
+            updateLeaderLines()
+        }, 0);
     }, [isEditMode, MainData])
 
     useEffect(() => {
@@ -379,8 +418,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                             }}
                         >
                             {collapsedRoles.length > 0 && collapsedRoles.length < MainData.length
-                                ? 'Collassa tutti'
-                                : 'Espandi tutti'}
+                                ? 'Espandi tutti'
+                                : 'Collassa tutti'}
                         </a>
                     </div>
                     <input

@@ -93,7 +93,6 @@ const Editor = () => {
             processAllCodeSegment(LocalData)
         } else {
             if (stateData?.from === "Nuovo + Genera da JSON" || stateData?.from === "Nuovo + Importa da Excel") {
-                console.log('state');
                 setActiveKey("view");
                 const Data = JSON.parse(stateData?.ePWorkFlowJson)
                 setisLoading(stateData?.isLoading)
@@ -163,7 +162,6 @@ const Editor = () => {
                     return response.json();
                 })
                 .then((data) => {
-                    console.log('data', data)
                     setisLoading(false)
                     const sData = {
                         Json: data?.jsonData,
@@ -245,9 +243,7 @@ const Editor = () => {
         const FinalSQLJson = sData?.sql
             ? (() => {
                 try {
-                    console.log('Raw SQL content:', sData.sql);
                     const formattedSql = customFormatSql(sData.sql);
-                    console.log('Formatted SQL content:', formattedSql);
                     return formattedSql;
                 } catch (error) {
                     console.error('SQL formatting failed:', error.message, 'SQL content:', sData.sql);

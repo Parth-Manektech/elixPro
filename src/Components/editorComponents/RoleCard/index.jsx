@@ -46,7 +46,6 @@ function RoleCard({
     duplicateCount,
     setDuplicateCount
 }) {
-    console.log('shownStatuses', shownStatuses)
     const roleName = element.ruolo.nome;
     const top = element.layout?.top || 0;
     const left = element.layout?.left || 0;
