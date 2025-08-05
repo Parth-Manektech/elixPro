@@ -72,9 +72,12 @@ function ActionSection({
                     isElementVisible(actionKey) &&
                     isElementVisible(wf.statoDestinazione)
                 ) {
+                    const StatusElement = MainData.find(item =>
+                        Object.keys(item?.pulsantiAttivi || {}).some(key => key === wf.statoDestinazione)
+                    );
                     createLeaderLine(
-                        actionKey,
-                        wf.statoDestinazione,
+                        `${element?.ruolo?.key}_${actionKey}`,
+                        `${StatusElement?.ruolo?.key}_${wf.statoDestinazione}`,
                         'rgba(14, 165, 233, 0.25)',
                         'behind',
                         'arrow2',
@@ -88,9 +91,14 @@ function ActionSection({
                             isElementVisible(actionKey) &&
                             isElementVisible(listId)
                         ) {
+                            const ListElement = MainData.find(item =>
+                                item.liste?.some(liste =>
+                                    liste.listArray?.some(listItem => listItem.key === listId)
+                                )
+                            );
                             createLeaderLine(
-                                actionKey,
-                                listId,
+                                `${element?.ruolo?.key}_${actionKey}`,
+                                `${ListElement?.ruolo?.key}_${listId}`,
                                 'rgba(41, 115, 147, 0.25)',
                                 'behind',
                                 'arrow2',
@@ -107,9 +115,14 @@ function ActionSection({
                             isElementVisible(actionKey) &&
                             isElementVisible(listId)
                         ) {
+                            const ListElement = MainData.find(item =>
+                                item.liste?.some(liste =>
+                                    liste.listArray?.some(listItem => listItem.key === listId)
+                                )
+                            );
                             createLeaderLine(
-                                actionKey,
-                                listId,
+                                `${element?.ruolo?.key}_${actionKey}`,
+                                `${ListElement?.ruolo?.key}_${listId}`,
                                 'rgba(202, 138, 4, 0.25)',
                                 'square',
                                 'square',
@@ -134,7 +147,7 @@ function ActionSection({
     };
 
     const handleMouseLeave = (actionKey) => {
-        if (!refsMap.current[actionKey]) return;
+        if (!refsMap.current[`${element?.ruolo?.key}_${actionKey}`]) return;
         setHoveredStatus(null);
         setHoveredAction(null);
         clearLeaderLines();
@@ -150,7 +163,7 @@ function ActionSection({
     };
 
     const handleActionItemClick = (actionKey, actionTitle) => {
-        const newSelectedElement = { type: 'action', roleName, actionTitle, itemKey: actionKey };
+        const newSelectedElement = { type: 'action', roleName, actionTitle, itemKey: actionKey, data_id: `${element?.ruolo?.key}_${actionKey}` };
         if (
             selectedElement?.type === 'action' &&
             selectedElement.itemKey === actionKey &&
@@ -181,9 +194,12 @@ function ActionSection({
                         isElementVisible(actionKey) &&
                         isElementVisible(wf.statoDestinazione)
                     ) {
+                        const StatusElement = MainData.find(item =>
+                            Object.keys(item?.pulsantiAttivi || {}).some(key => key === wf.statoDestinazione)
+                        );
                         createLeaderLine(
-                            actionKey,
-                            wf.statoDestinazione,
+                            `${element?.ruolo?.key}_${actionKey}`,
+                            `${StatusElement?.ruolo?.key}_${wf.statoDestinazione}`,
                             'rgba(124, 195, 225, 1)',
                             'behind',
                             'arrow2',
@@ -197,9 +213,13 @@ function ActionSection({
                                 isElementVisible(actionKey) &&
                                 isElementVisible(listId)
                             ) {
+                                const ListElement = MainData.find(item =>
+                                    item.liste?.some(liste =>
+                                        liste.listArray?.some(listItem => listItem.key === listId)
+                                    ));
                                 createLeaderLine(
-                                    actionKey,
-                                    listId,
+                                    `${element?.ruolo?.key}_${actionKey}`,
+                                    `${ListElement?.ruolo?.key}_${listId}`,
                                     'rgba(41, 115, 147, 0.25)',
                                     'behind',
                                     'arrow2',
@@ -216,9 +236,13 @@ function ActionSection({
                                 isElementVisible(actionKey) &&
                                 isElementVisible(listId)
                             ) {
+                                const ListElement = MainData.find(item =>
+                                    item.liste?.some(liste =>
+                                        liste.listArray?.some(listItem => listItem.key === listId)
+                                    ));
                                 createLeaderLine(
-                                    actionKey,
-                                    listId,
+                                    `${element?.ruolo?.key}_${actionKey}`,
+                                    `${ListElement?.ruolo?.key}_${listId}`,
                                     'rgba(202, 138, 4, 0.25)',
                                     'square',
                                     'square',
@@ -547,7 +571,8 @@ function ActionSection({
                                 <div
                                     key={item.key}
                                     id={item.key}
-                                    ref={(el) => (refsMap.current[item.key] = el)}
+                                    data-id={`${element?.ruolo?.key}_${item?.key}`}
+                                    ref={(el) => (refsMap.current[`${element?.ruolo?.key}_${item?.key}`] = el)}
                                     className={`azioniArrayItem ${dropTarget?.type === 'action' && dropTarget?.itemKey === item.key && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                                     onMouseEnter={() => handleActionMouseHover(item.key)}
                                     onMouseLeave={() => handleMouseLeave(item.key)}

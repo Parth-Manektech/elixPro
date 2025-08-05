@@ -82,9 +82,13 @@ function StatusSection({
                     isElementVisible(wf.keyAzione) &&
                     isElementVisible(statusItemKey)
                 ) {
+                    const ActionElement = MainData.find(item =>
+                        item.azioni?.some(azione =>
+                            azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                        ));
                     createLeaderLine(
-                        wf.keyAzione,
-                        statusItemKey,
+                        `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
+                        `${element?.ruolo?.key}_${statusItemKey}`,
                         'rgba(14, 165, 233, 0.25)',
                         'behind',
                         'arrow2',
@@ -107,7 +111,7 @@ function StatusSection({
     };
 
     const handleMouseLeave = (statusItemKey) => {
-        if (!refsMap.current[statusItemKey]) return;
+        if (!refsMap.current[`${element?.ruolo?.key}_${statusItemKey}`]) return;
         setHoveredStatus(null);
         setHoveredAction(null);
         clearLeaderLines();
@@ -125,7 +129,7 @@ function StatusSection({
     const handleStatusClick = (statusItemKey) => {
         toggleStatusVisibility(roleName, statusItemKey, setShownStatuses);
 
-        const newSelectedElement = { type: 'status', roleName, statusItemKey };
+        const newSelectedElement = { type: 'status', roleName, statusItemKey, data_id: `${element?.ruolo?.key}_${statusItemKey}` };
         if (
             selectedElement?.type === 'status' &&
             selectedElement.statusItemKey === statusItemKey &&
@@ -152,9 +156,13 @@ function StatusSection({
                         isElementVisible(wf.keyAzione) &&
                         isElementVisible(statusItemKey)
                     ) {
+                        const ActionElement = MainData.find(item =>
+                            item.azioni?.some(azione =>
+                                azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                            ));
                         createLeaderLine(
-                            wf.keyAzione,
-                            statusItemKey,
+                            `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
+                            `${element?.ruolo?.key}_${statusItemKey}`,
                             'rgba(124, 195, 225, 1)',
                             'behind',
                             'arrow2',
@@ -307,10 +315,11 @@ function StatusSection({
                 Object.keys(pulsantiAttivi).map((StatusItem) => {
                     const isDublicate = getStatusOptions().includes(StatusItem);
                     return (
-                        <span
-                            ref={(el) => (refsMap.current[StatusItem] = el)}
+                        <div
+                            ref={(el) => (refsMap.current[`${element?.ruolo?.key}_${StatusItem}`] = el)}
                             className={`StatusItemTitle ${dropTarget?.type === 'status' && dropTarget?.statusItemKey === StatusItem && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                             id={StatusItem}
+                            data-id={`${rulekey}_${StatusItem}`}
                             onMouseEnter={() => handleStatusMouseHover(StatusItem)}
                             onMouseLeave={() => handleMouseLeave(StatusItem)}
                             onClick={() => handleStatusClick(StatusItem)}
@@ -371,7 +380,7 @@ function StatusSection({
                                     </Dropdown>
                                 )}
                             </div>
-                        </span>
+                        </div>
                     );
                 })}
             {isEditMode && (

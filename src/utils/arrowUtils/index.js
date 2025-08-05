@@ -22,9 +22,14 @@ export const drawSelectedElementArrows = (
                 isElementVisible(wf.keyAzione) &&
                 isElementVisible(selectedElement.itemKey)
             ) {
+                const ActionElement = MainData.find(item =>
+                    item.azioni?.some(azione =>
+                        azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                    )
+                );
                 createLeaderLine(
-                    wf.keyAzione,
-                    selectedElement.itemKey,
+                    `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
+                    selectedElement.data_id,
                     "rgba(41, 115, 147, 1)",
                     "behind",
                     "arrow2",
@@ -37,9 +42,14 @@ export const drawSelectedElementArrows = (
                 isElementVisible(wf.keyAzione) &&
                 isElementVisible(selectedElement.itemKey)
             ) {
+                const ActionElement = MainData.find(item =>
+                    item.azioni?.some(azione =>
+                        azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                    )
+                );
                 createLeaderLine(
-                    wf.keyAzione,
-                    selectedElement.itemKey,
+                    `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
+                    selectedElement.data_id,
                     "rgba(202, 138, 4, 1)",
                     "square",
                     "square",
@@ -55,9 +65,14 @@ export const drawSelectedElementArrows = (
                 isElementVisible(wf.keyAzione) &&
                 isElementVisible(selectedElement.statusItemKey)
             ) {
+                const ActionElement = MainData.find(item =>
+                    item.azioni?.some(azione =>
+                        azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                    )
+                );
                 createLeaderLine(
-                    wf.keyAzione,
-                    selectedElement.statusItemKey,
+                    `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
+                    selectedElement.data_id,
                     "rgba(124, 195, 225, 1)",
                     "behind",
                     "arrow2",
@@ -76,9 +91,12 @@ export const drawSelectedElementArrows = (
                 isElementVisible(selectedElement.itemKey) &&
                 isElementVisible(wf.statoDestinazione)
             ) {
+                const StatusElement = MainData.find(item =>
+                    Object.keys(item?.pulsantiAttivi || {}).some(key => key === wf.statoDestinazione)
+                );
                 createLeaderLine(
-                    selectedElement.itemKey,
-                    wf.statoDestinazione,
+                    selectedElement.data_id,
+                    `${StatusElement?.ruolo?.key}_${wf.statoDestinazione}`,
                     "rgba(124, 195, 225, 1)",
                     "behind",
                     "arrow2",
@@ -92,9 +110,14 @@ export const drawSelectedElementArrows = (
                         isElementVisible(selectedElement.itemKey) &&
                         isElementVisible(listId)
                     ) {
+                        const ListElement = MainData.find(item =>
+                            item.liste?.some(liste =>
+                                liste.listArray?.some(listItem => listItem.key === listId)
+                            )
+                        );
                         createLeaderLine(
-                            selectedElement.itemKey,
-                            listId,
+                            selectedElement.data_id,
+                            `${ListElement?.ruolo?.key}_${listId}`,
                             "rgba(41, 115, 147, 1)",
                             "behind",
                             "arrow2",
@@ -111,9 +134,14 @@ export const drawSelectedElementArrows = (
                         isElementVisible(selectedElement.itemKey) &&
                         isElementVisible(listId)
                     ) {
+                        const ListElement = MainData.find(item =>
+                            item.liste?.some(liste =>
+                                liste.listArray?.some(listItem => listItem.key === listId)
+                            )
+                        );
                         createLeaderLine(
-                            selectedElement.itemKey,
-                            listId,
+                            selectedElement.data_id,
+                            `${ListElement?.ruolo?.key}_${listId}`,
                             "rgba(202, 138, 4, 1)",
                             "square",
                             "square",
@@ -140,108 +168,6 @@ export const clearHoverArrows = (leaderLinesRef) => {
     });
 };
 
-export const drawHoverArrows = (
-    elementType,
-    itemKey,
-    MainData,
-    createLeaderLine,
-    containerRef,
-    leaderLinesRef
-) => {
-    const workflowIndex = MainData.length - 1;
-    if (!MainData[workflowIndex]?.workflowmapping) return;
-
-    if (elementType === "list") {
-        MainData[workflowIndex].workflowmapping.forEach((wf) => {
-            if (wf.listeDestinazione.includes(itemKey)) {
-                const line = createLeaderLine(
-                    wf.keyAzione,
-                    itemKey,
-                    "rgba(41, 115, 147, 0.25)",
-                    "behind",
-                    "arrow2",
-                    false,
-                    containerRef
-                );
-                if (line) leaderLinesRef.current.push({ line, type: "hover" });
-            }
-            if (wf.doNotlisteDestinazione.includes(itemKey)) {
-                const line = createLeaderLine(
-                    wf.keyAzione,
-                    itemKey,
-                    "rgba(202, 138, 4, 0.25)",
-                    "square",
-                    "square",
-                    false,
-                    containerRef
-                );
-                if (line) leaderLinesRef.current.push({ line, type: "hover" });
-            }
-        });
-    } else if (elementType === "status") {
-        MainData[workflowIndex].workflowmapping.forEach((wf) => {
-            if (wf.statoDestinazione === itemKey) {
-                const line = createLeaderLine(
-                    wf.keyAzione,
-                    itemKey,
-                    "rgba(14, 165, 233, 0.25)",
-                    "behind",
-                    "arrow2",
-                    false,
-                    containerRef
-                );
-                if (line) leaderLinesRef.current.push({ line, type: "hover" });
-            }
-        });
-    } else if (elementType === "action") {
-        const wf = MainData[workflowIndex].workflowmapping.find(
-            (item) => item.keyAzione === itemKey
-        );
-        if (wf) {
-            if (wf.statoDestinazione) {
-                const line = createLeaderLine(
-                    itemKey,
-                    wf.statoDestinazione,
-                    "rgba(14, 165, 233, 0.25)",
-                    "behind",
-                    "arrow2",
-                    false,
-                    containerRef
-                );
-                if (line) leaderLinesRef.current.push({ line, type: "hover" });
-            }
-            if (wf.listeDestinazione) {
-                wf.listeDestinazione.forEach((listId) => {
-                    const line = createLeaderLine(
-                        itemKey,
-                        listId,
-                        "rgba(41, 115, 147, 0.25)",
-                        "behind",
-                        "arrow2",
-                        false,
-                        containerRef
-                    );
-                    if (line) leaderLinesRef.current.push({ line, type: "hover" });
-                });
-            }
-            if (wf.doNotlisteDestinazione) {
-                wf.doNotlisteDestinazione.forEach((listId) => {
-                    const line = createLeaderLine(
-                        itemKey,
-                        listId,
-                        "rgba(202, 138, 4, 0.25)",
-                        "square",
-                        "square",
-                        false,
-                        containerRef
-                    );
-                    if (line) leaderLinesRef.current.push({ line, type: "hover" });
-                });
-            }
-
-        }
-    }
-};
 
 // debounce.js
 export function debounce(func, wait) {
