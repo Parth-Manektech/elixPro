@@ -84,7 +84,7 @@ function RoleCard({
     };
 
 
-    const handleRoleCardDrag = (e) => {
+    function handleRoleCardDrag(e) {
         if (!draggingItem || draggingItem.type !== 'role') return;
 
         if (e.clientX === 0 && e.clientY === 0) return;
@@ -96,8 +96,11 @@ function RoleCard({
         const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
         const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
 
-        let newTop = Math.max(0, parseInt(currentLayout.top) + deltaY);
-        let newLeft = Math.max(0, parseInt(currentLayout.left) + deltaX);
+        const originalTop = originalPositionsRef.current[roleName]?.top || 0;
+        const originalLeft = originalPositionsRef.current[roleName]?.left || 0;
+
+        let newTop = Math.max(0, Math.round((originalTop + deltaY) / 20) * 20);
+        let newLeft = Math.max(0, Math.round((originalLeft + deltaX) / 20) * 20);
         let newWidth = currentLayout.width;
         let newHeight = currentLayout.height;
 
@@ -112,8 +115,7 @@ function RoleCard({
             top: newTop + newHeight + 100,
             left: newLeft + newWidth + 100,
         });
-        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
-    };
+    }
 
 
     const handleRoleCardDrop = (e) => {
