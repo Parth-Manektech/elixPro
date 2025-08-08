@@ -381,6 +381,109 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         return luminance > 140;
     }
 
+    const dragStartPosRef = useRef({ x: 0, y: 0 });
+    const originalPositionsRef = useRef({});
+
+    const handleCollapsedRoleDragStart = (e, ruolo) => {
+        if (!ruolo?.nome) return;
+        setDraggingItem({ type: 'collapsedRole', roleName: ruolo.nome });
+        e.dataTransfer.setData('roleName', ruolo.nome);
+        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+
+        const role = MainData.find((r) => r.ruolo?.nome === ruolo.nome);
+        originalPositionsRef.current[ruolo.nome] = {
+            top: role.layout?.top || 0,
+            left: role.layout?.left || 0,
+            width: role.layout?.width || 350,
+            height: role.layout?.height || 690,
+        };
+    };
+
+    const handleCollapsedRoleDrag = (e, ruolo) => {
+        if (!draggingItem || draggingItem.type !== 'collapsedRole' || draggingItem.roleName !== ruolo.nome) return;
+
+        if (e.clientX === 0 && e.clientY === 0) return;
+
+        const updatedData = [...MainData];
+        const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === ruolo.nome);
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350, height: 690 };
+
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const deltaX = (e.clientX - containerRect.left - dragStartPosRef.current.x) / zoomLevel;
+        const deltaY = (e.clientY - containerRect.top - dragStartPosRef.current.y) / zoomLevel;
+
+        const originalTop = originalPositionsRef.current[ruolo.nome]?.top || 0;
+        const originalLeft = originalPositionsRef.current[ruolo.nome]?.left || 0;
+
+        let newTop = Math.max(0, Math.round((originalTop + deltaY) / 20) * 20);
+        let newLeft = Math.max(0, Math.round((originalLeft + deltaX) / 20) * 20);
+
+        updatedData[roleIndex].layout = {
+            ...currentLayout,
+            top: newTop,
+            left: newLeft,
+        };
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        updateCanvasSize({
+            top: newTop + (currentLayout.height || 690) + 100,
+            left: newLeft + (currentLayout.width || 350) + 100,
+        });
+    };
+
+    const handleCollapsedRoleDragEnd = (e, ruolo) => {
+        e.preventDefault();
+        if (!draggingItem || draggingItem.type !== 'collapsedRole' || draggingItem.roleName !== ruolo.nome) return;
+
+        setCollapsedRoles((prev) => prev.filter((key) => key !== ruolo.key));
+        setCollapsedCards((prev) => {
+            const newCollapsed = { ...prev };
+            delete newCollapsed[ruolo.nome];
+            return newCollapsed;
+        });
+
+        setDraggingItem(null);
+        delete originalPositionsRef.current[ruolo.nome];
+        updateCanvasSize();
+        clearLeaderLines();
+    };
+
+    const handleCollapsedRoleDrop = (e) => {
+        e.preventDefault();
+        if (!draggingItem || draggingItem.type !== 'collapsedRole') return;
+
+        const roleName = e.dataTransfer.getData('roleName');
+        const role = MainData.find((r) => r.ruolo?.nome === roleName);
+        if (!role) return;
+
+        const updatedData = [...MainData];
+        const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === roleName);
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350, height: 690 };
+
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const newTop = Math.max(0, Math.round((e.clientY - containerRect.top) / zoomLevel / 20) * 20);
+        const newLeft = Math.max(0, Math.round((e.clientX - containerRect.left) / zoomLevel / 20) * 20);
+
+        updatedData[roleIndex].layout = {
+            ...currentLayout,
+            top: newTop,
+            left: newLeft,
+        };
+
+        setEpWorkflowjson(JSON.stringify(updatedData));
+        setCollapsedRoles((prev) => prev.filter((key) => key !== role.ruolo.key));
+        setCollapsedCards((prev) => {
+            const newCollapsed = { ...prev };
+            delete newCollapsed[roleName];
+            return newCollapsed;
+        });
+
+        setDraggingItem(null);
+        delete originalPositionsRef.current[roleName];
+        updateCanvasSize();
+        clearLeaderLines();
+    };
+
     useEffect(() => {
         setTimeout(() => {
             updateLeaderLines()
@@ -438,19 +541,22 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                             } else {
                                 Color = "#f8f9fa";
                             }
-                            return (<div key={role?.ruolo?.key}
-                                style={{ backgroundColor: role.ruolo?.colore || '#6f42c1', }}
-                                className="collapsed-role">
+                            return (<div
+                                key={role?.ruolo?.key}
+                                style={{ backgroundColor: role.ruolo?.colore || '#6f42c1' }}
+                                className="collapsed-role"
+                                draggable
+                                onDragStart={(e) => handleCollapsedRoleDragStart(e, role?.ruolo)}
+                                onDrag={(e) => handleCollapsedRoleDrag(e, role?.ruolo)}
+                                onDragEnd={(e) => handleCollapsedRoleDragEnd(e, role?.ruolo)}
+                            >
                                 <div className='d-flex gap-2 align-items-center'>
                                     <span className="drag-handle ms-2">
                                         <i className="bi bi-arrows-move" style={{ color: Color }}></i>
                                     </span>
-
                                     <span className="vr-line" style={{ backgroundColor: Color }}></span>
                                     <span className="role-name" style={{ color: Color }}>{role?.ruolo?.nome}</span>
                                 </div>
-
-
                                 <span
                                     onClick={() => handleExpandCard(role?.ruolo?.key)}
                                     style={{ cursor: 'pointer' }}
@@ -477,6 +583,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 ref={containerRef}
                 className="editor-visualization"
                 style={{ position: 'relative', width: '100%', overflow: 'auto' }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleCollapsedRoleDrop(e)}
             >
                 <div
                     className="d-flex justify-content-around flex-wrap"
