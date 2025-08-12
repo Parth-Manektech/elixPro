@@ -60,11 +60,7 @@ function ListSection({
         const workflowIndex = MainData.length - 1;
         if (MainData[workflowIndex]?.workflowmapping) {
             MainData[workflowIndex].workflowmapping.forEach((wf) => {
-                if (
-                    wf.listeDestinazione.includes(listItemKey) &&
-                    isElementVisible(wf.keyAzione) &&
-                    isElementVisible(listItemKey)
-                ) {
+                if (wf.listeDestinazione.includes(listItemKey) && isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
                     const ActionElement = MainData.find(item =>
                         item.azioni?.some(azione =>
                             azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
@@ -78,18 +74,43 @@ function ListSection({
                         false,
                         containerRef
                     );
+                } else if (wf.listeDestinazione.includes(listItemKey) && !isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
+                    const ActionElement = MainData.find(item =>
+                        item.azioni?.some(azione =>
+                            azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                        ));
+                    createLeaderLine(
+                        `${ActionElement?.ruolo?.key}`,
+                        `${element?.ruolo?.key}_${listItemKey}`,
+                        'rgba(41, 115, 147, 0.25)',
+                        'behind',
+                        'arrow2',
+                        false,
+                        containerRef
+                    );
                 }
-                if (
-                    wf.doNotlisteDestinazione.includes(listItemKey) &&
-                    isElementVisible(wf.keyAzione) &&
-                    isElementVisible(listItemKey)
-                ) {
+
+                if (wf.doNotlisteDestinazione.includes(listItemKey) && isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
                     const ActionElement = MainData.find(item =>
                         item.azioni?.some(azione =>
                             azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
                         ));
                     createLeaderLine(
                         `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
+                        `${element?.ruolo?.key}_${listItemKey}`,
+                        'rgba(202, 138, 4, 0.25)',
+                        'square',
+                        'square',
+                        false,
+                        containerRef
+                    );
+                } else if (wf.doNotlisteDestinazione.includes(listItemKey) && !isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
+                    const ActionElement = MainData.find(item =>
+                        item.azioni?.some(azione =>
+                            azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                        ));
+                    createLeaderLine(
+                        `${ActionElement?.ruolo?.key}`,
                         `${element?.ruolo?.key}_${listItemKey}`,
                         'rgba(202, 138, 4, 0.25)',
                         'square',
@@ -152,25 +173,28 @@ function ListSection({
             const workflowIndex = MainData.length - 1;
             if (MainData[workflowIndex]?.workflowmapping) {
                 MainData[workflowIndex].workflowmapping.forEach((wf) => {
-                    if (
-                        wf.listeDestinazione.includes(listItemKey) &&
-                        isElementVisible(wf.keyAzione) &&
-                        isElementVisible(listItemKey)
-                    ) {
+                    if (wf.listeDestinazione.includes(listItemKey) && isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
+                        const ActionElement = MainData.find(item =>
+                            item.azioni?.some(azione =>
+                                azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                            ));
+                        createLeaderLine(`${ActionElement?.ruolo?.key}_${wf.keyAzione}`, `${element?.ruolo?.key}_${listItemKey}`, 'rgba(41, 115, 147, 1)', 'behind', 'arrow2', true, containerRef);
+                    } else if (wf.listeDestinazione.includes(listItemKey) && !isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
                         const ActionElement = MainData.find(item =>
                             item.azioni?.some(azione =>
                                 azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
                             ));
                         createLeaderLine(
-                            `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
+                            `${ActionElement?.ruolo?.key}`,
                             `${element?.ruolo?.key}_${listItemKey}`,
-                            'rgba(41, 115, 147, 1)',
+                            'rgba(41, 115, 147, 0.25)',
                             'behind',
                             'arrow2',
                             true,
                             containerRef
                         );
                     }
+
                     if (
                         wf.doNotlisteDestinazione.includes(listItemKey) &&
                         isElementVisible(wf.keyAzione) &&
@@ -184,6 +208,20 @@ function ListSection({
                             `${ActionElement?.ruolo?.key}_${wf.keyAzione}`,
                             `${element?.ruolo?.key}_${listItemKey}`,
                             'rgba(202, 138, 4, 1)',
+                            'square',
+                            'square',
+                            true,
+                            containerRef
+                        );
+                    } else if (wf.doNotlisteDestinazione.includes(listItemKey) && !isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
+                        const ActionElement = MainData.find(item =>
+                            item.azioni?.some(azione =>
+                                azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                            ));
+                        createLeaderLine(
+                            `${ActionElement?.ruolo?.key}`,
+                            `${element?.ruolo?.key}_${listItemKey}`,
+                            'rgba(202, 138, 4, 0.25)',
                             'square',
                             'square',
                             true,

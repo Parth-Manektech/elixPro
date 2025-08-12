@@ -84,13 +84,28 @@ function ActionSection({
                         false,
                         containerRef
                     );
+                } else if (
+                    wf.statoDestinazione &&
+                    isElementVisible(actionKey) &&
+                    !isElementVisible(wf.statoDestinazione)
+                ) {
+                    const StatusElement = MainData.find(item =>
+                        Object.keys(item?.pulsantiAttivi || {}).some(key => key === wf.statoDestinazione)
+                    );
+                    createLeaderLine(
+                        `${element?.ruolo?.key}_${actionKey}`,
+                        `${StatusElement?.ruolo?.key}`,
+                        'rgba(14, 165, 233, 0.25)',
+                        'behind',
+                        'arrow2',
+                        false,
+                        containerRef
+                    );
                 }
+
                 if (wf?.listeDestinazione) {
                     wf?.listeDestinazione?.forEach((listId) => {
-                        if (
-                            isElementVisible(actionKey) &&
-                            isElementVisible(listId)
-                        ) {
+                        if (isElementVisible(actionKey) && isElementVisible(listId)) {
                             const ListElement = MainData.find(item =>
                                 item.liste?.some(liste =>
                                     liste.listArray?.some(listItem => listItem.key === listId)
@@ -105,16 +120,29 @@ function ActionSection({
                                 false,
                                 containerRef
                             );
+                        } else if (isElementVisible(actionKey) && !isElementVisible(listId)) {
+                            const ListElement = MainData.find(item =>
+                                item.liste?.some(liste =>
+                                    liste.listArray?.some(listItem => listItem.key === listId)
+                                )
+                            );
+                            createLeaderLine(
+                                `${element?.ruolo?.key}_${actionKey}`,
+                                `${ListElement?.ruolo?.key}`,
+                                'rgba(41, 115, 147, 0.25)',
+                                'behind',
+                                'arrow2',
+                                false,
+                                containerRef
+                            );
                         }
+
                     });
                 }
 
                 if (wf?.doNotlisteDestinazione) {
                     wf?.doNotlisteDestinazione?.forEach((listId) => {
-                        if (
-                            isElementVisible(actionKey) &&
-                            isElementVisible(listId)
-                        ) {
+                        if (isElementVisible(actionKey) && isElementVisible(listId)) {
                             const ListElement = MainData.find(item =>
                                 item.liste?.some(liste =>
                                     liste.listArray?.some(listItem => listItem.key === listId)
@@ -123,6 +151,21 @@ function ActionSection({
                             createLeaderLine(
                                 `${element?.ruolo?.key}_${actionKey}`,
                                 `${ListElement?.ruolo?.key}_${listId}`,
+                                'rgba(202, 138, 4, 0.25)',
+                                'square',
+                                'square',
+                                false,
+                                containerRef
+                            );
+                        } else if (isElementVisible(actionKey) && !isElementVisible(listId)) {
+                            const ListElement = MainData.find(item =>
+                                item.liste?.some(liste =>
+                                    liste.listArray?.some(listItem => listItem.key === listId)
+                                )
+                            );
+                            createLeaderLine(
+                                `${element?.ruolo?.key}_${actionKey}`,
+                                `${ListElement?.ruolo?.key}`,
                                 'rgba(202, 138, 4, 0.25)',
                                 'square',
                                 'square',
@@ -206,7 +249,25 @@ function ActionSection({
                             true,
                             containerRef
                         );
+                    } else if (
+                        wf.statoDestinazione &&
+                        isElementVisible(actionKey) &&
+                        !isElementVisible(wf.statoDestinazione)
+                    ) {
+                        const StatusElement = MainData.find(item =>
+                            Object.keys(item?.pulsantiAttivi || {}).some(key => key === wf.statoDestinazione)
+                        );
+                        createLeaderLine(
+                            `${element?.ruolo?.key}_${actionKey}`,
+                            `${StatusElement?.ruolo?.key}`,
+                            'rgba(14, 165, 233, 0.25)',
+                            'behind',
+                            'arrow2',
+                            true,
+                            containerRef
+                        );
                     }
+
                     if (wf?.listeDestinazione) {
                         wf?.listeDestinazione?.forEach((listId) => {
                             if (
@@ -223,7 +284,24 @@ function ActionSection({
                                     'rgba(41, 115, 147, 0.25)',
                                     'behind',
                                     'arrow2',
-                                    false,
+                                    true,
+                                    containerRef
+                                );
+                            } else if (
+                                isElementVisible(actionKey) &&
+                                !isElementVisible(listId)
+                            ) {
+                                const ListElement = MainData.find(item =>
+                                    item.liste?.some(liste =>
+                                        liste.listArray?.some(listItem => listItem.key === listId)
+                                    ));
+                                createLeaderLine(
+                                    `${element?.ruolo?.key}_${actionKey}`,
+                                    `${ListElement?.ruolo?.key}`,
+                                    'rgba(41, 115, 147, 0.25)',
+                                    'behind',
+                                    'arrow2',
+                                    true,
                                     containerRef
                                 );
                             }
@@ -246,7 +324,24 @@ function ActionSection({
                                     'rgba(202, 138, 4, 0.25)',
                                     'square',
                                     'square',
-                                    false,
+                                    true,
+                                    containerRef
+                                );
+                            } else if (
+                                isElementVisible(actionKey) &&
+                                !isElementVisible(listId)
+                            ) {
+                                const ListElement = MainData.find(item =>
+                                    item.liste?.some(liste =>
+                                        liste.listArray?.some(listItem => listItem.key === listId)
+                                    ));
+                                createLeaderLine(
+                                    `${element?.ruolo?.key}_${actionKey}`,
+                                    `${ListElement?.ruolo?.key}`,
+                                    'rgba(202, 138, 4, 0.25)',
+                                    'square',
+                                    'square',
+                                    true,
                                     containerRef
                                 );
                             }

@@ -17,6 +17,7 @@ export const drawSelectedElementArrows = (
 
     if (selectedElement?.type === "list") {
         MainData[workflowIndex].workflowmapping.forEach((wf) => {
+
             if (
                 wf.listeDestinazione.includes(selectedElement.itemKey) &&
                 isElementVisible(wf.keyAzione) &&
@@ -36,7 +37,28 @@ export const drawSelectedElementArrows = (
                     true,
                     containerRef
                 );
+            } else if (
+                wf.listeDestinazione.includes(selectedElement.itemKey) &&
+                !isElementVisible(wf.keyAzione) &&
+                isElementVisible(selectedElement.itemKey)
+            ) {
+                const ActionElement = MainData.find(item =>
+                    item.azioni?.some(azione =>
+                        azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                    )
+                );
+                createLeaderLine(
+                    `${ActionElement?.ruolo?.key}`,
+                    selectedElement.data_id,
+                    "rgba(41, 115, 147, 1)",
+                    "behind",
+                    "arrow2",
+                    true,
+                    containerRef
+                );
             }
+
+
             if (
                 wf.doNotlisteDestinazione.includes(selectedElement.itemKey) &&
                 isElementVisible(wf.keyAzione) &&
@@ -56,7 +78,29 @@ export const drawSelectedElementArrows = (
                     true,
                     containerRef
                 );
+            } else if (
+                wf.doNotlisteDestinazione.includes(selectedElement.itemKey) &&
+                !isElementVisible(wf.keyAzione) &&
+                isElementVisible(selectedElement.itemKey)
+            ) {
+                const ActionElement = MainData.find(item =>
+                    item.azioni?.some(azione =>
+                        azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                    )
+                );
+                createLeaderLine(
+                    `${ActionElement?.ruolo?.key}`,
+                    selectedElement.data_id,
+                    "rgba(202, 138, 4, 1)",
+                    "square",
+                    "square",
+                    true,
+                    containerRef
+                );
             }
+
+
+
         });
     } else if (selectedElement?.type === "status") {
         MainData[workflowIndex].workflowmapping.forEach((wf) => {
@@ -79,7 +123,28 @@ export const drawSelectedElementArrows = (
                     true,
                     containerRef
                 );
+            } else if (
+                wf.statoDestinazione === selectedElement.statusItemKey &&
+                !isElementVisible(wf.keyAzione) &&
+                isElementVisible(selectedElement.statusItemKey)
+            ) {
+                const ActionElement = MainData.find(item =>
+                    item.azioni?.some(azione =>
+                        azione.listArray?.some(listItem => listItem.key === wf.keyAzione)
+                    )
+                );
+                createLeaderLine(
+                    `${ActionElement?.ruolo?.key}`,
+                    selectedElement.data_id,
+                    "rgba(124, 195, 225, 1)",
+                    "behind",
+                    "arrow2",
+                    true,
+                    containerRef
+                );
             }
+
+
         });
     } else if (selectedElement?.type === "action") {
         const wf = MainData[workflowIndex].workflowmapping.find(
@@ -103,7 +168,27 @@ export const drawSelectedElementArrows = (
                     true,
                     containerRef
                 );
+            } else if (
+                wf.statoDestinazione &&
+                isElementVisible(selectedElement.itemKey) &&
+                !isElementVisible(wf.statoDestinazione)
+            ) {
+                const StatusElement = MainData.find(item =>
+                    Object.keys(item?.pulsantiAttivi || {}).some(key => key === wf.statoDestinazione)
+                );
+                createLeaderLine(
+                    selectedElement.data_id,
+                    `${StatusElement?.ruolo?.key}`,
+                    "rgba(124, 195, 225, 1)",
+                    "behind",
+                    "arrow2",
+                    true,
+                    containerRef
+                );
             }
+
+
+
             if (wf.listeDestinazione) {
                 wf.listeDestinazione.forEach((listId) => {
                     if (
@@ -118,6 +203,24 @@ export const drawSelectedElementArrows = (
                         createLeaderLine(
                             selectedElement.data_id,
                             `${ListElement?.ruolo?.key}_${listId}`,
+                            "rgba(41, 115, 147, 1)",
+                            "behind",
+                            "arrow2",
+                            true,
+                            containerRef
+                        );
+                    } else if (
+                        isElementVisible(selectedElement.itemKey) &&
+                        !isElementVisible(listId)
+                    ) {
+                        const ListElement = MainData.find(item =>
+                            item.liste?.some(liste =>
+                                liste.listArray?.some(listItem => listItem.key === listId)
+                            )
+                        );
+                        createLeaderLine(
+                            selectedElement.data_id,
+                            `${ListElement?.ruolo?.key}`,
                             "rgba(41, 115, 147, 1)",
                             "behind",
                             "arrow2",
@@ -142,6 +245,24 @@ export const drawSelectedElementArrows = (
                         createLeaderLine(
                             selectedElement.data_id,
                             `${ListElement?.ruolo?.key}_${listId}`,
+                            "rgba(202, 138, 4, 1)",
+                            "square",
+                            "square",
+                            true,
+                            containerRef
+                        );
+                    } else if (
+                        isElementVisible(selectedElement.itemKey) &&
+                        !isElementVisible(listId)
+                    ) {
+                        const ListElement = MainData.find(item =>
+                            item.liste?.some(liste =>
+                                liste.listArray?.some(listItem => listItem.key === listId)
+                            )
+                        );
+                        createLeaderLine(
+                            selectedElement.data_id,
+                            `${ListElement?.ruolo?.key}`,
                             "rgba(202, 138, 4, 1)",
                             "square",
                             "square",

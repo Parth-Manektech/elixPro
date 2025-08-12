@@ -252,6 +252,9 @@ function RoleCard({
         <div
             key={roleName}
             className="mb-3 d-flex justify-content-between flex-wrap Editor_Card"
+            id={element.ruolo.key}
+            ref={(el) => (refsMap.current[element.ruolo.key] = el)}
+            data-key={element?.ruolo.key}
             style={{
                 position: 'absolute',
                 top: `${top}px`,

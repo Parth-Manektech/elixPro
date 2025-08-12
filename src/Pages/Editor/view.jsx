@@ -543,6 +543,9 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                             }
                             return (<div
                                 key={role?.ruolo?.key}
+                                id={role.ruolo.key}
+                                ref={(el) => (refsMap.current[role.ruolo.key] = el)}
+                                data-key={role?.ruolo.key}
                                 style={{ backgroundColor: role.ruolo?.colore || '#6f42c1' }}
                                 className="collapsed-role"
                                 draggable
