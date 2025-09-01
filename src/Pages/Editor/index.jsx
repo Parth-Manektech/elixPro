@@ -538,7 +538,7 @@ const Editor = () => {
 
     return (
         <div className='position-relative'>
-            {isLoading && <div className='z-3 position-absolute top-0 w-100 h-100' style={{ background: '#00000075' }}> <Loader /></div>}
+            {isLoading && <Loader />}
             <Tabs
                 activeKey={activeKey}
                 onSelect={(k) => setActiveKey(k)}

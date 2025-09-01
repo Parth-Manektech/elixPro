@@ -44,7 +44,9 @@ function RoleCard({
     leaderLinesRef,
     onCollapse,
     duplicateCount,
-    setDuplicateCount
+    setDuplicateCount,
+    rDataID,
+    dataID
 }) {
     const roleName = element.ruolo.nome;
     const top = element.layout?.top || 0;
@@ -62,7 +64,7 @@ function RoleCard({
     const handleRoleCardDragStart = (e) => {
         if (
             e.target.closest(
-                '.listeArrayItem, .StatusItemTitle, .azioniArrayItem, .listeItemTitle, .azioniItemTitle, .CardStatusTitle, .plus-icon'
+                '.list-item, .status-item, .action-item, .catLista-header, .catAzione-header, .plus-icon'
             )
         ) {
             e.preventDefault();
@@ -251,30 +253,25 @@ function RoleCard({
     return (
         <div
             key={roleName}
-            className="mb-3 d-flex justify-content-between flex-wrap Editor_Card"
+            className="card-wrapper"
             id={element.ruolo.key}
+            data-id={rDataID}
             ref={(el) => (refsMap.current[element.ruolo.key] = el)}
             data-key={element?.ruolo.key}
             style={{
-                position: 'absolute',
                 top: `${top}px`,
                 left: `${left}px`,
-                width: collapsedCards[roleName] ? `${width}px` : `${width}px`,
-                height: collapsedCards[roleName] ? 'fit-content' : 'fit-content',
-                opacity: 1,
+                width: `${width}px`,
                 background: draggingItem?.type === 'role' && draggingItem?.roleName === roleName ? '#f0f0f0' : 'white',
             }}
         >
-            <Card style={{ width: '100%', height: '100%', position: 'relative' }}>
+            <Card>
                 <Card.Header
-                    style={{
-                        position: 'relative',
-                        backgroundColor: element.ruolo?.colore || '#343a40',
-                    }}
-                    className='d-flex align-items-center justify-content-between'
+                    style={{ backgroundColor: element.ruolo?.colore || '#343a40' }}
+                    className='d-flex align-items-center justify-content-between position-relative cursor-default'
                 >
                     <div className='d-flex align-items-center gap-2'>
-                        <span className='d-flex align-items-center cursor-move'
+                        <span className='d-flex align-items-center cursor-grab'
                             draggable
                             onDragStart={handleRoleCardDragStart}
                             onDrag={handleRoleCardDrag}
@@ -284,30 +281,35 @@ function RoleCard({
                             <ArrowMove width={25} height={25} fill={contrastColor} />
                         </span>
                         <span className='vr-line' style={{ backgroundColor: contrastColor }}></span>
-                        <span style={{ color: contrastColor }}>
+                        <span className='cursor-text' style={{ color: contrastColor }}>
                             {element.ruolo.nome}
                         </span>
-                        <span
-                            className="cursor-pointer"
-                            onClick={() => {
-                                setCollapsedCards((prev) => {
-                                    const isCollapsed = !prev[roleName];
-                                    return { ...prev, [roleName]: isCollapsed };
-                                });
-                            }}
-                        >
-                            {collapsedCards[roleName] ? <ChevronDown height={20} width={20} fill={contrastColor} /> : <ChevronUp height={20} width={20} fill={contrastColor} />}
-                        </span>
+
+                        <div className='role-toggle-button'>
+                            <span
+                                className="cursor-pointer"
+                                onClick={() => {
+                                    setCollapsedCards((prev) => {
+                                        const isCollapsed = !prev[roleName];
+                                        return { ...prev, [roleName]: isCollapsed };
+                                    });
+                                }}
+                            >
+                                {collapsedCards[roleName] ? <i class="bi bi-chevron-down" style={{ color: contrastColor }}></i> : <i class="bi bi-chevron-up" style={{ color: contrastColor }}></i>}
+                            </span>
+                        </div>
                     </div>
 
 
-                    <div className="d-flex gap-3 align-items-center justify-content-center">
+                    <div className="d-flex gap-2 align-items-center justify-content-center">
+                        <div className='role-toggle-button ms-1 cursor-pointer'>
+                            <span
+                                onClick={handleCollapseClick}
+                            >
+                                <i className="bi bi-arrows-angle-contract" style={{ color: contrastColor }}></i>
+                            </span>
+                        </div>
 
-                        <span
-                            onClick={handleCollapseClick}
-                        >
-                            <i className="bi bi-arrows-angle-contract" style={{ color: contrastColor }}></i>
-                        </span>
                         {isEditMode && <input
                             type="color"
                             className='ColorInput'
@@ -331,14 +333,14 @@ function RoleCard({
 
 
                         {isEditMode && <Dropdown>
-                            <Dropdown.Toggle className="role_menu" ref={(el) => (dropdownToggleRefs.current[roleName] = el)}>
+                            <Dropdown.Toggle className="menu-btn-list" ref={(el) => (dropdownToggleRefs.current[roleName] = el)}>
                                 <ThreeDotsIcon fill={contrastColor} className='mb-1' height={20} width={20} />
                             </Dropdown.Toggle>
                             <Dropdown.Menu className='darshan'>
                                 <Dropdown.Item
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        openRoleModal(element?.ruolo);
+                                        openRoleModal(element?.ruolo, rDataID);
                                         dropdownToggleRefs.current[roleName]?.click();
                                     }}
                                 >
@@ -369,10 +371,11 @@ function RoleCard({
                     </div>
                 </Card.Header>
 
-
                 <Card.Body style={{ display: collapsedCards[roleName] ? 'none' : 'block', overflow: 'auto' }}>
                     <div className="d-flex gap-2 w-100">
                         <ListSection
+                            rDataID={rDataID}
+                            dataID={dataID}
                             liste={element.liste}
                             roleName={roleName}
                             element={element}
@@ -397,6 +400,7 @@ function RoleCard({
                         <StatusSection
                             pulsantiAttivi={element.pulsantiAttivi}
                             element={element}
+                            dataID={dataID}
                             roleName={roleName}
                             shownStatus={shownStatuses[roleName]}
                             setShownStatuses={setShownStatuses}
@@ -424,6 +428,7 @@ function RoleCard({
                             azioni={element.azioni}
                             roleName={roleName}
                             element={element}
+                            dataID={dataID}
                             shownStatus={shownStatuses[roleName]}
                             associatedActions={associatedActions}
                             openActionItemModal={openActionItemModal}
@@ -452,17 +457,6 @@ function RoleCard({
                     <div
                         className="resize-handle"
                         onMouseDown={handleResizeStart}
-                        style={{
-                            position: 'absolute',
-                            bottom: 0,
-                            right: 0,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            width: '20px',
-                            height: '20px',
-                            background: 'transparent',
-                            cursor: 'se-resize',
-                        }}
                     >
                         <CardResizer height={20} width={20} />
                     </div>

@@ -72,7 +72,7 @@ function GeneradaJSON() {
 
     return (
         <>
-            {isLoading && <div className='z-3 position-absolute top-0 start-0 w-100 h-100' style={{ background: '#00000075' }}> <Loader /></div>}
+            {isLoading && <Loader />}
             <form onSubmit={handleSubmit(onSubmit)}>
                 <Row className='ms-1 mb-4 text-secondary'>Compila i seguenti campi per generare l’Excel del nuovo Procedimento.</Row>
                 <Row lg={12}>

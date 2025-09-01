@@ -31,27 +31,25 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
         hendelGenrateCode()
     }
     return (
-        <div className="toolbar d-flex justify-content-between align-items-center">
+        <div className="toolbar">
             <div className='d-flex justify-content-center gap-3'>
                 <Button
+                    className="btn btn-secondary add-role-btn"
                     disabled={!isEditMode}
-                    className="d-flex justify-content-center rounded cursor-pointer px-3 py-1"
-                    variant="dark"
                     onClick={openRoleModal}
                 >
                     Nuovo ruolo
                 </Button>
 
                 <Dropdown>
-                    <Dropdown.Toggle variant="light" id="filter-roles" className="no-caret">
-                        <DownBar width={15} height={15} /> Filtra
+                    <Dropdown.Toggle variant="light" id="filter-roles" className="no-caret btn btn-light btn-filter">
+                        <i class="bi bi-filter "></i> Filtra
                     </Dropdown.Toggle>
-                    <Dropdown.Menu>
+                    <Dropdown.Menu className='btn-filter-dropdown-menu'>
                         <div className='d-flex justify-content-between align-items-center px-3 py-2'>
-                            <span>Ruoli</span>
+                            <span className='dropdown-header-title'>Ruoli</span>
                             <span
-                                style={{ cursor: 'pointer', fontWeight: 'bold', textWrap: 'nowrap', marginLeft: '10px' }}
-                                className='onswitchtext'
+                                className='filter-toggle-all-ruoli'
                                 onClick={() => {
                                     const allVisible = Object.values(visibleRoles).every(Boolean);
                                     const updatedRoles = {};
@@ -81,6 +79,7 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                                 >
                                     <input
                                         type="checkbox"
+                                        className='form-check-input me-2'
                                         checked={visibleRoles[element.ruolo.nome] ?? true}
                                         onChange={() =>
                                             setVisibleRoles((prev) => ({
@@ -88,7 +87,7 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                                                 [element.ruolo.nome]: !prev[element.ruolo.nome],
                                             }))
                                         }
-                                        style={{ marginRight: '8px' }}
+                                        style={{ backgroundColor: element.ruolo?.colore, borderColor: element.ruolo?.colore }}
                                     />
                                     {element.ruolo.nome}
                                 </Dropdown.Item>
@@ -129,9 +128,6 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                     <Button variant="primary" onClick={SalvaButton} disabled={!isEditMode || !MainData?.length}>Salva</Button>
                 </span>
             </div>
-
-
-
         </div>
     );
 }

@@ -8,7 +8,7 @@ import CustomSelect from "../../../CustomAutoSelect";
 import CustomMultiSelect from "../../../CustomMultiSelect";
 
 
-const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
+const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainData, currentFaculty, currentActionTitle, selectedActionItem, setEpWorkflowjson, setSelectedActionItem, setActionItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
         defaultValues: { ...initialData, moveToList: initialData?.moveToList?.length ? initialData?.moveToList?.split(',').map(item => item.trim()) : [], doNotMoveToList: initialData?.doNotMoveToList?.length ? initialData?.doNotMoveToList?.split(',').map(item => item.trim()) : [] } || {
             key: "",
@@ -292,7 +292,10 @@ const ActionItemModal = ({ show, handleClose, initialData, MainData, currentFacu
         <>
             <Modal show={show} onHide={hendleFinalClose} size="xl">
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Modal.Header closeButton className="fs-5">{initialData?.key ? "Modifica" : "Nuova"}&nbsp;<span className="fw-bold">Azione</span> </Modal.Header>
+                    <Modal.Header closeButton className="fs-5 d-flex align-items-center gap-3">
+                        <span >{initialData?.key ? "Modifica" : " Nuova"}&nbsp;<span className="fw-bold">Azione</span></span>
+                        {initialData?.key && <span className="modal-badge-ID">{currentDataId}</span>}
+                    </Modal.Header>
                     <Modal.Body className="mx-3">
 
                         <Col lg={12} className="mt-2">

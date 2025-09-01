@@ -3,7 +3,7 @@ import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
-const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleItem, setEpWorkflowjson, setSelectedRoleItem, setRoleModalShow, setShownStatuses }) => {
+const RoleItemModal = ({ show, currentDataId, handleClose, initialData, MainData, selectedRoleItem, setEpWorkflowjson, setSelectedRoleItem, setRoleModalShow, setShownStatuses }) => {
     const { control, handleSubmit, formState: { errors }, reset, setValue } = useForm({
         defaultValues: initialData || { nome: "", descrizione: "", listaDefault: "", key: "" }
     });
@@ -213,8 +213,9 @@ const RoleItemModal = ({ show, handleClose, initialData, MainData, selectedRoleI
     return (
         <Modal show={show} onHide={onClose} size="xl">
             <Form onSubmit={handleSubmit(onSubmit)}>
-                <Modal.Header className="fs-5" closeButton>
-                    {initialData?.nome ? `Modifica` : `Nuovo`}&nbsp;<span className="fw-bold">Ruolo</span>
+                <Modal.Header className="fs-5 d-flex align-items-center gap-3" closeButton>
+                    <span>{initialData?.nome ? `Modifica` : `Nuovo`}&nbsp;<span className="fw-bold">Ruolo</span></span>
+                    {initialData?.nome && <span className="modal-badge-ID">{currentDataId}</span>}
                 </Modal.Header>
 
                 <Modal.Body className="mx-3">

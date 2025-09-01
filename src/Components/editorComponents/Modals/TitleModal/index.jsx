@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
-const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, currentFaculty, selectedTitle, setEpWorkflowjson, setSelectedTitle, setTitleItemModalShow }) => {
+const TitleModal = ({ show, currentDataId, handleClose, initialData, titleModalType, MainData, currentFaculty, selectedTitle, setEpWorkflowjson, setSelectedTitle, setTitleItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || { title: "" }
     });
@@ -224,7 +224,13 @@ const TitleModal = ({ show, handleClose, initialData, titleModalType, MainData, 
             <Modal show={show} onHide={handleFinalClose} size="xl" >
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Modal.Header closeButton>
-                        <Modal.Title className="fs-5"> <span>{initialData?.title ? "Modifica" : "Nuova"}</span> <span className="fw-bold">Categoria {titleModalType === 'liste' ? "lista" : "azione"}</span></Modal.Title>
+                        <Modal.Title className="fs-5 d-flex align-items-center gap-3">
+                            <span>
+                                <span>{initialData?.title ? "Modifica" : "Nuova"}</span>
+                                <span className="fw-bold">Categoria {titleModalType === 'liste' ? "lista" : "azione"}</span>
+                            </span>
+                            {initialData?.title && <span className="modal-badge-ID">{currentDataId}</span>}
+                        </Modal.Title>
                     </Modal.Header>
                     <Modal.Body className="mx-3">
                         <Col lg={12}>

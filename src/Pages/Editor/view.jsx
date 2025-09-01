@@ -50,7 +50,9 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     const [searchTerm, setSearchTerm] = useState('');
     const [isRightBarOpen, setIsRightBarOpen] = useState(true);
     const [duplicateCount, setDuplicateCount] = useState(0);
-
+    const [dataID, setDataID] = useState({})
+    const [allKey, setAllKey] = useState({})
+    const [currentDataId, setCurrentDataId] = useState(null)
 
     const handleCollapseCard = (role) => {
 
@@ -233,39 +235,139 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 return newVisibleRoles;
             });
         }
+
+        const listKeys = [];
+        const statusKeys = [];
+        const actionKeys = [];
+
+        const rolekeysforId = [];
+        const catlistkeysforid = [];
+        const listKeysforid = [];
+        const statusKeysforid = [];
+        const catactionlistfroid = []
+        const actionKeysforid = [];
+
+
+        MainData.forEach((item, i) => {
+            if (item.ruolo) {
+                // Extract list keys from liste[].listArray[].key
+                rolekeysforId.push(item.ruolo.key.concat("-", String(i)))
+
+                if (item.liste && Array.isArray(item.liste)) {
+                    item.liste.forEach(list => {
+                        const catList = item.ruolo.key.concat("-", list.title?.replaceAll(" ", "-"))
+                        catlistkeysforid.push(catList)
+                        if (list.listArray && Array.isArray(list.listArray)) {
+                            list.listArray.forEach(listItem => {
+                                if (listItem.key) {
+                                    listKeysforid.push(catList.concat("-", listItem.key.replaceAll(" ", "-")))
+                                    listKeys.push(listItem.key);
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Extract status keys from pulsantiAttivi
+                if (item.pulsantiAttivi && typeof item.pulsantiAttivi === 'object') {
+                    Object.keys(item.pulsantiAttivi).forEach(statusKey => {
+                        statusKeysforid.push(item.ruolo.key.concat("-", statusKey))
+                        statusKeys.push(statusKey);
+                    });
+                }
+
+                // Extract action keys from azioni[].listArray[].key
+                if (item.azioni && Array.isArray(item.azioni)) {
+                    item.azioni.forEach(action => {
+                        const catAction = item.ruolo.key.concat("-", action.title?.replaceAll(" ", "-"))
+                        catactionlistfroid.push(catAction)
+                        if (action.listArray && Array.isArray(action.listArray)) {
+                            action.listArray.forEach(actionItem => {
+                                actionKeysforid.push(catAction.concat("-", actionItem.key.replaceAll(" ", "-")))
+                                if (actionItem.key) {
+                                    actionKeys.push(actionItem.key);
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+
+        setAllKey({
+            list: listKeys,
+            status: statusKeys,
+            action: actionKeys
+        })
+
+        const DataIds = {
+            roleId: {},
+            catlistId: {},
+            listId: {},
+            statusId: {},
+            catactionId: {},
+            action: {}
+        }
+
+        rolekeysforId.forEach((e, i) => {
+            DataIds.roleId[e] = `R-${String(i + 1).padStart(2, '0')}`;
+        })
+        catlistkeysforid.forEach((e, i) => {
+            DataIds.catlistId[e] = `CL-${String(i + 1).padStart(3, '0')}`;
+        })
+        listKeysforid.forEach((e, i) => {
+            DataIds.listId[e] = `L-${String(i + 1).padStart(4, '0')}`;
+        })
+        statusKeysforid.forEach((e, i) => {
+            DataIds.statusId[e] = `S-${String(i + 1).padStart(4, '0')}`
+        })
+        catactionlistfroid.forEach((e, i) => {
+            DataIds.catactionId[e] = `CA-${String(i + 1).padStart(3, '0')}`;
+        })
+        actionKeysforid.forEach((e, i) => {
+            DataIds.action[e] = `A-${String(i + 1).padStart(4, '0')}`;
+        })
+
+        setDataID(DataIds)
+
     }, [MainData, setEpWorkflowjson]);
 
 
-    const openListItemModal = (facultyName, listTitle, listItem = null) => {
+    const openListItemModal = (facultyName, listTitle, listItem = null, dataid) => {
         setCurrentFaculty(facultyName);
         setCurrentListTitle(listTitle);
         setSelectedListItem(listItem);
         setListItemModalShow(true);
+        setCurrentDataId(dataid)
     };
 
-    const openActionItemModal = (facultyName, actionTitle, actionItem = null) => {
+    const openActionItemModal = (facultyName, actionTitle, actionItem = null, dataid) => {
         setCurrentFaculty(facultyName);
         setCurrentActionTitle(actionTitle);
         setSelectedActionItem(actionItem);
         setActionItemModalShow(true);
+        setCurrentDataId(dataid)
     };
 
-    const openStatusItemModal = (facultyName, statusItem = null) => {
+    const openStatusItemModal = (facultyName, statusItem = null, dataid) => {
         setCurrentFaculty(facultyName);
         setSelectedStatusItem(statusItem);
         setStatusItemModalShow(true);
+        setCurrentDataId(dataid)
     };
 
-    const openTitleItemModal = (facultyName, type, initialData = null) => {
+    const openTitleItemModal = (facultyName, type, initialData = null, dataid) => {
         setCurrentFaculty(facultyName);
         setTitleModalType(type);
         setSelectedTitle(initialData ? initialData.title : null);
         setTitleItemModalShow(true);
+        setCurrentDataId(dataid)
     };
 
-    const openRoleModal = (ruolo = null) => {
+    const openRoleModal = (ruolo = null, dataid) => {
         setSelectedRoleItem(ruolo);
         setRoleModalShow(true);
+        setCurrentDataId(dataid)
     };
 
     const getStatusOptions = () => {
@@ -290,7 +392,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
 
     useEffect(() => {
         if (isEditMode) {
-            const result = findDuplicateKeys(MainData);
+            const result = findDuplicateKeys();
             if (result?.result?.actionDuplicateCount > 0 || result?.result?.listDuplicateCount > 0 || result?.result?.statusDuplicateCount > 0) {
                 const TotalCount = result?.result?.actionDuplicateCount + result?.result?.listDuplicateCount + result?.result?.statusDuplicateCount
                 DuplicateErrorToast(`Sono stati rilevati ${TotalCount * 2} errori di key duplicata.`)
@@ -298,13 +400,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         }
     }, [isEditMode]);
 
-    function findDuplicateKeys(jsonData) {
-        // Initialize arrays to store keys
-        const listKeys = [];
-        const statusKeys = [];
-        const actionKeys = [];
-
-        // Helper function to count duplicates
+    function findDuplicateKeys() {
         const countDuplicates = (keysArray) => {
             const keyCountMap = {};
             keysArray.forEach(key => {
@@ -315,52 +411,14 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
             return totalKeys - uniqueKeys; // Duplicates = total - unique
         };
 
-        // Process each item in the JSON data
-        jsonData.forEach(item => {
-            if (item.ruolo) {
-                // Extract list keys from liste[].listArray[].key
-                if (item.liste && Array.isArray(item.liste)) {
-                    item.liste.forEach(list => {
-                        if (list.listArray && Array.isArray(list.listArray)) {
-                            list.listArray.forEach(listItem => {
-                                if (listItem.key) {
-                                    listKeys.push(listItem.key);
-                                }
-                            });
-                        }
-                    });
-                }
-
-                // Extract status keys from pulsantiAttivi
-                if (item.pulsantiAttivi && typeof item.pulsantiAttivi === 'object') {
-                    Object.keys(item.pulsantiAttivi).forEach(statusKey => {
-                        statusKeys.push(statusKey);
-                    });
-                }
-
-                // Extract action keys from azioni[].listArray[].key
-                if (item.azioni && Array.isArray(item.azioni)) {
-                    item.azioni.forEach(action => {
-                        if (action.listArray && Array.isArray(action.listArray)) {
-                            action.listArray.forEach(actionItem => {
-                                if (actionItem.key) {
-                                    actionKeys.push(actionItem.key);
-                                }
-                            });
-                        }
-                    });
-                }
-            }
-        });
 
         // Count duplicates for each category
-        const listDuplicateCount = countDuplicates(listKeys);
-        const statusDuplicateCount = countDuplicates(statusKeys);
-        const actionDuplicateCount = countDuplicates(actionKeys);
+        const listDuplicateCount = countDuplicates(allKey?.list);
+        const statusDuplicateCount = countDuplicates(allKey?.status);
+        const actionDuplicateCount = countDuplicates(allKey?.action);
 
         // Create formatted message
         const message = `${listDuplicateCount} list key${listDuplicateCount !== 1 ? 's' : ''} and ${statusDuplicateCount} status key${statusDuplicateCount !== 1 ? 's' : ''} and ${actionDuplicateCount} action key${actionDuplicateCount !== 1 ? 's' : ''} are duplicate`;
-
         // Return result object
         return {
             message,
@@ -436,11 +494,18 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         if (!draggingItem || draggingItem.type !== 'collapsedRole' || draggingItem.roleName !== ruolo.nome) return;
 
         setCollapsedRoles((prev) => prev.filter((key) => key !== ruolo.key));
+        // setCollapsedCards((prev) => {
+        //     const newCollapsed = { ...prev };
+        //     delete newCollapsed[ruolo.nome];
+        //     return newCollapsed;
+        // });
+
         setCollapsedCards((prev) => {
-            const newCollapsed = { ...prev };
-            delete newCollapsed[ruolo.nome];
-            return newCollapsed;
+            const isCollapsed = !prev[ruolo.nome];
+            return { ...prev, [ruolo.nome]: isCollapsed };
         });
+
+
 
         setDraggingItem(null);
         delete originalPositionsRef.current[ruolo.nome];
@@ -472,10 +537,16 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
 
         setEpWorkflowjson(JSON.stringify(updatedData));
         setCollapsedRoles((prev) => prev.filter((key) => key !== role.ruolo.key));
+
+        // setCollapsedCards((prev) => {
+        //     const newCollapsed = { ...prev };
+        //     delete newCollapsed[roleName];
+        //     return newCollapsed;
+        // });
+
         setCollapsedCards((prev) => {
-            const newCollapsed = { ...prev };
-            delete newCollapsed[roleName];
-            return newCollapsed;
+            const isCollapsed = !prev[roleName];
+            return { ...prev, [roleName]: isCollapsed };
         });
 
         setDraggingItem(null);
@@ -498,7 +569,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     }, [activeKey])
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div className='position-relative'>
             <button
                 className="right-bar-toggle"
                 onClick={toggleRightBar}
@@ -532,7 +603,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <div className="collapsed-roles-container">
+                    <div className="right-bar-body">
                         {filteredCollapsedRoles.map((role) => {
                             let Color = '#fff'
                             const isLight = isColorLight(role.ruolo?.colore ? role.ruolo?.colore : "#343a40");
@@ -558,11 +629,11 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                         <i className="bi bi-arrows-move" style={{ color: Color }}></i>
                                     </span>
                                     <span className="vr-line" style={{ backgroundColor: Color }}></span>
-                                    <span className="role-name" style={{ color: Color }}>{role?.ruolo?.nome}</span>
+                                    <span style={{ color: Color }}>{role?.ruolo?.nome}</span>
                                 </div>
                                 <span
                                     onClick={() => handleExpandCard(role?.ruolo?.key)}
-                                    style={{ cursor: 'pointer' }}
+                                    className='cursor-pointer'
                                 >
                                     <i className="bi bi-arrows-angle-expand fw-bold" style={{ color: Color }}></i>
                                 </span>
@@ -584,26 +655,27 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
             />
             <div
                 ref={containerRef}
-                className="editor-visualization"
-                style={{ position: 'relative', width: '100%', overflow: 'auto' }}
+                className="board"
+                id='board'
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleCollapsedRoleDrop(e)}
             >
                 <div
-                    className="d-flex justify-content-around flex-wrap"
+                    className="d-flex justify-content-around flex-wrap position-relative"
                     style={{
-                        position: 'relative',
                         transform: `scale(${zoomLevel})`,
                         transformOrigin: 'top left',
-                        width: `${250 / zoomLevel}%`,
+                        width: `${200 / zoomLevel}%`,
                         height: `${300 / zoomLevel}%`,
                     }}
                 >
-                    {MainData?.map((element) =>
-                        element?.ruolo && visibleRoles[element.ruolo.nome] ? (
+                    {MainData?.map((element, roleIndex) => {
+                        const rDataID = dataID.roleId[`${element?.ruolo?.key}-${roleIndex}`]
+                        return element?.ruolo && visibleRoles[element.ruolo.nome] ? (
                             !collapsedRoles.includes(element.ruolo.key) && (
                                 <RoleCard
                                     key={element.ruolo.nome}
+                                    dataID={dataID}
                                     element={element}
                                     visibleRoles={visibleRoles}
                                     shownStatuses={shownStatuses}
@@ -644,8 +716,10 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                     onCollapse={handleCollapseCard}
                                     duplicateCount={duplicateCount}
                                     setDuplicateCount={setDuplicateCount}
+                                    rDataID={rDataID}
                                 />)
                         ) : null
+                    }
                     )}
 
 
@@ -654,9 +728,11 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
 
                 <ListItemModal
                     show={listItemModalShow}
+                    currentDataId={currentDataId}
                     handleClose={() => {
                         setListItemModalShow(false);
                         setCurrentFaculty('');
+                        setCurrentDataId(null);
                     }}
                     MainData={MainData}
                     currentFaculty={currentFaculty}
@@ -669,9 +745,11 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 />
                 <ActionItemModal
                     show={actionItemModalShow}
+                    currentDataId={currentDataId}
                     handleClose={() => {
                         setActionItemModalShow(false);
                         setCurrentFaculty('');
+                        setCurrentDataId(null);
                     }}
                     MainData={MainData}
                     currentFaculty={currentFaculty}
@@ -685,9 +763,11 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 />
                 <StatusModal
                     show={statusItemModalShow}
+                    currentDataId={currentDataId}
                     handleClose={() => {
                         setStatusItemModalShow(false);
                         setCurrentFaculty('');
+                        setCurrentDataId(null);
                     }}
                     MainData={MainData}
                     currentFaculty={currentFaculty}
@@ -702,10 +782,12 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 />
                 <TitleModal
                     show={titleItemModalShow}
+                    currentDataId={currentDataId}
                     handleClose={() => {
                         setTitleItemModalShow(false);
                         setCurrentFaculty('');
                         setSelectedTitle(null);
+                        setCurrentDataId(null);
                     }}
                     MainData={MainData}
                     currentFaculty={currentFaculty}
@@ -718,10 +800,12 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 />
                 <RoleItemModal
                     show={roleModalShow}
+                    currentDataId={currentDataId}
                     initialData={selectedRoleItem ? selectedRoleItem : null}
                     handleClose={() => {
                         setRoleModalShow(false);
                         setSelectedRoleItem(null);
+                        setCurrentDataId(null);
                     }}
                     MainData={MainData}
                     selectedRoleItem={selectedRoleItem}

@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
-const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty, selectedStatusItem, setEpWorkflowjson, setSelectedStatusItem, setStatusItemModalShow, shownStatuses, setShownStatuses }) => {
+const StatusModal = ({ show, currentDataId, handleClose, initialData, MainData, currentFaculty, selectedStatusItem, setEpWorkflowjson, setSelectedStatusItem, setStatusItemModalShow, shownStatuses, setShownStatuses }) => {
     const getStatusTitle = (statusKey) => {
         const workflowIndex = MainData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
         if (workflowIndex !== -1 && MainData[workflowIndex].ajWFStatiName?.[statusKey]) {
@@ -207,7 +207,10 @@ const StatusModal = ({ show, handleClose, initialData, MainData, currentFaculty,
             <Modal show={show} onHide={handlefinalclose} size="xl">
                 <Form onSubmit={handleSubmit(onSubmit)}>
                     <Modal.Header closeButton>
-                        <Modal.Title className="fs-5">{initialData?.status ? "Modifica" : "Nuovo"} <span className="fw-bold">Stato</span></Modal.Title>
+                        <Modal.Title className="fs-5 d-flex align-items-center gap-3">
+                            <span >{initialData?.status ? "Modifica" : " Nuova"}&nbsp;<span className="fw-bold">Stato</span></span>
+                            {initialData?.status && <span className="modal-badge-ID">{currentDataId}</span>}
+                        </Modal.Title>
                     </Modal.Header>
                     <Modal.Body className="mx-3">
                         <Col lg={12} className="mt-2">

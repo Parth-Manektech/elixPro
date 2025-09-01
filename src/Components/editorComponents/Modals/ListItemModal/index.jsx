@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Button, Form, Col, Row } from "react-bootstrap";
+import { Modal, Button, Form, Col, Row, Badge } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
-const ListItemModal = ({ show, handleClose, initialData, MainData, currentFaculty, currentListTitle, selectedListItem, setEpWorkflowjson, setSelectedListItem, setListItemModalShow }) => {
+const ListItemModal = ({ currentDataId, show, handleClose, initialData, MainData, currentFaculty, currentListTitle, selectedListItem, setEpWorkflowjson, setSelectedListItem, setListItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || { key: "", title: "", type: "button", isDetailAllowed: "true" }
     });
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-
 
     useEffect(() => {
         reset(initialData || { key: "", title: "", type: "button", isDetailAllowed: "true" });
@@ -154,7 +153,10 @@ const ListItemModal = ({ show, handleClose, initialData, MainData, currentFacult
         <>
             <Modal show={show} onHide={hendleFinalClose} size="xl" >
                 <Form onSubmit={handleSubmit(onSubmit)}>
-                    <Modal.Header className="fs-5" closeButton> {initialData?.key ? "Modifica" : " Nuova"}&nbsp;<span className="fw-bold">Lista</span></Modal.Header>
+                    <Modal.Header className="fs-5 d-flex align-items-center gap-3" closeButton>
+                        <span >{initialData?.key ? "Modifica" : " Nuova"}&nbsp;<span className="fw-bold">Lista</span></span>
+                        {initialData?.key && <span className="modal-badge-ID">{currentDataId}</span>}
+                    </Modal.Header>
                     <Modal.Body className="mx-3">
 
                         <Col lg={12} className="mt-3">

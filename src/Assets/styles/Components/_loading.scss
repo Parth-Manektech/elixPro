@@ -1,4 +1,17 @@
-.main_loader {
-    height: 50vh;
-    width: 100vw
+.caricamento-sfondo {
+    background: #00000075;
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+.caricatore {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

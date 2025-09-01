@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewOpenEyeIcon, ViewClosedEyeIcon, GamePadIcon, ArrowMove, ThreeDotsIcon, PlusIcon } from '../../../../Assets/SVGs';
 import { toggleActionVisibility } from '../../ViewComponentUtility';
-import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Col, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import CloneActionModal from '../../Modals/CloneActionModal';
 import DeleteActionModal from '../../Modals/DeleteActionModal';
 import CloneActionItemModal from '../../Modals/CloneActionItemModal';
@@ -30,7 +30,8 @@ function ActionSection({
     clearLeaderLines,
     createLeaderLine,
     leaderLinesRef,
-    element
+    element,
+    dataID
 }) {
     const [cloneActionModalShow, setCloneActionModalShow] = useState(false);
     const [deleteActionModalShow, setDeleteActionModalShow] = useState(false);
@@ -43,6 +44,7 @@ function ActionSection({
     const [actionTitleForItem, setActionTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
     const [actionkeys, setActionKeys] = useState([]);
+    const [duplicateAction, setDuplicateAction] = useState([])
 
     const dragStartSourceRefAction = useRef(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
@@ -205,29 +207,41 @@ function ActionSection({
         }
     };
 
+    const isCheckRelation = (actionKey) => {
+        const workflowIndex = MainData.length - 1;
+        if (MainData[workflowIndex]?.workflowmapping) {
+            const wf = MainData[workflowIndex].workflowmapping.find(
+                (item) => item.keyAzione === actionKey
+            );
+            if (wf.statoDestinazione?.length || wf?.listeDestinazione?.length || wf?.doNotlisteDestinazione?.length) return true
+            else return false
+        }
+    }
+
     const handleActionItemClick = (actionKey, actionTitle) => {
-        const newSelectedElement = { type: 'action', roleName, actionTitle, itemKey: actionKey, data_id: `${element?.ruolo?.key}_${actionKey}` };
-        if (
-            selectedElement?.type === 'action' &&
-            selectedElement.itemKey === actionKey &&
-            selectedElement.actionTitle === actionTitle &&
-            selectedElement.roleName === roleName
-        ) {
-            setSelectedElement(null);
-            clearLeaderLines();
-        } else {
-            setSelectedElement(newSelectedElement);
-            setHoveredStatus(null);
-            setHoveredAction(null);
-            clearLeaderLines();
+        if (isCheckRelation(actionKey)) {
+            const newSelectedElement = { type: 'action', roleName, actionTitle, itemKey: actionKey, data_id: `${element?.ruolo?.key}_${actionKey}` };
+            if (
+                selectedElement?.type === 'action' &&
+                selectedElement.itemKey === actionKey &&
+                selectedElement.actionTitle === actionTitle &&
+                selectedElement.roleName === roleName
+            ) {
+                setSelectedElement(null);
+                clearLeaderLines();
+            } else {
+                setSelectedElement(newSelectedElement);
+                setHoveredStatus(null);
+                setHoveredAction(null);
+                clearLeaderLines();
 
-            const isElementVisible = (id) => {
-                const element = document.getElementById(id);
-                return element && element.offsetParent !== null;
-            };
+                const isElementVisible = (id) => {
+                    const element = document.getElementById(id);
+                    return element && element.offsetParent !== null;
+                };
 
-            const workflowIndex = MainData.length - 1;
-            if (MainData[workflowIndex]?.workflowmapping) {
+                const workflowIndex = MainData.length - 1;
+
                 const wf = MainData[workflowIndex].workflowmapping.find(
                     (item) => item.keyAzione === actionKey
                 );
@@ -348,6 +362,8 @@ function ActionSection({
                         });
                     }
                 }
+
+
             }
         }
     };
@@ -380,6 +396,7 @@ function ActionSection({
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleActionDragStart = (e, actionTitle) => {
+        clearLeaderLines();
         const actualClickedElement = dragStartSourceRefAction.current;
         if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMoveactionGroup") {
             e.preventDefault();
@@ -393,18 +410,21 @@ function ActionSection({
 
     const handleActionDragOver = (e, actionTitle, targetRoleName) => {
         e.preventDefault();
+        clearLeaderLines();
         if (draggingItem?.type === 'actionGroup') {
             setDropTarget({ type: 'actionGroup', actionTitle, roleName: targetRoleName });
         }
     };
 
     const handleActionDragLeave = () => {
+        clearLeaderLines();
         setDropTarget(null);
     };
 
     const handleActionDrop = (e, targetActionTitle, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
+        clearLeaderLines();
         if (!draggingItem || draggingItem.type !== 'actionGroup') {
             setDraggingItem(null);
             setDropTarget(null);
@@ -472,6 +492,7 @@ function ActionSection({
     };
 
     const handleActionItemDragStart = (e, actionTitle, itemKey) => {
+        clearLeaderLines();
         const actualClickedElement = dragStartSourceRefAction.current;
         if (!isEditMode || actualClickedElement?.className?.baseVal !== "ArrowMoveAction") {
             e.preventDefault();
@@ -485,18 +506,21 @@ function ActionSection({
 
     const handleActionItemDragOver = (e, actionTitle, itemKey, targetRoleName) => {
         e.preventDefault();
+        clearLeaderLines();
         if (draggingItem?.type === 'action') {
             setDropTarget({ type: 'action', actionTitle, itemKey, roleName: targetRoleName });
         }
     };
 
     const handleActionItemDragLeave = () => {
+        clearLeaderLines();
         setDropTarget(null);
     };
 
     const handleActionItemDrop = (e, targetActionTitle, targetKey, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
+        clearLeaderLines();
         if (!draggingItem || draggingItem.type !== 'action') {
             setDraggingItem(null);
             setDropTarget(null);
@@ -574,6 +598,7 @@ function ActionSection({
 
     useEffect(() => {
         const Allaction = [];
+        const duplicateActions = []
         MainData.forEach(item => {
             if (item.ruolo && item.ruolo.key !== element?.ruolo?.key) {
                 if (item.azioni && Array.isArray(item.azioni)) {
@@ -581,6 +606,11 @@ function ActionSection({
                         if (action.listArray && Array.isArray(action.listArray)) {
                             action.listArray.forEach(actionItem => {
                                 if (actionItem.key) {
+                                    const Addaction = {
+                                        label: `${item?.ruolo?.key}-${action.title?.replaceAll(" ", "-")}-${actionItem?.key?.replaceAll(" ", "-")}`,
+                                        value: actionItem.key
+                                    }
+                                    duplicateActions.push(Addaction)
                                     Allaction.push(actionItem.key);
                                 }
                             });
@@ -589,181 +619,201 @@ function ActionSection({
                 }
             }
         });
+        setDuplicateAction(duplicateActions);
         setActionKeys(Allaction);
     }, [MainData, element]);
 
-    const renderTooltip = (props) => (
+    const renderTooltip = (props, msg) => (
         <Tooltip id="button-tooltip" {...props}>
-            La Key non è univoca! Viene usata più volte.
+            La Key non è univoca! Viene usata più volte: {msg}
         </Tooltip>
     );
 
     return (
-        <div className="d-flex flex-column gap-2 column">
-            <div className='d-flex justify-content-center align-item-center'>
-                <GamePadIcon height={20} width={20} fill='#6c757d' className='d-flex justify-content-center align-item-center me-1' />
-                <span style={{ color: '#6c757d', margin: "-4px 0 0 0" }}>AZIONI</span>
+        <Col>
+            <div className='column-header'>
+                <i class="bi bi-dpad me-1"></i>AZIONI
             </div>
-            {azioni?.map((azioniItem) => (
-                <div
-                    className={`d-flex flex-column azioni ${dropTarget?.type === 'actionGroup' && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
-                    key={azioniItem.title}
-                    draggable={isEditMode}
-                    onDragStart={(e) => handleActionDragStart(e, azioniItem.title)}
-                    onDragOver={(e) => handleActionDragOver(e, azioniItem.title, roleName)}
-                    onDragLeave={handleActionDragLeave}
-                    onMouseDown={(e) => {
-                        dragStartSourceRefAction.current = e.target;
-                    }}
-                    onDrop={(e) => handleActionDrop(e, azioniItem.title, roleName)}
-                >
-                    <div className="azioniItemTitle">
-                        <div className='d-flex align-items-center gap-2'>
-                            {isEditMode && (
-                                <>
-                                    <span className='ArrowMoveactionGroup d-flex align-items-center cursor-move ms-1'>
-                                        <ArrowMove className='ArrowMoveactionGroup' fill="#495057" width={20} height={20} />
-                                    </span>
-                                    <span className='vr-line'></span>
-                                </>
-                            )}
-                            <span>{azioniItem?.title}</span>
+            <div className='container-catAzione d-flex flex-column gap-1'>
+                {azioni?.map((azioniItem) => {
+                    const catactionkey = `${element?.ruolo?.key}-${azioniItem?.title?.replaceAll(" ", "-")}`
+                    const caDataID = dataID.catactionId[catactionkey]
+                    return <div
+                        className={`catAzione ${dropTarget?.type === 'actionGroup' && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''} w-100`}
+                        key={azioniItem.title}
+                        data-id={caDataID}
+                        draggable={isEditMode}
+                        onDragStart={(e) => handleActionDragStart(e, azioniItem.title)}
+                        onDragOver={(e) => handleActionDragOver(e, azioniItem.title, roleName)}
+                        onDragLeave={handleActionDragLeave}
+                        onMouseDown={(e) => {
+                            dragStartSourceRefAction.current = e.target;
+                        }}
+                        onDrop={(e) => handleActionDrop(e, azioniItem.title, roleName)}
+                    >
+                        <div className="catAzione-header">
+                            <div className='d-flex align-items-center gap-2'>
+                                {isEditMode && (
+                                    <>
+                                        <span className='catAzione-title ArrowMoveactionGroup d-flex align-items-center cursor-grab ms-1'>
+                                            <ArrowMove className='ArrowMoveactionGroup' fill="#495057" width={20} height={20} />
+                                        </span>
+                                        <span className='vr-line'></span>
+                                    </>
+                                )}
+                                <span className='catAzione-text'>{azioniItem?.title}</span>
+                            </div>
+                            <div className="d-flex align-items-center justify-content-center mx-2">
+                                {isEditMode && (
+                                    <Dropdown>
+                                        <Dropdown.Toggle className="menu-btn-list">
+                                            <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
+                                        </Dropdown.Toggle>
+                                        <Dropdown.Menu>
+                                            <Dropdown.Item onClick={(e) => { e.stopPropagation(); openTitleItemModal(roleName, 'azioni', { title: azioniItem.title }, caDataID) }}>
+                                                <i className='bi bi-pencil me-2' /> Modifica
+                                            </Dropdown.Item>
+                                            <Dropdown.Item onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActionToClone(azioniItem);
+                                                setCloneActionModalShow(true);
+                                            }}>
+                                                <i className='bi bi-files me-2' /> Clona
+                                            </Dropdown.Item>
+                                            <Dropdown.Item className='text-danger' onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActionToDelete(azioniItem.title);
+                                                setDeleteActionModalShow(true);
+                                            }}>
+                                                <i className='bi bi-trash me-2' /> Elimina
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                )}
+                            </div>
                         </div>
-                        <div className="d-flex align-items-center justify-content-center mx-2">
-                            {isEditMode && (
-                                <Dropdown>
-                                    <Dropdown.Toggle className="role_menu">
-                                        <ThreeDotsIcon fill="#495057" className='mb-1' height={17} width={17} />
-                                    </Dropdown.Toggle>
-                                    <Dropdown.Menu>
-                                        <Dropdown.Item onClick={(e) => { e.stopPropagation(); openTitleItemModal(roleName, 'azioni', { title: azioniItem.title }) }}>
-                                            <i className='bi bi-pencil me-2' /> Modifica
-                                        </Dropdown.Item>
-                                        <Dropdown.Item onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActionToClone(azioniItem);
-                                            setCloneActionModalShow(true);
-                                        }}>
-                                            <i className='bi bi-files me-2' /> Clona
-                                        </Dropdown.Item>
-                                        <Dropdown.Item className='text-danger' onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActionToDelete(azioniItem.title);
-                                            setDeleteActionModalShow(true);
-                                        }}>
-                                            <i className='bi bi-trash me-2' /> Elimina
-                                        </Dropdown.Item>
-                                    </Dropdown.Menu>
-                                </Dropdown>
-                            )}
-                        </div>
-                    </div>
-                    <div className="actiongroup">
-                        {azioniItem?.listArray?.map((item) => {
-                            const isAssociated = shownStatus && associatedActions[item.key];
-                            const isDuplicateAction = actionkeys?.includes(item?.key);
-                            return (
-                                <div
-                                    key={item.key}
-                                    id={item.key}
-                                    data-id={`${element?.ruolo?.key}_${item?.key}`}
-                                    ref={(el) => (refsMap.current[`${element?.ruolo?.key}_${item?.key}`] = el)}
-                                    className={`azioniArrayItem ${dropTarget?.type === 'action' && dropTarget?.itemKey === item.key && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
-                                    onMouseEnter={() => handleActionMouseHover(item.key)}
-                                    onMouseLeave={() => handleMouseLeave(item.key)}
-                                    onClick={() => handleActionItemClick(item.key, azioniItem.title)}
-                                    draggable={isEditMode}
-                                    onDragStart={(e) => handleActionItemDragStart(e, azioniItem.title, item.key)}
-                                    onDragOver={(e) => handleActionItemDragOver(e, azioniItem.title, item.key, roleName)}
-                                    onDragLeave={handleActionItemDragLeave}
-                                    onMouseDown={(e) => {
-                                        dragStartSourceRefAction.current = e.target;
-                                    }}
-                                    onDrop={(e) => handleActionItemDrop(e, azioniItem.title, item.key, roleName)}
-                                    style={{
-                                        backgroundColor: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
-                                        color: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '',
-                                        border: (shownStatus && isAssociated && selectedElement?.type === 'status' && selectedElement.roleName === roleName) ? '3px solid black' : '2px solid #ced4da',
-                                    }}
-                                >
-                                    <div className='w-100 d-flex justify-content-between align-items-center'>
-                                        <div className='d-flex align-items-center gap-2'>
-                                            {isEditMode && (
-                                                <>
-                                                    <span className='ArrowMoveAction d-flex align-items-center cursor-move ms-1'>
-                                                        <ArrowMove className='ArrowMoveAction' fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
+
+                        <div className="actiongroup">
+                            {azioniItem?.listArray?.map((item) => {
+                                const isAssociated = shownStatus && associatedActions[item.key];
+                                const isDuplicateAction = actionkeys?.includes(item?.key);
+                                const aDataID = dataID.action[`${catactionkey}-${item.key}`]
+
+                                let sameDataId
+                                if (isDuplicateAction) {
+                                    const sameList = duplicateAction.find(e => e.value === item?.key);
+                                    sameDataId = dataID.action[sameList?.label]
+                                }
+
+                                return (
+                                    <div
+                                        key={item.key}
+                                        id={item.key}
+                                        data-id={aDataID}
+                                        ref={(el) => (refsMap.current[`${element?.ruolo?.key}_${item?.key}`] = el)}
+                                        className={`action-item ${dropTarget?.type === 'action' && dropTarget?.itemKey === item.key && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''} 
+                                        ${(shownStatus && isAssociated && selectedElement?.type === 'status' && selectedElement.roleName === roleName) ? 'highlighted-action' : ''}
+                                        `}
+                                        onMouseEnter={() => handleActionMouseHover(item.key)}
+                                        onMouseLeave={() => handleMouseLeave(item.key)}
+                                        onClick={() => handleActionItemClick(item.key, azioniItem.title)}
+                                        draggable={isEditMode}
+                                        onDragStart={(e) => handleActionItemDragStart(e, azioniItem.title, item.key)}
+                                        onDragOver={(e) => handleActionItemDragOver(e, azioniItem.title, item.key, roleName)}
+                                        onDragLeave={handleActionItemDragLeave}
+                                        onMouseDown={(e) => {
+                                            dragStartSourceRefAction.current = e.target;
+                                        }}
+                                        onDrop={(e) => handleActionItemDrop(e, azioniItem.title, item.key, roleName)}
+                                        style={{
+                                            backgroundColor: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
+                                            color: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '',
+                                        }}
+                                    >
+                                        <div className='w-100 d-flex justify-content-between align-items-center'>
+                                            <div className='d-flex align-items-center gap-2'>
+                                                {isEditMode && (
+                                                    <>
+                                                        <span className='ArrowMoveAction d-flex align-items-center cursor-grab ms-1'>
+                                                            <ArrowMove className='ArrowMoveAction' fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
+                                                        </span>
+                                                        <span className='vr-line'></span>
+                                                    </>
+                                                )}
+                                                <div className='action-content'>
+                                                    <span className='item-title'>
+                                                        {(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${aDataID}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
+                                                        {item?.title}
                                                     </span>
-                                                    <span className='vr-line'></span>
-                                                </>
-                                            )}
-                                            <span className='d-flex align-items-center gap-1'>
-                                                {(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={renderTooltip} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
-                                                {item?.title}
-                                            </span>
-                                            {(isEditMode && selectedElement?.type === 'status' && selectedElement.roleName === roleName) && (
-                                                <div className="enable-action-for-status-checkbox" title="Abilita/disabilita azione per lo stato attivo" onClick={(e) => { e.stopPropagation(); }}>
-                                                    <input type="checkbox" checked={shownStatus && isAssociated ? true : false} onChange={() => toggleActionVisibility(roleName, shownStatus, item.key, MainData, setEpWorkflowjson)} />
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="d-flex align-items-center justify-content-center mx-2" onClick={(e) => e.stopPropagation()}>
-                                            {isEditMode && (
-                                                <Dropdown>
-                                                    <Dropdown.Toggle className="role_menu">
-                                                        <ThreeDotsIcon fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
-                                                    </Dropdown.Toggle>
-                                                    <Dropdown.Menu>
-                                                        <Dropdown.Item onClick={(e) => { e.stopPropagation(); openActionItemModal(roleName, azioniItem.title, item) }}>
-                                                            <i className='bi bi-pencil me-2' /> Modifica
-                                                        </Dropdown.Item>
-                                                        <Dropdown.Item onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setActionItemToClone(item);
-                                                            setActionTitleForItem(azioniItem.title);
-                                                            setCloneActionItemModalShow(true);
-                                                        }}>
-                                                            <i className='bi bi-files me-2' /> Clona
-                                                        </Dropdown.Item>
-                                                        <Dropdown.Item className='text-danger' onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setActionItemToDelete(item);
-                                                            setActionTitleForItem(azioniItem.title);
-                                                            setDeleteActionItemModalShow(true);
-                                                        }}>
-                                                            <i className='bi bi-trash me-2' /> Elimina
-                                                        </Dropdown.Item>
-                                                    </Dropdown.Menu>
-                                                </Dropdown>
-                                            )}
+
+                                                {(isEditMode && selectedElement?.type === 'status' && selectedElement.roleName === roleName) && (
+                                                    <div className='action-controls'>
+                                                        <div className="enable-action-for-status-checkbox" title="Abilita/disabilita azione per lo stato attivo" onClick={(e) => { e.stopPropagation(); }}>
+                                                            <input type="checkbox" checked={shownStatus && isAssociated ? true : false} onChange={() => toggleActionVisibility(roleName, shownStatus, item.key, MainData, setEpWorkflowjson)} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="d-flex align-items-center justify-content-center mx-2" onClick={(e) => e.stopPropagation()}>
+                                                {isEditMode && (
+                                                    <Dropdown>
+                                                        <Dropdown.Toggle className="menu-btn-list">
+                                                            <ThreeDotsIcon fill={selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} className='mb-1' height={17} width={17} />
+                                                        </Dropdown.Toggle>
+                                                        <Dropdown.Menu>
+                                                            <Dropdown.Item onClick={(e) => { e.stopPropagation(); openActionItemModal(roleName, azioniItem.title, item, aDataID) }}>
+                                                                <i className='bi bi-pencil me-2' /> Modifica
+                                                            </Dropdown.Item>
+                                                            <Dropdown.Item onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActionItemToClone(item);
+                                                                setActionTitleForItem(azioniItem.title);
+                                                                setCloneActionItemModalShow(true);
+                                                            }}>
+                                                                <i className='bi bi-files me-2' /> Clona
+                                                            </Dropdown.Item>
+                                                            <Dropdown.Item className='text-danger' onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActionItemToDelete(item);
+                                                                setActionTitleForItem(azioniItem.title);
+                                                                setDeleteActionItemModalShow(true);
+                                                            }}>
+                                                                <i className='bi bi-trash me-2' /> Elimina
+                                                            </Dropdown.Item>
+                                                        </Dropdown.Menu>
+                                                    </Dropdown>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
+                                );
+                            })}
+                            {isEditMode && (
+                                <div
+                                    className={`drop-target-last ${dropTarget?.type === 'action' && dropTarget?.actionTitle === azioniItem.title && dropTarget?.isLastPosition ? 'drop-target' : ''} w-100`}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        if (draggingItem?.type === 'action') {
+                                            setDropTarget({ type: 'action', actionTitle: azioniItem.title, roleName, isLastPosition: true });
+                                        }
+                                    }}
+                                    onDragLeave={handleActionItemDragLeave}
+                                    onDrop={(e) => handleActionItemDrop(e, azioniItem.title, null, roleName, true)}
+                                >
+                                    <span className='add-action-btn' onClick={() => openActionItemModal(roleName, azioniItem.title)}>
+                                        <i class="bi bi-plus-lg"></i>
+                                    </span>
                                 </div>
-                            );
-                        })}
-                        {isEditMode && (
-                            <div
-                                style={{ width: '100%' }}
-                                className={`drop-target-last ${dropTarget?.type === 'action' && dropTarget?.actionTitle === azioniItem.title && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    if (draggingItem?.type === 'action') {
-                                        setDropTarget({ type: 'action', actionTitle: azioniItem.title, roleName, isLastPosition: true });
-                                    }
-                                }}
-                                onDragLeave={handleActionItemDragLeave}
-                                onDrop={(e) => handleActionItemDrop(e, azioniItem.title, null, roleName, true)}
-                            >
-                                <span className='listeArrayItem' style={{ width: 'fit-content', padding: '6px 12px', cursor: 'pointer' }} onClick={() => openActionItemModal(roleName, azioniItem.title)}>
-                                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
-                                </span>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
-            ))}
+                })}
+            </div>
+
             {isEditMode && (
                 <div
-                    className={`liste text-center drop-target-last ${dropTarget?.type === 'actionGroup' && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
+                    className={`add-catAction-btn drop-target-last ${dropTarget?.type === 'actionGroup' && dropTarget?.isLastPosition ? 'drop-target' : ''}`}
                     onDragOver={(e) => {
                         e.preventDefault();
                         if (draggingItem?.type === 'actionGroup') {
@@ -774,7 +824,7 @@ function ActionSection({
                     onDrop={(e) => handleActionDrop(e, null, roleName, true)}
                     onClick={() => openTitleItemModal(roleName, 'azioni')}
                 >
-                    <PlusIcon fill="#495057" className="cursor-pointer" height={15} width={15} />
+                    <i class="bi bi-plus-lg"></i>
                 </div>
             )}
             <CloneActionModal
@@ -829,7 +879,7 @@ function ActionSection({
                 setEpWorkflowjson={setEpWorkflowjson}
                 updateCanvasSize={() => { }}
             />
-        </div>
+        </Col>
     );
 }
 
