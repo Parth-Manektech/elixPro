@@ -72,7 +72,8 @@ function ListSection({
                         'behind',
                         'arrow2',
                         false,
-                        containerRef
+                        containerRef,
+                        true
                     );
                 } else if (wf.listeDestinazione.includes(listItemKey) && !isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
                     const ActionElement = MainData.find(item =>
@@ -86,7 +87,8 @@ function ListSection({
                         'behind',
                         'arrow2',
                         false,
-                        containerRef
+                        containerRef,
+                        true
                     );
                 }
 
@@ -102,7 +104,8 @@ function ListSection({
                         'square',
                         'square',
                         false,
-                        containerRef
+                        containerRef,
+                        false
                     );
                 } else if (wf.doNotlisteDestinazione.includes(listItemKey) && !isElementVisible(wf.keyAzione) && isElementVisible(listItemKey)) {
                     const ActionElement = MainData.find(item =>
@@ -116,7 +119,8 @@ function ListSection({
                         'square',
                         'square',
                         false,
-                        containerRef
+                        containerRef,
+                        false
                     );
                 }
             });

@@ -84,7 +84,8 @@ function ActionSection({
                         'behind',
                         'arrow2',
                         false,
-                        containerRef
+                        containerRef,
+                        true
                     );
                 } else if (
                     wf.statoDestinazione &&
@@ -101,7 +102,8 @@ function ActionSection({
                         'behind',
                         'arrow2',
                         false,
-                        containerRef
+                        containerRef,
+                        true
                     );
                 }
 
@@ -120,7 +122,8 @@ function ActionSection({
                                 'behind',
                                 'arrow2',
                                 false,
-                                containerRef
+                                containerRef,
+                                true
                             );
                         } else if (isElementVisible(actionKey) && !isElementVisible(listId)) {
                             const ListElement = MainData.find(item =>
@@ -135,7 +138,8 @@ function ActionSection({
                                 'behind',
                                 'arrow2',
                                 false,
-                                containerRef
+                                containerRef,
+                                true
                             );
                         }
 

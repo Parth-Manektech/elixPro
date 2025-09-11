@@ -118,7 +118,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     const refsMap = useRef({});
     const dropdownToggleRefs = useRef({});
 
-    const createLeaderLine = (startId, endId, color, startPlug, endPlug, isSelected = false, containerRef) => {
+    const createLeaderLine = (startId, endId, color, startPlug, endPlug, isSelected = false, containerRef, isdropShadow = false) => {
         const startElement = refsMap.current[startId];
         const endElement = refsMap.current[endId];
         if (startElement && endElement && containerRef.current) {
@@ -140,7 +140,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 path: 'fluid',
                 size: 2,
                 endPlugSize: 2,
-                dropShadow: true,
+                dropShadow: isdropShadow,
                 startPlugSize: 2,
                 gradient: true,
                 container: containerRef.current,

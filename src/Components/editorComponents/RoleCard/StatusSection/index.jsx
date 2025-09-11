@@ -112,7 +112,8 @@ function StatusSection({
                         'behind',
                         'arrow2',
                         false,
-                        containerRef
+                        containerRef,
+                        true
                     );
                 } else if (wf.statoDestinazione === statusItemKey && !isElementVisible(wf.keyAzione) && isElementVisible(statusItemKey)) {
                     const ActionElement = MainData.find(item =>
@@ -126,7 +127,8 @@ function StatusSection({
                         'behind',
                         'arrow2',
                         false,
-                        containerRef
+                        containerRef,
+                        true
                     );
                 }
             }
