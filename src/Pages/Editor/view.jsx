@@ -114,7 +114,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         leaderLinesRef.current.forEach(line => line.position());
     };
 
-    const canvasRef = useRef(null);
     const containerRef = useRef(null);
     const refsMap = useRef({});
     const dropdownToggleRefs = useRef({});
@@ -301,9 +300,9 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                         const catList = item.ruolo.key.concat("-", list.title?.replaceAll(" ", "-"))
                         catlistkeysforid.push(catList)
                         if (list.listArray && Array.isArray(list.listArray)) {
-                            list.listArray.forEach(listItem => {
+                            list.listArray.forEach((listItem, index) => {
                                 if (listItem.key) {
-                                    listKeysforid.push(catList.concat("-", listItem.key.replaceAll(" ", "-")))
+                                    listKeysforid.push(`${catList.concat("-", listItem.key.replaceAll(" ", "-"))}-${index}`)
                                     listKeys.push(listItem.key);
                                 }
                             });
@@ -313,8 +312,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
 
                 // Extract status keys from pulsantiAttivi
                 if (item.pulsantiAttivi && typeof item.pulsantiAttivi === 'object') {
-                    Object.keys(item.pulsantiAttivi).forEach(statusKey => {
-                        statusKeysforid.push(item.ruolo.key.concat("-", statusKey))
+                    Object.keys(item.pulsantiAttivi).forEach((statusKey, index) => {
+                        statusKeysforid.push(`${item.ruolo.key.concat("-", statusKey)}-${index}`)
                         statusKeys.push(statusKey);
                     });
                 }
@@ -325,8 +324,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                         const catAction = item.ruolo.key.concat("-", action.title?.replaceAll(" ", "-"))
                         catactionlistfroid.push(catAction)
                         if (action.listArray && Array.isArray(action.listArray)) {
-                            action.listArray.forEach(actionItem => {
-                                actionKeysforid.push(catAction.concat("-", actionItem.key.replaceAll(" ", "-")))
+                            action.listArray.forEach((actionItem, index) => {
+                                actionKeysforid.push(`${catAction.concat("-", actionItem.key.replaceAll(" ", "-"))}-${index}`)
                                 if (actionItem.key) {
                                     actionKeys.push(actionItem.key);
                                 }
@@ -370,7 +369,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         setTimeout(() => {
             addFrecciaClass();
         }, 10);
-
+        isEditMode && detectAndMarkDuplicatedKeys();
     }, [MainData, setEpWorkflowjson]);
 
 
@@ -497,8 +496,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         } else {
             removeDuplicateKeyAlerts();
         }
-
-    }, [isEditMode, MainData]);
+    }, [isEditMode]);
 
 
     function isColorLight(hexColor) {

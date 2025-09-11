@@ -383,9 +383,9 @@ function StatusSection({
                 <div class="category-title"></div>
                 <div className='statusGroup'>
                     {pulsantiAttivi &&
-                        Object.keys(pulsantiAttivi).map((StatusItem) => {
+                        Object.keys(pulsantiAttivi).map((StatusItem, index) => {
                             const isDublicate = getStatusOptions().includes(StatusItem);
-                            const sDataId = dataID?.statusId[`${element?.ruolo?.key}-${StatusItem}`]
+                            const sDataId = dataID?.statusId[`${element?.ruolo?.key}-${StatusItem}-${index}`]
 
                             let sameDataId
                             if (isDublicate) {

@@ -213,7 +213,7 @@ function ActionSection({
             const wf = MainData[workflowIndex].workflowmapping.find(
                 (item) => item.keyAzione === actionKey
             );
-            if (wf.statoDestinazione?.length || wf?.listeDestinazione?.length || wf?.doNotlisteDestinazione?.length) return true
+            if (wf?.statoDestinazione?.length || wf?.listeDestinazione?.length || wf?.doNotlisteDestinazione?.length) return true
             else return false
         }
     }
@@ -712,10 +712,10 @@ function ActionSection({
                         </div>
 
                         <div className="actiongroup">
-                            {azioniItem?.listArray?.map((item) => {
+                            {azioniItem?.listArray?.map((item, index) => {
                                 const isAssociated = shownStatus && associatedActions[item.key];
                                 const isDuplicateAction = actionkeys?.includes(item?.key);
-                                const aDataID = dataID.action[`${catactionkey}-${item.key}`]
+                                const aDataID = dataID.action[`${catactionkey}-${item.key}-${index}`]
 
                                 let sameDataId
                                 if (isDuplicateAction) {

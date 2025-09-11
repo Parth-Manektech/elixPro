@@ -598,9 +598,9 @@ function ListSection({
                         </div>
 
                         <div className="listGroup">
-                            {listeItem?.listArray?.map((listArrayItem) => {
+                            {listeItem?.listArray?.map((listArrayItem, index) => {
                                 const isDuplicateList = listKeys?.includes(listArrayItem?.key);
-                                const lDataID = dataID.listId[`${catListkey}-${listArrayItem.key}`]
+                                const lDataID = dataID.listId[`${catListkey}-${listArrayItem.key}-${index}`]
                                 let sameDataId
                                 if (isDuplicateList) {
                                     const sameList = duplicateList.find(e => e.value === listArrayItem?.key);
