@@ -502,6 +502,7 @@ function ActionSection({
         e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'action', itemKey, facultyName: roleName, actionTitle }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
+        e.currentTarget.classList.add("action-item-dragging");
     };
 
     const handleActionItemDragOver = (e, actionTitle, itemKey, targetRoleName) => {
@@ -592,6 +593,23 @@ function ActionSection({
         } catch (error) {
             console.error('Error parsing drag data:', error);
         }
+        setDraggingItem(null);
+        setDropTarget(null);
+        document.querySelectorAll('.action-item-dragging').forEach((element) => {
+            element.classList.remove('action-item-dragging');
+        });
+    };
+
+
+    const handleactionItemDragEnd = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearLeaderLines();
+
+        document.querySelectorAll('.action-item-dragging').forEach((element) => {
+            element.classList.remove('action-item-dragging');
+        });
+
         setDraggingItem(null);
         setDropTarget(null);
     };
@@ -710,10 +728,14 @@ function ActionSection({
                                         key={item.key}
                                         id={item.key}
                                         data-id={aDataID}
+                                        data-key={item?.key}
                                         ref={(el) => (refsMap.current[`${element?.ruolo?.key}_${item?.key}`] = el)}
                                         className={`action-item ${dropTarget?.type === 'action' && dropTarget?.itemKey === item.key && dropTarget?.actionTitle === azioniItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''} 
                                         ${(shownStatus && isAssociated && selectedElement?.type === 'status' && selectedElement.roleName === roleName) ? 'highlighted-action' : ''}
                                         `}
+                                        data-status={item?.status}
+                                        data-movetolist={item?.moveToList ? item?.moveToList : "[]"}
+                                        data-donotmovetolist={item?.doNotMoveToList ? item?.doNotMoveToList : "[]"}
                                         onMouseEnter={() => handleActionMouseHover(item.key)}
                                         onMouseLeave={() => handleMouseLeave(item.key)}
                                         onClick={() => handleActionItemClick(item.key, azioniItem.title)}
@@ -724,6 +746,7 @@ function ActionSection({
                                         onMouseDown={(e) => {
                                             dragStartSourceRefAction.current = e.target;
                                         }}
+                                        onDragEnd={(e) => handleactionItemDragEnd(e)}
                                         onDrop={(e) => handleActionItemDrop(e, azioniItem.title, item.key, roleName)}
                                         style={{
                                             backgroundColor: selectedElement?.type === 'action' && selectedElement.itemKey === item.key && selectedElement.actionTitle === azioniItem.title && selectedElement.roleName === roleName ? '#343a40' : '',
@@ -742,7 +765,7 @@ function ActionSection({
                                                 )}
                                                 <div className='action-content'>
                                                     <span className='item-title'>
-                                                        {(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${aDataID}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
+                                                        {/* {(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${aDataID}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>} */}
                                                         {item?.title}
                                                     </span>
                                                 </div>

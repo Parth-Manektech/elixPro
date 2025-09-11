@@ -1,6 +1,7 @@
 
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import LeaderLine from 'leader-line-new';
+import * as bootstrap from 'bootstrap';
 
 import DeleteConfirmationModal from '../../Components/DeleteConfirmationModal';
 import ListItemModal from '../../Components/editorComponents/Modals/ListItemModal';
@@ -15,6 +16,7 @@ import Toolbar from '../../Components/editorComponents/Toolbar';
 // import MainCanvas from '../../Components/editorComponents/MainCanvas';
 import RoleCard from '../../Components/editorComponents/RoleCard';
 import { DuplicateErrorToast } from '../../utils/Toster';
+import { parseList } from '../../utils/utils';
 
 function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey }) {
     const MainData = useMemo(() => (epWorkflowjson ? JSON.parse(epWorkflowjson) : []), [epWorkflowjson]);
@@ -50,8 +52,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     const [searchTerm, setSearchTerm] = useState('');
     const [isRightBarOpen, setIsRightBarOpen] = useState(true);
     const [duplicateCount, setDuplicateCount] = useState(0);
-    const [dataID, setDataID] = useState({})
-    const [allKey, setAllKey] = useState({})
+    const [dataID, setDataID] = useState({});
     const [currentDataId, setCurrentDataId] = useState(null)
 
     const handleCollapseCard = (role) => {
@@ -140,6 +141,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 path: 'fluid',
                 size: 2,
                 endPlugSize: 2,
+                dropShadow: true,
                 startPlugSize: 2,
                 gradient: true,
                 container: containerRef.current,
@@ -156,6 +158,47 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         [zoomLevel, collapsedCards, MainData]
     );
 
+    function detectAndMarkDuplicatedKeys() {
+        const keyMap = {};
+        const items = document.querySelectorAll('[data-key]');
+
+        // Pulisce tutte le icone precedenti
+        items.forEach(el => {
+            el.querySelectorAll('.duplicate-key-alert')?.forEach(icon => icon.remove());
+        });
+
+        // Costruisce la mappa delle key
+        items.forEach(el => {
+            const key = el.dataset.key?.trim();
+            if (!key || key === 'undefined') return;
+            if (!keyMap[key]) keyMap[key] = [];
+            keyMap[key].push(el);
+        });
+
+        // Applica le icone solo dove necessario
+        Object.entries(keyMap).forEach(([key, els]) => {
+            if (els.length <= 1) return;
+
+            const ids = els.map(el => el.dataset.id).filter(Boolean).join(', ');
+
+            els.forEach(el => {
+                const vr = el.querySelector('.vr-line');
+                if (!vr) return;
+
+                const alertIcon = document.createElement('i');
+                alertIcon.className = 'bi bi-exclamation-triangle-fill text-danger duplicate-key-alert';
+                alertIcon.setAttribute('data-bs-toggle', 'tooltip');
+                alertIcon.setAttribute('data-bs-title', `La Key non è univoca! Viene usata più volte per: ${ids}`);
+                alertIcon.setAttribute('data-bs-placement', 'top');
+
+                vr.insertAdjacentElement('afterend', alertIcon);
+
+                // Tooltip Bootstrap
+                new bootstrap.Tooltip(alertIcon);
+            });
+        });
+    }
+
     useEffect(() => {
         let hasChanges = false;
         const updatedData = MainData.map((role, index) => {
@@ -165,8 +208,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 updatedRole = {
                     ...updatedRole,
                     layout: {
-                        top: Math.floor(index / 3) * (637), // Increment top after every 3rd role with a 50px gap
-                        left: (index % 3) * 780, // Horizontal spacing for each role within a group of 3
+                        top: (Math.floor(index / 4) * (480)) + 20, // Increment top after every 3rd role with a 50px gap
+                        left: ((index % 4) * 785) + 20, // Horizontal spacing for each role within a group of 3
                         width: 768,
                         height: 637,
                     },
@@ -294,12 +337,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
             }
         });
 
-        setAllKey({
-            list: listKeys,
-            status: statusKeys,
-            action: actionKeys
-        })
-
         const DataIds = {
             roleId: {},
             catlistId: {},
@@ -328,9 +365,60 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
             DataIds.action[e] = `A-${String(i + 1).padStart(4, '0')}`;
         })
 
-        setDataID(DataIds)
+        setDataID(DataIds);
+
+        setTimeout(() => {
+            addFrecciaClass();
+        }, 10);
 
     }, [MainData, setEpWorkflowjson]);
+
+
+    const addFrecciaClass = () => {
+        if (MainData) {
+            const allActions = MainData.flatMap(card => (card.azioni || []).flatMap(cat => cat.listArray || []));
+
+            const listItemSet = new Set();
+            allActions.forEach(a => {
+                const move = Array.isArray(a.moveToList) ?
+                    a.moveToList :
+                    typeof a.moveToList === 'string' ?
+                        a.moveToList.split(',').map(s => s.trim()).filter(Boolean) :
+                        [];
+
+                const noMove = Array.isArray(a.doNotMoveToList) ?
+                    a.doNotMoveToList :
+                    typeof a.doNotMoveToList === 'string' ?
+                        a.doNotMoveToList.split(',').map(s => s.trim()).filter(Boolean) :
+                        [];
+
+                [...move, ...noMove].forEach(key => {
+                    if (key) listItemSet.add(key);
+                });
+            });
+
+            // Applica alle liste
+            document.querySelectorAll('.list-item').forEach(listEl => {
+                listEl.classList.remove('has-freccia');
+                if (listItemSet.has(listEl.id)) {
+                    listEl.classList.add('has-freccia');
+                }
+            });
+
+            // Applica alle azioni
+            document.querySelectorAll('.action-item').forEach(actionEl => {
+                actionEl.classList.remove('has-freccia');
+                const hasStatus = !!actionEl.dataset.status?.trim();
+                const hasMove = parseList(actionEl.dataset.movetolist).length > 0;
+                const hasNoMove = parseList(actionEl.dataset.donotmovetolist).length > 0;
+
+                if (hasStatus || hasMove || hasNoMove) {
+                    actionEl.classList.add('has-freccia');
+                }
+            });
+        }
+
+    }
 
 
     const openListItemModal = (facultyName, listTitle, listItem = null, dataid) => {
@@ -390,45 +478,28 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         setCanvasSize((prev) => ({ ...prev }));
     };
 
+    const removeDuplicateKeyAlerts = () => {
+        document.querySelectorAll('.duplicate-key-alert').forEach((icon) => {
+            const tooltip = bootstrap.Tooltip.getInstance(icon); // Get tooltip instance
+            if (tooltip) {
+                tooltip.dispose(); // Dispose of tooltip to prevent memory leaks
+            }
+            icon.remove(); // Remove the icon from the DOM
+        });
+    };
     useEffect(() => {
         if (isEditMode) {
-            const result = findDuplicateKeys();
-            if (result?.result?.actionDuplicateCount > 0 || result?.result?.listDuplicateCount > 0 || result?.result?.statusDuplicateCount > 0) {
-                const TotalCount = result?.result?.actionDuplicateCount + result?.result?.listDuplicateCount + result?.result?.statusDuplicateCount
-                DuplicateErrorToast(`Sono stati rilevati ${TotalCount * 2} errori di key duplicata.`)
-            }
+            detectAndMarkDuplicatedKeys();
+            const duplicateIcons = document.querySelectorAll('.duplicate-key-alert');
+            const count = duplicateIcons.length;
+            if (count) DuplicateErrorToast(`Sono stati rilevati ${count} errori di key duplicata.`)
+
+        } else {
+            removeDuplicateKeyAlerts();
         }
-    }, [isEditMode]);
 
-    function findDuplicateKeys() {
-        const countDuplicates = (keysArray) => {
-            const keyCountMap = {};
-            keysArray.forEach(key => {
-                keyCountMap[key] = (keyCountMap[key] || 0) + 1;
-            });
-            const totalKeys = keysArray.length;
-            const uniqueKeys = new Set(keysArray).size;
-            return totalKeys - uniqueKeys; // Duplicates = total - unique
-        };
+    }, [isEditMode, MainData]);
 
-
-        // Count duplicates for each category
-        const listDuplicateCount = countDuplicates(allKey?.list);
-        const statusDuplicateCount = countDuplicates(allKey?.status);
-        const actionDuplicateCount = countDuplicates(allKey?.action);
-
-        // Create formatted message
-        const message = `${listDuplicateCount} list key${listDuplicateCount !== 1 ? 's' : ''} and ${statusDuplicateCount} status key${statusDuplicateCount !== 1 ? 's' : ''} and ${actionDuplicateCount} action key${actionDuplicateCount !== 1 ? 's' : ''} are duplicate`;
-        // Return result object
-        return {
-            message,
-            result: {
-                listDuplicateCount,
-                statusDuplicateCount,
-                actionDuplicateCount
-            }
-        };
-    }
 
     function isColorLight(hexColor) {
         const hex = hexColor.replace("#", "");
@@ -591,9 +662,10 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                 handleToggleAll();
                             }}
                         >
-                            {collapsedRoles.length > 0 && collapsedRoles.length < MainData.length
+                            {collapsedRoles.length == MainData.map((role) => role?.ruolo?.key).filter(Boolean).length
                                 ? 'Espandi tutti'
                                 : 'Collassa tutti'}
+
                         </a>
                     </div>
                     <input
@@ -616,7 +688,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                 key={role?.ruolo?.key}
                                 id={role.ruolo.key}
                                 ref={(el) => (refsMap.current[role.ruolo.key] = el)}
-                                data-key={role?.ruolo.key}
                                 style={{ backgroundColor: role.ruolo?.colore || '#6f42c1' }}
                                 className="collapsed-role"
                                 draggable
@@ -625,7 +696,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                 onDragEnd={(e) => handleCollapsedRoleDragEnd(e, role?.ruolo)}
                             >
                                 <div className='d-flex gap-2 align-items-center'>
-                                    <span className="drag-handle ms-2">
+                                    <span className="drag-handle cursor-grab ms-2">
                                         <i className="bi bi-arrows-move" style={{ color: Color }}></i>
                                     </span>
                                     <span className="vr-line" style={{ backgroundColor: Color }}></span>

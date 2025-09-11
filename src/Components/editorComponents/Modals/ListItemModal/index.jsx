@@ -237,9 +237,10 @@ const ListItemModal = ({ currentDataId, show, handleClose, initialData, MainData
                                                     field.onChange(e.target.value);
                                                 }}
                                                 aria-label="select type"
+
                                                 isInvalid={!!errors.type}
                                             >
-                                                <option value="button">button</option>
+                                                <option style={{ cursor: "pointer !impotant" }} value="button">button</option>
                                             </Form.Select>
                                         )}
                                     />

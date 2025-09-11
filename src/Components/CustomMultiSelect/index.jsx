@@ -140,13 +140,7 @@ const CustomMultiSelect = ({ options, control, errors, fieldName, placeholder, l
                                     </button>
                                     {isSelectOpen && (
                                         <div
-                                            className="dropdown-menu show"
-                                            style={{
-                                                display: 'block',
-                                                width: '100%',
-                                                maxHeight: '200px',
-                                                overflowY: 'auto',
-                                            }}
+                                            className="dropdown-menu custom-dropdown-menu show"
                                         >
                                             <input
                                                 ref={inputRef}

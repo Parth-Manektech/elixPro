@@ -177,6 +177,7 @@ function RoleCard({
             height: role.layout?.height || 690,
         };
 
+        document.body.style.cursor = 'w-resize'; // Set cursor to w-resize globally
         document.addEventListener('mousemove', handleResize);
         document.addEventListener('mouseup', handleResizeStop);
     };
@@ -232,8 +233,10 @@ function RoleCard({
         }
 
         resizingRoleRef.current = null;
+        document.body.style.cursor = 'auto'; // Reset cursor to default
         updateCanvasSize();
     };
+
     useEffect(() => {
         function isColorLight(hexColor) {
             const hex = hexColor.replace("#", "");
@@ -253,11 +256,11 @@ function RoleCard({
     return (
         <div
             key={roleName}
-            className="card-wrapper"
+            className="draggable-card"
             id={element.ruolo.key}
             data-id={rDataID}
             ref={(el) => (refsMap.current[element.ruolo.key] = el)}
-            data-key={element?.ruolo.key}
+            // data-key={element?.ruolo.key}
             style={{
                 top: `${top}px`,
                 left: `${left}px`,
@@ -281,7 +284,7 @@ function RoleCard({
                             <ArrowMove width={25} height={25} fill={contrastColor} />
                         </span>
                         <span className='vr-line' style={{ backgroundColor: contrastColor }}></span>
-                        <span className='cursor-text' style={{ color: contrastColor }}>
+                        <span className='cursor-text text-start' style={{ color: contrastColor }}>
                             {element.ruolo.nome}
                         </span>
 
@@ -458,7 +461,7 @@ function RoleCard({
                         className="resize-handle"
                         onMouseDown={handleResizeStart}
                     >
-                        <CardResizer height={20} width={20} />
+                        <CardResizer height={16} width={16} />
                     </div>
                 )}
             </Card>

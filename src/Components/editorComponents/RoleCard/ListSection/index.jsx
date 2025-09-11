@@ -51,11 +51,9 @@ function ListSection({
         setHoveredStatus(null);
         setHoveredAction(null);
         clearLeaderLines();
-        console.log('Hover')
 
         const isElementVisible = (id) => {
             const element = document.getElementById(id);
-            console.log('element', element)
             return element && element.offsetParent !== null;
         };
 
@@ -386,25 +384,25 @@ function ListSection({
         e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'list', itemKey, facultyName: roleName, listTitle }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
+        e.currentTarget.classList.add("list-item-dragging");
     };
 
     const handleListItemDragOver = (e, listTitle, itemKey, targetRoleName) => {
-        e.preventDefault();
         clearLeaderLines()
         if (draggingItem?.type === 'list') {
             setDropTarget({ type: 'list', listTitle, itemKey, roleName: targetRoleName });
         }
     };
 
-    const handleListItemDragLeave = () => {
+    const handleListItemDragLeave = (e) => {
         setDropTarget(null);
-        clearLeaderLines()
+        clearLeaderLines();
     };
 
     const handleListItemDrop = (e, targetListTitle, targetKey, targetRoleName, isLastPosition = false) => {
         e.preventDefault();
         e.stopPropagation();
-        clearLeaderLines()
+        clearLeaderLines();
         if (!draggingItem || draggingItem.type !== 'list') {
             setDraggingItem(null);
             setDropTarget(null);
@@ -476,6 +474,24 @@ function ListSection({
         } catch (error) {
             console.error('Error parsing drag data:', error);
         }
+        setDraggingItem(null);
+        setDropTarget(null);
+        document.querySelectorAll('.list-item-dragging').forEach((element) => {
+            element.classList.remove('list-item-dragging');
+        });
+        console.log('drop');
+
+    };
+
+    const handleListItemDragEnd = (e, listTitle, itemKey) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearLeaderLines();
+
+        document.querySelectorAll('.list-item-dragging').forEach((element) => {
+            element.classList.remove('list-item-dragging');
+        });
+
         setDraggingItem(null);
         setDropTarget(null);
     };
@@ -596,7 +612,7 @@ function ListSection({
                                         ref={(el) => (refsMap.current[`${element?.ruolo?.key}_${listArrayItem?.key}`] = el)}
                                         id={listArrayItem?.key}
                                         data-id={lDataID}
-                                        data-key={`${element?.ruolo?.key}_${listArrayItem?.key}`}
+                                        data-key={`${listArrayItem?.key}`}
                                         className={`list-item ${dropTarget?.type === 'list' && dropTarget?.itemKey === listArrayItem.key && dropTarget?.listTitle === listeItem.title && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                                         onMouseEnter={() => handleListMouseHover(listArrayItem?.key)}
                                         onMouseLeave={() => handleMouseLeave(listArrayItem?.key)}
@@ -605,6 +621,7 @@ function ListSection({
                                         onDragStart={(e) => handleListItemDragStart(e, listeItem.title, listArrayItem.key)}
                                         onDragOver={(e) => handleListItemDragOver(e, listeItem.title, listArrayItem.key, roleName)}
                                         onDragLeave={handleListItemDragLeave}
+                                        onDragEnd={(e) => handleListItemDragEnd(e, listeItem.title, listArrayItem.key)}
                                         onDrop={(e) => handleListItemDrop(e, listeItem.title, listArrayItem.key, roleName)}
                                         onMouseDown={(e) => {
                                             dragStartSourceRef.current = e.target;
@@ -618,14 +635,14 @@ function ListSection({
                                             <div className='list-title'>
                                                 {isEditMode && (
                                                     <>
-                                                        <span className='ArrowMovelist d-flex align-items-center cursor-grab ms-1'>
+                                                        <span className='ArrowMovelist  d-flex align-items-center cursor-grab ms-1'>
                                                             <ArrowMove className='ArrowMovelist' fill={selectedElement?.type === 'list' && selectedElement.itemKey === listArrayItem.key && selectedElement.listTitle === listeItem.title && selectedElement.roleName === roleName ? 'white' : '#495057'} width={20} height={20} />
                                                         </span>
                                                         <span className='vr-line'></span>
                                                     </>
                                                 )}
                                                 <span className='item-title'>
-                                                    {(isEditMode && isDuplicateList) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${lDataID}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
+                                                    {/* {(isEditMode && isDuplicateList) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${lDataID}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>} */}
                                                     {listArrayItem?.title}
                                                 </span>
                                             </div>

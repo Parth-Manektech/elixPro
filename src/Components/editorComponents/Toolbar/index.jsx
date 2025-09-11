@@ -10,8 +10,12 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
         e.preventDefault();
         e.stopPropagation();
 
-        if (zoomCount < 1) {
+        if (zoomCount < 1 && zoomCount !== 0.05) {
             const zValue = zoomCount + 0.1;
+            setZoomCount(parseFloat(zValue.toFixed(10)));
+            setZoomLevel(parseFloat(zValue.toFixed(10)));
+        } else if (zoomCount === 0.05) {
+            const zValue = zoomCount + 0.05
             setZoomCount(parseFloat(zValue.toFixed(10)));
             setZoomLevel(parseFloat(zValue.toFixed(10)));
         }
@@ -20,8 +24,12 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
         e.preventDefault();
         e.stopPropagation();
 
-        if (zoomCount > 0.5) {
+        if (zoomCount > 0.1) {
             const zValue = zoomCount - 0.1;
+            setZoomCount(parseFloat(zValue.toFixed(10)));
+            setZoomLevel(parseFloat(zValue.toFixed(10)));
+        } else if (zoomCount === 0.1) {
+            const zValue = zoomCount - 0.05
             setZoomCount(parseFloat(zValue.toFixed(10)));
             setZoomLevel(parseFloat(zValue.toFixed(10)));
         }

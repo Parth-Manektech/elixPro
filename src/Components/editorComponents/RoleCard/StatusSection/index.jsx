@@ -262,6 +262,7 @@ function StatusSection({
         e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'status', statusItemKey, facultyName: roleName }));
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
         e.stopPropagation();
+        e.currentTarget.classList.add("status-item-dragging");
     };
 
     const handleStatusDragOver = (e, statusItemKey, targetRoleName) => {
@@ -350,6 +351,21 @@ function StatusSection({
         }
         setDraggingItem(null);
         setDropTarget(null);
+        document.querySelectorAll('.status-item-dragging').forEach((element) => {
+            element.classList.remove('status-item-dragging');
+        });
+    };
+    const handleStatusDragEnd = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearLeaderLines();
+
+        document.querySelectorAll('.status-item-dragging').forEach((element) => {
+            element.classList.remove('status-item-dragging');
+        });
+
+        setDraggingItem(null);
+        setDropTarget(null);
     };
 
     const renderTooltip = (props, msg) => (
@@ -382,6 +398,7 @@ function StatusSection({
                                     className={`status-item ${dropTarget?.type === 'status' && dropTarget?.statusItemKey === StatusItem && dropTarget?.roleName === roleName ? 'drop-target' : ''}`}
                                     id={StatusItem}
                                     data-id={sDataId}
+                                    data-key={StatusItem}
                                     onMouseEnter={() => handleStatusMouseHover(StatusItem)}
                                     onMouseLeave={() => handleMouseLeave(StatusItem)}
                                     onClick={() => handleStatusClick(StatusItem)}
@@ -389,6 +406,7 @@ function StatusSection({
                                     onDragStart={(e) => handleStatusDragStart(e, StatusItem)}
                                     onDragOver={(e) => handleStatusDragOver(e, StatusItem, roleName)}
                                     onDragLeave={handleStatusDragLeave}
+                                    onDragEnd={(e) => handleStatusDragEnd(e)}
                                     onDrop={(e) => handleStatusDrop(e, StatusItem, roleName)}
                                     key={StatusItem}
                                     onMouseDown={(e) => {
@@ -409,7 +427,7 @@ function StatusSection({
                                             </>
                                         )}
                                         <span className='item-title'>
-                                            {(isEditMode && isDublicate) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${sDataId}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>}
+                                            {/* {(isEditMode && isDublicate) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${sDataId}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>} */}
                                             {getStatusTitle(StatusItem)}
                                         </span>
                                     </div>
