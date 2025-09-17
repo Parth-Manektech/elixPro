@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ViewOpenEyeIcon, ViewClosedEyeIcon, GamePadIcon, ArrowMove, ThreeDotsIcon, PlusIcon } from '../../../../Assets/SVGs';
+import { ArrowMove, ThreeDotsIcon } from '../../../../Assets/SVGs';
 import { toggleActionVisibility } from '../../ViewComponentUtility';
-import { Col, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Col, Dropdown } from 'react-bootstrap';
 import CloneActionModal from '../../Modals/CloneActionModal';
 import DeleteActionModal from '../../Modals/DeleteActionModal';
 import CloneActionItemModal from '../../Modals/CloneActionItemModal';
@@ -15,13 +15,10 @@ function ActionSection({
     associatedActions,
     openActionItemModal,
     openTitleItemModal,
-    setHoveredAction,
-    setHoveredStatus,
     MainData,
     draggingItem,
     setDraggingItem,
     setEpWorkflowjson,
-    hoveredAction,
     refsMap,
     isEditMode,
     containerRef,
@@ -43,19 +40,11 @@ function ActionSection({
     const [actionItemToDelete, setActionItemToDelete] = useState(null);
     const [actionTitleForItem, setActionTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
-    const [actionkeys, setActionKeys] = useState([]);
-    const [duplicateAction, setDuplicateAction] = useState([])
 
     const dragStartSourceRefAction = useRef(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
-    const updateLeaderLines = () => {
-        leaderLinesRef.current.forEach(line => line.position());
-    };
-
     const handleActionMouseHover = (actionKey) => {
-        setHoveredAction({ role: roleName, actionKey });
-        setHoveredStatus(null);
         clearLeaderLines();
 
         const isElementVisible = (id) => {
@@ -197,8 +186,6 @@ function ActionSection({
 
     const handleMouseLeave = (actionKey) => {
         if (!refsMap.current[`${element?.ruolo?.key}_${actionKey}`]) return;
-        setHoveredStatus(null);
-        setHoveredAction(null);
         clearLeaderLines();
 
         if (selectedElement) {
@@ -235,8 +222,6 @@ function ActionSection({
                 clearLeaderLines();
             } else {
                 setSelectedElement(newSelectedElement);
-                setHoveredStatus(null);
-                setHoveredAction(null);
                 clearLeaderLines();
 
                 const isElementVisible = (id) => {
@@ -397,6 +382,7 @@ function ActionSection({
                 container.removeEventListener('scroll', updateLeaderLines);
             }
         };
+        //eslint-disable-next-line
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleActionDragStart = (e, actionTitle) => {
@@ -618,38 +604,6 @@ function ActionSection({
         setDropTarget(null);
     };
 
-    useEffect(() => {
-        const Allaction = [];
-        const duplicateActions = []
-        MainData.forEach(item => {
-            if (item.ruolo && item.ruolo.key !== element?.ruolo?.key) {
-                if (item.azioni && Array.isArray(item.azioni)) {
-                    item.azioni.forEach(action => {
-                        if (action.listArray && Array.isArray(action.listArray)) {
-                            action.listArray.forEach(actionItem => {
-                                if (actionItem.key) {
-                                    const Addaction = {
-                                        label: `${item?.ruolo?.key}-${action.title?.replaceAll(" ", "-")}-${actionItem?.key?.replaceAll(" ", "-")}`,
-                                        value: actionItem.key
-                                    }
-                                    duplicateActions.push(Addaction)
-                                    Allaction.push(actionItem.key);
-                                }
-                            });
-                        }
-                    });
-                }
-            }
-        });
-        setDuplicateAction(duplicateActions);
-        setActionKeys(Allaction);
-    }, [MainData, element]);
-
-    const renderTooltip = (props, msg) => (
-        <Tooltip id="button-tooltip" {...props}>
-            La Key non è univoca! Viene usata più volte: {msg}
-        </Tooltip>
-    );
 
     return (
         <Col>
@@ -718,14 +672,7 @@ function ActionSection({
                         <div className="actiongroup">
                             {azioniItem?.listArray?.map((item, index) => {
                                 const isAssociated = shownStatus && associatedActions[item.key];
-                                const isDuplicateAction = actionkeys?.includes(item?.key);
                                 const aDataID = dataID.action[`${catactionkey}-${item.key}-${index}`]
-
-                                let sameDataId
-                                if (isDuplicateAction) {
-                                    const sameList = duplicateAction.find(e => e.value === item?.key);
-                                    sameDataId = dataID.action[sameList?.label]
-                                }
 
                                 return (
                                     <div
@@ -769,7 +716,6 @@ function ActionSection({
                                                 )}
                                                 <div className='action-content'>
                                                     <span className='item-title'>
-                                                        {/* {(isEditMode && isDuplicateAction) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${aDataID}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>} */}
                                                         {item?.title}
                                                     </span>
                                                 </div>
@@ -864,7 +810,6 @@ function ActionSection({
                 actionToClone={actionToClone}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
             />
             <DeleteActionModal
                 show={deleteActionModalShow}
@@ -876,7 +821,6 @@ function ActionSection({
                 actionTitle={actionToDelete}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
             />
             <CloneActionItemModal
                 show={cloneActionItemModalShow}
@@ -890,7 +834,6 @@ function ActionSection({
                 actionItemToClone={actionItemToClone}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
             />
             <DeleteActionItemModal
                 show={deleteActionItemModalShow}
@@ -904,7 +847,6 @@ function ActionSection({
                 actionItem={actionItemToDelete}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
             />
         </Col>
     );

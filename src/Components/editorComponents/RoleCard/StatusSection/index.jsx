@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ViewOpenEyeIcon, ViewClosedEyeIcon, SlidersIcon, ArrowMove, ThreeDotsIcon, PlusIcon } from '../../../../Assets/SVGs';
+import { ArrowMove, ThreeDotsIcon } from '../../../../Assets/SVGs';
 import { toggleStatusVisibility } from '../../ViewComponentUtility';
-import { Col, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Col, Dropdown } from 'react-bootstrap';
 import CloneStatusModal from '../../Modals/CloneStatusModal';
 import DeleteStatusModal from '../../Modals/DeleteStatusModal';
 import { drawSelectedElementArrows } from '../../../../utils/arrowUtils';
@@ -10,15 +10,11 @@ function StatusSection({
     pulsantiAttivi,
     roleName,
     element,
-    shownStatus,
     setShownStatuses,
     openStatusItemModal,
-    setHoveredStatus,
-    setHoveredAction,
     MainData,
     draggingItem,
     setDraggingItem,
-    hoveredStatus,
     refsMap,
     setEpWorkflowjson,
     isEditMode,
@@ -28,8 +24,6 @@ function StatusSection({
     clearLeaderLines,
     createLeaderLine,
     leaderLinesRef,
-    duplicateCount,
-    setDuplicateCount,
     dataID
 }) {
     const [cloneStatusModalShow, setCloneStatusModalShow] = useState(false);
@@ -38,42 +32,8 @@ function StatusSection({
     const [statusToDelete, setStatusToDelete] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
     const dragStartPosRef = useRef({ x: 0, y: 0 });
-    const [duplicateStatus, setDuplicateStatus] = useState([])
     const dragStartSourceRefStatus = useRef(null);
 
-    const rulekey = element?.ruolo?.key;
-
-    const getStatusOptions = () => {
-        if (!MainData) return [];
-        const allStatuses = new Set();
-        MainData.forEach((element) => {
-            if (element.ruolo && element.pulsantiAttivi && element?.ruolo?.key !== rulekey) {
-                Object.keys(element.pulsantiAttivi).forEach((status) => {
-                    allStatuses.add(status)
-                });
-            }
-        });
-        return Array.from(allStatuses);
-    };
-
-    useEffect(() => {
-        if (MainData) {
-            const dublicatestatus = []
-            MainData.forEach((element) => {
-                if (element.ruolo && element.pulsantiAttivi && element?.ruolo?.key !== rulekey) {
-                    Object.keys(element.pulsantiAttivi).forEach((status) => {
-                        const Addstatus = {
-                            label: `${element?.ruolo?.key}-${status}`,
-                            value: status
-                        }
-                        dublicatestatus.push(Addstatus)
-
-                    });
-                }
-            });
-            setDuplicateStatus(dublicatestatus)
-        }
-    }, [MainData])
 
     const getStatusTitle = (statusKey) => {
         const workflowIndex = MainData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
@@ -84,8 +44,6 @@ function StatusSection({
     };
 
     const handleStatusMouseHover = (statusItemKey) => {
-        setHoveredStatus({ role: roleName, status: statusItemKey });
-        setHoveredAction(null);
         clearLeaderLines();
 
         const isElementVisible = (id) => {
@@ -148,8 +106,6 @@ function StatusSection({
 
     const handleMouseLeave = (statusItemKey) => {
         if (!refsMap.current[`${element?.ruolo?.key}_${statusItemKey}`]) return;
-        setHoveredStatus(null);
-        setHoveredAction(null);
         clearLeaderLines();
 
         if (selectedElement) {
@@ -175,8 +131,6 @@ function StatusSection({
             clearLeaderLines();
         } else {
             setSelectedElement(newSelectedElement);
-            setHoveredStatus(null);
-            setHoveredAction(null);
             clearLeaderLines();
 
             const isElementVisible = (id) => {
@@ -251,6 +205,7 @@ function StatusSection({
                 container.removeEventListener('scroll', updateLeaderLines);
             }
         };
+        //eslint-disable-next-line
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleStatusDragStart = (e, statusItemKey) => {
@@ -370,11 +325,6 @@ function StatusSection({
         setDropTarget(null);
     };
 
-    const renderTooltip = (props, msg) => (
-        <Tooltip id="button-tooltip" {...props}>
-            La Key non è univoca! Viene usata più volte: {msg}
-        </Tooltip>
-    );
 
     return (
         <Col >
@@ -386,14 +336,7 @@ function StatusSection({
                 <div className='statusGroup'>
                     {pulsantiAttivi &&
                         Object.keys(pulsantiAttivi).map((StatusItem, index) => {
-                            const isDublicate = getStatusOptions().includes(StatusItem);
                             const sDataId = dataID?.statusId[`${element?.ruolo?.key}-${StatusItem}-${index}`]
-
-                            let sameDataId
-                            if (isDublicate) {
-                                const sameStatus = duplicateStatus.find(e => e.value === StatusItem);
-                                sameDataId = dataID.statusId[sameStatus?.label]
-                            }
                             return (
                                 <div
                                     ref={(el) => (refsMap.current[`${element?.ruolo?.key}_${StatusItem}`] = el)}
@@ -429,7 +372,6 @@ function StatusSection({
                                             </>
                                         )}
                                         <span className='item-title'>
-                                            {/* {(isEditMode && isDublicate) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${sDataId}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>} */}
                                             {getStatusTitle(StatusItem)}
                                         </span>
                                     </div>
@@ -493,7 +435,6 @@ function StatusSection({
                 statusToClone={statusToClone}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
             />
             <DeleteStatusModal
                 show={deleteStatusModalShow}
@@ -505,7 +446,6 @@ function StatusSection({
                 statusKey={statusToDelete}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
             />
         </Col>
     );

@@ -3,7 +3,7 @@ import { Modal, Button, Form, Col, Row } from 'react-bootstrap';
 import { useForm, Controller } from 'react-hook-form';
 import { ErrorToast } from '../../../../utils/Toster';
 
-function CloneListItemModal({ show, handleClose, roleName, listTitle, listItemToClone, MainData, setEpWorkflowjson, updateCanvasSize }) {
+function CloneListItemModal({ show, handleClose, roleName, listTitle, listItemToClone, MainData, setEpWorkflowjson }) {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: {
             title: '',
@@ -67,7 +67,6 @@ function CloneListItemModal({ show, handleClose, roleName, listTitle, listItemTo
 
         listArray.push(newItem);
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
         handleClose();
         reset();
     };

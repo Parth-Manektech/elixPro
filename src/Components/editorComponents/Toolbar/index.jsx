@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Dropdown, Form } from 'react-bootstrap';
-import { CircleMinus, Circleplus, DownBar, SettingIcon } from '../../../Assets/SVGs';
-import { ErrorToast } from '../../../utils/Toster';
+import { CircleMinus, Circleplus, SettingIcon } from '../../../Assets/SVGs';
 
 function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisibleRoles, isEditMode, setIsEditMode, hendelGenrateCode }) {
     const [zoomCount, setZoomCount] = useState(1)

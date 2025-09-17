@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowMove, LayersIcon, PlusIcon, ThreeDotsIcon } from '../../../../Assets/SVGs';
-import { Col, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { ArrowMove, ThreeDotsIcon } from '../../../../Assets/SVGs';
+import { Col, Dropdown } from 'react-bootstrap';
 import CloneListModal from '../../Modals/CloneListModal';
 import DeleteListModal from '../../Modals/DeleteListModal';
 import CloneListItemModal from '../../Modals/CloneListItemModal';
@@ -12,14 +12,12 @@ function ListSection({
     roleName,
     openListItemModal,
     openTitleItemModal,
-    setHoveredStatus,
-    setHoveredAction,
     MainData,
     draggingItem,
     setDraggingItem,
-    containerRef,
     setEpWorkflowjson,
     refsMap,
+    containerRef,
     isEditMode,
     selectedElement,
     setSelectedElement,
@@ -27,7 +25,6 @@ function ListSection({
     createLeaderLine,
     leaderLinesRef,
     element,
-    rDataID,
     dataID
 }) {
     const [cloneListModalShow, setCloneListModalShow] = useState(false);
@@ -40,16 +37,12 @@ function ListSection({
     const [listItemToDelete, setListItemToDelete] = useState(null);
     const [listTitleForItem, setListTitleForItem] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
-    const [listKeys, setListKeys] = useState([]);
-    const [duplicateList, setDuplicateList] = useState([])
     const dragStartSourceRef = useRef(null);
 
     const dragStartPosRef = useRef({ x: 0, y: 0 });
 
 
     const handleListMouseHover = (listItemKey) => {
-        setHoveredStatus(null);
-        setHoveredAction(null);
         clearLeaderLines();
 
         const isElementVisible = (id) => {
@@ -139,8 +132,6 @@ function ListSection({
 
     const handleMouseLeave = (listItemKey) => {
         if (!refsMap.current[`${element?.ruolo?.key}_${listItemKey}`]) return;
-        setHoveredStatus(null);
-        setHoveredAction(null);
         clearLeaderLines();
 
         if (selectedElement) {
@@ -179,8 +170,6 @@ function ListSection({
 
 
                 setSelectedElement(newSelectedElement);
-                setHoveredStatus(null);
-                setHoveredAction(null);
                 clearLeaderLines();
 
                 const isElementVisible = (id) => {
@@ -277,6 +266,7 @@ function ListSection({
                 container.removeEventListener('scroll', updateLeaderLines);
             }
         };
+        //eslint-disable-next-line
     }, [containerRef, MainData, selectedElement, createLeaderLine, clearLeaderLines, leaderLinesRef, refsMap]);
 
     const handleListDragStart = (e, listTitle) => {
@@ -500,38 +490,7 @@ function ListSection({
         setDropTarget(null);
     };
 
-    useEffect(() => {
-        const AllList = [];
-        const dublicateLists = []
-        MainData.forEach(item => {
-            if (item.ruolo && item.ruolo.key !== element?.ruolo?.key) {
-                if (item.liste && Array.isArray(item.liste)) {
-                    item.liste.forEach(list => {
-                        if (list.listArray && Array.isArray(list.listArray)) {
-                            list.listArray.forEach(listItem => {
-                                if (listItem.key) {
-                                    const Addlist = {
-                                        label: `${item?.ruolo?.key}-${list.title?.replaceAll(" ", "-")}-${listItem.key}`,
-                                        value: listItem.key
-                                    }
-                                    dublicateLists.push(Addlist)
-                                    AllList.push(listItem.key);
-                                }
-                            });
-                        }
-                    });
-                }
-            }
-        });
-        setListKeys(AllList);
-        setDuplicateList(dublicateLists)
-    }, [MainData, element]);
 
-    const renderTooltip = (props, msg) => (
-        <Tooltip id="button-tooltip" {...props}>
-            La Key non è univoca! Viene usata più volte: {msg}.
-        </Tooltip>
-    );
 
 
 
@@ -603,13 +562,8 @@ function ListSection({
 
                         <div className="listGroup">
                             {listeItem?.listArray?.map((listArrayItem, index) => {
-                                const isDuplicateList = listKeys?.includes(listArrayItem?.key);
                                 const lDataID = dataID.listId[`${catListkey}-${listArrayItem.key}-${index}`]
-                                let sameDataId
-                                if (isDuplicateList) {
-                                    const sameList = duplicateList.find(e => e.value === listArrayItem?.key);
-                                    sameDataId = dataID.listId[sameList?.label]
-                                }
+
                                 return (
                                     <div
                                         key={listArrayItem.key}
@@ -646,7 +600,6 @@ function ListSection({
                                                     </>
                                                 )}
                                                 <span className='item-title'>
-                                                    {/* {(isEditMode && isDuplicateList) && <OverlayTrigger overlay={(e) => renderTooltip(e, `${lDataID}, ${sameDataId}`)} placement='top'><i className='bi bi-exclamation-triangle-fill text-danger'></i></OverlayTrigger>} */}
                                                     {listArrayItem?.title}
                                                 </span>
                                             </div>
@@ -739,7 +692,7 @@ function ListSection({
                 listToClone={listToClone}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
+
             />
             <DeleteListModal
                 show={deleteListModalShow}
@@ -751,7 +704,7 @@ function ListSection({
                 listTitle={listToDelete}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
+
             />
             <CloneListItemModal
                 show={cloneListItemModalShow}
@@ -765,7 +718,7 @@ function ListSection({
                 listItemToClone={listItemToClone}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
+
             />
             <DeleteListItemModal
                 show={deleteListItemModalShow}
@@ -779,7 +732,7 @@ function ListSection({
                 listItem={listItemToDelete}
                 MainData={MainData}
                 setEpWorkflowjson={setEpWorkflowjson}
-                updateCanvasSize={() => { }}
+
             />
         </Col>
     );

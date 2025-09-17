@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
-function DeleteActionModal({ show, handleClose, roleName, actionTitle, MainData, setEpWorkflowjson, updateCanvasSize }) {
+function DeleteActionModal({ show, handleClose, roleName, actionTitle, MainData, setEpWorkflowjson }) {
     const handleDelete = () => {
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === roleName);
@@ -43,7 +43,6 @@ function DeleteActionModal({ show, handleClose, roleName, actionTitle, MainData,
         });
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
         handleClose();
     };
 

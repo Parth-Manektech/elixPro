@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
-function DeleteStatusModal({ show, handleClose, roleName, statusKey, MainData, setEpWorkflowjson, updateCanvasSize }) {
+function DeleteStatusModal({ show, handleClose, roleName, statusKey, MainData, setEpWorkflowjson }) {
     const getStatusTitle = (statusKey) => {
         const workflowIndex = MainData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
         if (workflowIndex !== -1 && MainData[workflowIndex].ajWFStatiName?.[statusKey]) {
@@ -47,7 +47,6 @@ function DeleteStatusModal({ show, handleClose, roleName, statusKey, MainData, s
         });
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
         handleClose();
     };
 

@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
-const CloneActionModal = ({ show, handleClose, roleName, actionToClone, MainData, setEpWorkflowjson, updateCanvasSize }) => {
+const CloneActionModal = ({ show, handleClose, roleName, actionToClone, MainData, setEpWorkflowjson }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm();
 
     const handleCloneAction = (data) => {
@@ -41,16 +41,13 @@ const CloneActionModal = ({ show, handleClose, roleName, actionToClone, MainData
         // Find the index of the original action
         const originalActionIndex = role.azioni.findIndex((action) => action.title === actionToClone.title);
 
-        // Insert the new action immediately after the original action
         if (originalActionIndex !== -1) {
             role.azioni.splice(originalActionIndex + 1, 0, newAction);
         } else {
-            // Fallback: append to the end if original action is not found
             role.azioni.push(newAction);
         }
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
         handleClose();
     };
 

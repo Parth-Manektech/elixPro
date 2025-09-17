@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
-import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 const StatusModal = ({ show, currentDataId, handleClose, initialData, MainData, currentFaculty, selectedStatusItem, setEpWorkflowjson, setSelectedStatusItem, setStatusItemModalShow, shownStatuses, setShownStatuses }) => {
@@ -14,13 +13,13 @@ const StatusModal = ({ show, currentDataId, handleClose, initialData, MainData, 
     };
 
     const OldData = { status: initialData?.status || "", title: getStatusTitle(initialData?.status) || "" };
-    const { control, handleSubmit, formState: { errors }, reset, setError, clearErrors } = useForm({
+    const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: OldData
     });
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     useEffect(() => {
         reset(OldData);
+        //eslint-disable-next-line
     }, [initialData, reset, show]);
 
     const validateStatusKey = (value) => {
@@ -139,42 +138,7 @@ const StatusModal = ({ show, currentDataId, handleClose, initialData, MainData, 
         setStatusItemModalShow(false);
     };
 
-    const handleDeleteStatusItem = () => {
-        if (!selectedStatusItem) return;
-        const updatedData = initializeWorkflowMapping([...MainData]);
-        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
-        const workflowIndex = updatedData.findIndex((elem) => elem.ajWFStatiName || elem.workflowmapping);
 
-        // Remove from pulsantiAttivi
-        delete updatedData[facultyIndex].pulsantiAttivi[selectedStatusItem];
-
-        // Remove from ajWFStatiName
-        if (updatedData[workflowIndex].ajWFStatiName?.[selectedStatusItem]) {
-            delete updatedData[workflowIndex].ajWFStatiName[selectedStatusItem];
-        }
-
-        // Update workflow mappings
-        if (workflowIndex !== -1 && updatedData[workflowIndex].workflowmapping) {
-            updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-                if (wf.statoDestinazione === selectedStatusItem) {
-                    wf.statoDestinazione = null;
-                }
-            });
-        }
-
-        // Update shownStatuses
-        if (shownStatuses[currentFaculty] === selectedStatusItem) {
-            setShownStatuses(prev => {
-                const newStatuses = { ...prev };
-                delete newStatuses[currentFaculty];
-                return newStatuses;
-            });
-        }
-
-        setEpWorkflowjson(JSON.stringify(updatedData));
-        setSelectedStatusItem(null);
-        setStatusItemModalShow(false);
-    };
 
     const onSubmit = (data) => {
         const trimmedData = {
@@ -186,15 +150,8 @@ const StatusModal = ({ show, currentDataId, handleClose, initialData, MainData, 
         reset({ status: "", title: "" });
     };
 
-    const handleDeleteClick = () => {
-        setShowDeleteConfirmation(true);
-    };
 
-    const handleConfirmDelete = () => {
-        handleDeleteStatusItem();
-        setShowDeleteConfirmation(false);
-        handlefinalclose();
-    };
+
 
     const handlefinalclose = () => {
         reset({ status: "", title: "" });
@@ -284,13 +241,6 @@ const StatusModal = ({ show, currentDataId, handleClose, initialData, MainData, 
                     </Modal.Footer>
                 </Form>
             </Modal>
-
-            <DeleteConfirmationModal
-                show={showDeleteConfirmation}
-                handleClose={() => setShowDeleteConfirmation(false)}
-                handleConfirm={handleConfirmDelete}
-                itemType="status"
-            />
         </>
     );
 };

@@ -5,7 +5,7 @@ import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 import CustomSelect from "../../../CustomAutoSelect";
 import CustomMultiSelect from "../../../CustomMultiSelect";
 
-const CloneActionItemModal = ({ show, handleClose, roleName, actionTitle, actionItemToClone, MainData, setEpWorkflowjson, updateCanvasSize }) => {
+const CloneActionItemModal = ({ show, handleClose, roleName, actionTitle, actionItemToClone, MainData, setEpWorkflowjson }) => {
     const { control, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
         defaultValues: {
             key: "",
@@ -45,6 +45,7 @@ const CloneActionItemModal = ({ show, handleClose, roleName, actionTitle, action
             setValue("status", "");
             setValue("doNotMoveToList", []);
         }
+        //eslint-disable-next-line
     }, [watch("behaviourTag"), show]);
 
     useEffect(() => {
@@ -164,7 +165,6 @@ const CloneActionItemModal = ({ show, handleClose, roleName, actionTitle, action
         }
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
         handleClose();
     };
 

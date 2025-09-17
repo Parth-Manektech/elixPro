@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
-import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
-import Select from 'react-select';
 import CustomSelect from "../../../CustomAutoSelect";
 import CustomMultiSelect from "../../../CustomMultiSelect";
 
@@ -25,15 +23,13 @@ const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainDa
         }
     });
 
-    const [suggestions, setSuggestions] = useState([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
 
     const [isPassaAOnly, setIsPassaAOnly] = useState(false)
 
 
     const behaviourValueOptions = [
-        { value: 'aggiungiSchedaAlFascicolo', label: 'aggiungiSchedaAlFascicolo' }, //no
+        { value: 'aggiungiSchedaAlFascicolo', label: 'aggiungiSchedaAlFascicolo' }, //n
         { value: 'apriProcessoEsterno', label: 'apriProcessoEsterno' },//n
         { value: 'clonaModulo', label: 'clonaModulo' },//y
         { value: 'generaPdfDaTemplate', label: 'generaPdfDaTemplate' },//n
@@ -53,15 +49,11 @@ const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainDa
             setValue("status", "");
             setValue("doNotMoveToList", []);
         }
+        //eslint-disable-next-line
     }, [watch('behaviourTag'), show])
 
     const validationRules = {
         required: 'Campo obbligatorio',
-    };
-
-    const validationRulesmulti = {
-        validate: (value) =>
-            Array.isArray(value) && value.length > 0 ? true : 'Campo obbligatorio',
     };
 
 
@@ -84,42 +76,6 @@ const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainDa
             }
         });
         return Array.from(allStatuses);
-    };
-
-    const handleDeleteActionItem = () => {
-        if (!selectedActionItem) return;
-        const updatedData = initializeWorkflowMapping([...MainData]);
-        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
-        const actionIndex = updatedData[facultyIndex].azioni.findIndex((action) => action.title === currentActionTitle);
-        const workflowIndex = updatedData.length - 1;
-
-        const itemKey = selectedActionItem.key;
-        updatedData[facultyIndex].azioni[actionIndex].listArray = updatedData[facultyIndex].azioni[actionIndex].listArray.filter(
-            (item) => item.key !== selectedActionItem.key
-        );
-
-        updatedData[workflowIndex].workflowmapping = updatedData[workflowIndex].workflowmapping.filter(
-            (wf) => wf.keyAzione !== itemKey
-        );
-        updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-            wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
-            wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
-            if (wf.statoDestinazione === itemKey) {
-                wf.statoDestinazione = null;
-            }
-        });
-
-        updatedData.forEach((faculty, index) => {
-            if (faculty.pulsantiAttivi) {
-                Object.keys(faculty.pulsantiAttivi).forEach(status => {
-                    delete faculty.pulsantiAttivi[status][itemKey];
-                });
-            }
-        });
-
-        setEpWorkflowjson(JSON.stringify(updatedData));
-        setSelectedActionItem(null);
-        setActionItemModalShow(false);
     };
 
 
@@ -243,20 +199,6 @@ const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainDa
 
     }
 
-
-    const handleDeleteClick = () => {
-        setShowDeleteConfirmation(true);
-    };
-
-    const handleConfirmDelete = () => {
-        handleDeleteActionItem();
-        setShowDeleteConfirmation(false);
-        hendleFinalClose();
-    };
-
-    const handleCancelDelete = () => {
-        setShowDeleteConfirmation(false);
-    };
 
     const statusOptions = () => {
         return getStatusOptions()?.map((e) => {
@@ -447,32 +389,6 @@ const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainDa
                         }
 
 
-
-                        {/* <Form.Group controlId="formBehaviorTag" className="mb-3">
-                            <Form.Label>Behavior Tag</Form.Label>
-                            <Controller
-                                name={"behaviourTag"}
-                                control={control}
-                                rules={{ required: "Behavior Tag is required" }} // Added required validation
-                                render={({ field: { onChange, value } }) => (
-
-                                    <Select
-                                        placeholder="Select Behavior Tag"
-                                        options={bihaviourtagOptions}
-                                        isInvalid={!!errors.behaviourTag} // Show validation error styling
-                                        value={bihaviourtagOptions.filter(option => value?.includes(option.value))}
-                                        onChange={(selectedOptions) => {
-                                            onChange(selectedOptions?.value);
-                                        }}
-                                        className="basic-multi-select"
-                                        classNamePrefix="select Behavior Tag"
-                                    />
-                                )}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {errors.behaviourTag?.message}
-                            </Form.Control.Feedback>
-                        </Form.Group> */}
                         <Col lg={12} className="mt-3">
                             <div className="modal-sezione">
                                 <span className="modal-sezione-titolo">Avanzate</span>
@@ -495,20 +411,6 @@ const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainDa
                             </Row>
                         </Form.Group>
 
-
-
-                        {/* <div className="d-flex justify-content-center mt-4">
-                            <Button variant="primary" type="submit" className="mx-2">Save</Button>
-                            <Button variant="dark" onClick={hendleFinalClose} className="mx-2">Close</Button>
-                            <Button
-                                variant="danger"
-                                className="mx-2"
-                                onClick={handleDeleteClick}
-                                disabled={!initialData}
-                            >
-                                Delete
-                            </Button>
-                        </div> */}
                     </Modal.Body>
                     <Modal.Footer>
                         <div className="d-flex justify-content-end mb-4">
@@ -517,12 +419,6 @@ const ActionItemModal = ({ show, currentDataId, handleClose, initialData, MainDa
                     </Modal.Footer>
                 </Form>
             </Modal>
-            <DeleteConfirmationModal
-                show={showDeleteConfirmation}
-                handleClose={handleCancelDelete}
-                handleConfirm={handleConfirmDelete}
-                itemType="action item"
-            />
         </>
 
     );

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, Dropdown } from 'react-bootstrap';
-import { CardResizer, ArrowMove, ChevronDown, ChevronUp, ThreeDotsIcon } from '../../../Assets/SVGs';
+import { CardResizer, ArrowMove, ThreeDotsIcon } from '../../../Assets/SVGs';
 
 import ListSection from './ListSection';
 import StatusSection from './StatusSection';
@@ -26,14 +26,8 @@ function RoleCard({
     openActionItemModal,
     openStatusItemModal,
     openTitleItemModal,
-    drawConnections,
-    setHoveredStatus,
-    setHoveredAction,
     refsMap,
     dropdownToggleRefs,
-    hoveredStatus,
-    hoveredAction,
-    updateCanvasSize,
     zoomLevel,
     isEditMode,
     containerRef,
@@ -43,8 +37,6 @@ function RoleCard({
     createLeaderLine,
     leaderLinesRef,
     onCollapse,
-    duplicateCount,
-    setDuplicateCount,
     rDataID,
     dataID
 }) {
@@ -103,8 +95,6 @@ function RoleCard({
 
         let newTop = Math.max(0, Math.round((originalTop + deltaY) / 20) * 20);
         let newLeft = Math.max(0, Math.round((originalLeft + deltaX) / 20) * 20);
-        let newWidth = currentLayout.width;
-        let newHeight = currentLayout.height;
 
         updatedData[roleIndex].layout = {
             ...currentLayout,
@@ -113,10 +103,6 @@ function RoleCard({
         };
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize({
-            top: newTop + newHeight + 100,
-            left: newLeft + newWidth + 100,
-        });
     }
 
 
@@ -142,7 +128,6 @@ function RoleCard({
         setEpWorkflowjson(JSON.stringify(updatedData));
         setDraggingItem(null);
         delete originalPositionsRef.current[roleName];
-        updateCanvasSize();
     };
 
 
@@ -218,7 +203,6 @@ function RoleCard({
         };
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
     };
 
@@ -234,7 +218,6 @@ function RoleCard({
 
         resizingRoleRef.current = null;
         document.body.style.cursor = 'auto'; // Reset cursor to default
-        updateCanvasSize();
     };
 
     useEffect(() => {
@@ -252,7 +235,9 @@ function RoleCard({
         } else {
             setContrastColor("#f8f9fa")
         }
+        //eslint-disable-next-line
     }, [MainData])
+
     return (
         <div
             key={roleName}
@@ -260,7 +245,6 @@ function RoleCard({
             id={element.ruolo.key}
             data-id={rDataID}
             ref={(el) => (refsMap.current[element.ruolo.key] = el)}
-            // data-key={element?.ruolo.key}
             style={{
                 top: `${top}px`,
                 left: `${left}px`,
@@ -377,16 +361,10 @@ function RoleCard({
                 <Card.Body style={{ display: collapsedCards[roleName] ? 'none' : 'block', overflow: 'auto' }}>
                     <div className="d-flex gap-2 w-100">
                         <ListSection
-                            rDataID={rDataID}
-                            dataID={dataID}
                             liste={element.liste}
                             roleName={roleName}
-                            element={element}
                             openListItemModal={openListItemModal}
                             openTitleItemModal={openTitleItemModal}
-                            drawConnections={drawConnections}
-                            setHoveredStatus={setHoveredStatus}
-                            setHoveredAction={setHoveredAction}
                             MainData={MainData}
                             draggingItem={draggingItem}
                             setDraggingItem={setDraggingItem}
@@ -399,23 +377,19 @@ function RoleCard({
                             clearLeaderLines={clearLeaderLines}
                             createLeaderLine={createLeaderLine}
                             leaderLinesRef={leaderLinesRef}
+                            element={element}
+                            dataID={dataID}
                         />
                         <StatusSection
                             pulsantiAttivi={element.pulsantiAttivi}
                             element={element}
-                            dataID={dataID}
                             roleName={roleName}
-                            shownStatus={shownStatuses[roleName]}
                             setShownStatuses={setShownStatuses}
                             openStatusItemModal={openStatusItemModal}
-                            drawConnections={drawConnections}
-                            setHoveredStatus={setHoveredStatus}
-                            setHoveredAction={setHoveredAction}
                             MainData={MainData}
                             draggingItem={draggingItem}
                             setDraggingItem={setDraggingItem}
                             setEpWorkflowjson={setEpWorkflowjson}
-                            hoveredStatus={hoveredStatus}
                             refsMap={refsMap}
                             isEditMode={isEditMode}
                             containerRef={containerRef}
@@ -424,26 +398,19 @@ function RoleCard({
                             clearLeaderLines={clearLeaderLines}
                             createLeaderLine={createLeaderLine}
                             leaderLinesRef={leaderLinesRef}
-                            duplicateCount={duplicateCount}
-                            setDuplicateCount={setDuplicateCount}
+                            dataID={dataID}
                         />
                         <ActionSection
                             azioni={element.azioni}
                             roleName={roleName}
-                            element={element}
-                            dataID={dataID}
                             shownStatus={shownStatuses[roleName]}
                             associatedActions={associatedActions}
                             openActionItemModal={openActionItemModal}
                             openTitleItemModal={openTitleItemModal}
-                            drawConnections={drawConnections}
-                            setHoveredAction={setHoveredAction}
-                            setHoveredStatus={setHoveredStatus}
                             MainData={MainData}
                             draggingItem={draggingItem}
                             setDraggingItem={setDraggingItem}
                             setEpWorkflowjson={setEpWorkflowjson}
-                            hoveredAction={hoveredAction}
                             refsMap={refsMap}
                             isEditMode={isEditMode}
                             containerRef={containerRef}
@@ -452,6 +419,8 @@ function RoleCard({
                             clearLeaderLines={clearLeaderLines}
                             createLeaderLine={createLeaderLine}
                             leaderLinesRef={leaderLinesRef}
+                            element={element}
+                            dataID={dataID}
                         />
                     </div>
                 </Card.Body>

@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { Modal, Button, Form, Col, Row, Badge } from "react-bootstrap";
+import React, { useEffect } from "react";
+import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
-import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 const ListItemModal = ({ currentDataId, show, handleClose, initialData, MainData, currentFaculty, currentListTitle, selectedListItem, setEpWorkflowjson, setSelectedListItem, setListItemModalShow }) => {
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: initialData || { key: "", title: "", type: "button", isDetailAllowed: "true" }
     });
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
     useEffect(() => {
         reset(initialData || { key: "", title: "", type: "button", isDetailAllowed: "true" });
@@ -25,63 +23,10 @@ const ListItemModal = ({ currentDataId, show, handleClose, initialData, MainData
         hendleFinalClose()
     };
 
-    const handleDeleteClick = () => {
-        setShowDeleteConfirmation(true);
-    };
-
-    const handleConfirmDelete = () => {
-        handleDeleteListItem();
-        setShowDeleteConfirmation(false);
-        hendleFinalClose()
-    };
-
     const hendleFinalClose = () => {
         handleClose()
         reset({ key: "", title: "", type: "", isDetailAllowed: "" });
     }
-
-    const handleCancelDelete = () => {
-        setShowDeleteConfirmation(false);
-    };
-
-    const handleDeleteListItem = () => {
-        if (!selectedListItem) return;
-        const updatedData = initializeWorkflowMapping([...MainData]);
-        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
-        const workflowIndex = updatedData.length - 1;
-
-        const listIndex = updatedData[facultyIndex].liste.findIndex((list) => list.title === currentListTitle);
-        const itemKey = selectedListItem.key;
-        updatedData[facultyIndex].liste[listIndex].listArray = updatedData[facultyIndex].liste[listIndex].listArray.filter(
-            (item) => item.key !== selectedListItem.key
-        );
-
-        updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-            if (wf.listeDestinazione) {
-                wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
-            }
-            if (wf.doNotlisteDestinazione) {
-                wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
-            }
-        });
-
-        updatedData[facultyIndex].azioni.forEach(action => {
-            action.listArray.forEach(item => {
-                if (item.moveToList) {
-                    const moveToListKeys = item.moveToList.split(',').map(key => key.trim());
-                    item.moveToList = moveToListKeys.filter(key => key !== itemKey).join(', ');
-                }
-                if (item.doNotMoveToList) {
-                    const doNotMoveToListKeys = item.doNotMoveToList.split(',').map(key => key.trim());
-                    item.doNotMoveToList = doNotMoveToListKeys.filter(key => key !== itemKey).join(', ');
-                }
-            });
-        });
-
-        setEpWorkflowjson(JSON.stringify(updatedData));
-        setSelectedListItem(null);
-        setListItemModalShow(false);
-    };
 
 
     const handleAddListItem = (data) => {
@@ -133,11 +78,11 @@ const ListItemModal = ({ currentDataId, show, handleClose, initialData, MainData
         if (!trimmedValue) return "Campo obbligatorio";
 
         const existingKeys = MainData
-            .filter(elem => elem.ruolo && elem.liste) // Filter roles with liste
+            .filter(elem => elem.ruolo && elem.liste)
             .flatMap(elem =>
                 elem.liste.flatMap(list =>
                     list.listArray
-                        .filter(item => item.key !== initialData?.key) // Exclude current item when editing
+                        .filter(item => item.key !== initialData?.key)
                         .map(item => item.key)
                 )
             );
@@ -277,19 +222,6 @@ const ListItemModal = ({ currentDataId, show, handleClose, initialData, MainData
                                 </Col>
                             </Row>
                         </Form.Group>
-                        {/* 
-                        <div className="d-flex justify-content-center mt-4">
-                            <Button variant="primary" type="submit" className="mx-2">Save</Button>
-                            <Button variant="dark" onClick={hendleFinalClose} className="mx-2">Close</Button>
-                            <Button
-                                variant="danger"
-                                className="mx-2"
-                                onClick={handleDeleteClick}
-                                disabled={!initialData} // Disabled if adding new item
-                            >
-                                Delete
-                            </Button>
-                        </div> */}
                     </Modal.Body>
                     <Modal.Footer>
                         <div className="d-flex justify-content-end mb-4">
@@ -298,12 +230,6 @@ const ListItemModal = ({ currentDataId, show, handleClose, initialData, MainData
                     </Modal.Footer>
                 </Form>
             </Modal>
-            {/* <DeleteConfirmationModal
-                show={showDeleteConfirmation}
-                handleClose={handleCancelDelete}
-                handleConfirm={handleConfirmDelete}
-                itemType="list item"
-            /> */}
         </>
     );
 };

@@ -1,5 +1,5 @@
 
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import LeaderLine from 'leader-line-new';
 import * as bootstrap from 'bootstrap';
 
@@ -10,10 +10,8 @@ import StatusModal from '../../Components/editorComponents/Modals/StatusModal';
 import TitleModal from '../../Components/editorComponents/Modals/TitleModal';
 import RoleItemModal from '../../Components/editorComponents/Modals/RoleModal';
 import CloneRoleModal from '../../Components/editorComponents/Modals/CloneRoleModal';
-
-import { getRoleForElement, drawArrow, handleDeleteRole, handleCloneRoleSubmit } from '../../Components/editorComponents/ViewComponentUtility';
+import { handleDeleteRole, handleCloneRoleSubmit } from '../../Components/editorComponents/ViewComponentUtility';
 import Toolbar from '../../Components/editorComponents/Toolbar';
-// import MainCanvas from '../../Components/editorComponents/MainCanvas';
 import RoleCard from '../../Components/editorComponents/RoleCard';
 import { DuplicateErrorToast } from '../../utils/Toster';
 import { parseList } from '../../utils/utils';
@@ -22,8 +20,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     const MainData = useMemo(() => (epWorkflowjson ? JSON.parse(epWorkflowjson) : []), [epWorkflowjson]);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [shownStatuses, setShownStatuses] = useState({});
-    const [hoveredStatus, setHoveredStatus] = useState(null);
-    const [hoveredAction, setHoveredAction] = useState(null);
     const [listItemModalShow, setListItemModalShow] = useState(false);
     const [actionItemModalShow, setActionItemModalShow] = useState(false);
     const [statusItemModalShow, setStatusItemModalShow] = useState(false);
@@ -39,7 +35,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     const [currentActionTitle, setCurrentActionTitle] = useState('');
     const [selectedTitle, setSelectedTitle] = useState(null);
     const [collapsedCards, setCollapsedCards] = useState({});
-    const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
     const [draggingItem, setDraggingItem] = useState(null);
     const [roleDeleteConfirmation, setRoleDeleteConfirmation] = useState({ modal: false, value: null });
     const [roleToDelete, setRoleToDelete] = useState(null);
@@ -51,7 +46,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
     const [collapsedRoles, setCollapsedRoles] = useState([]); // Holds keys
     const [searchTerm, setSearchTerm] = useState('');
     const [isRightBarOpen, setIsRightBarOpen] = useState(true);
-    const [duplicateCount, setDuplicateCount] = useState(0);
+
     const [dataID, setDataID] = useState({});
     const [currentDataId, setCurrentDataId] = useState(null)
 
@@ -152,10 +147,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         }
     };
 
-    const drawConnections = useCallback(
-        (connections) => { console.log('connections', connections) },
-        [zoomLevel, collapsedCards, MainData]
-    );
+
 
     function detectAndMarkDuplicatedKeys() {
         const keyMap = {};
@@ -370,6 +362,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
             addFrecciaClass();
         }, 10);
         isEditMode && detectAndMarkDuplicatedKeys();
+        // eslint-disable-next-line
     }, [MainData, setEpWorkflowjson]);
 
 
@@ -473,17 +466,14 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         setCloneRoleModalShow(true);
     };
 
-    const updateCanvasSize = () => {
-        setCanvasSize((prev) => ({ ...prev }));
-    };
 
     const removeDuplicateKeyAlerts = () => {
         document.querySelectorAll('.duplicate-key-alert').forEach((icon) => {
-            const tooltip = bootstrap.Tooltip.getInstance(icon); // Get tooltip instance
+            const tooltip = bootstrap.Tooltip.getInstance(icon);
             if (tooltip) {
-                tooltip.dispose(); // Dispose of tooltip to prevent memory leaks
+                tooltip.dispose();
             }
-            icon.remove(); // Remove the icon from the DOM
+            icon.remove();
         });
     };
     useEffect(() => {
@@ -552,10 +542,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         };
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize({
-            top: newTop + (currentLayout.height || 690) + 100,
-            left: newLeft + (currentLayout.width || 350) + 100,
-        });
     };
 
     const handleCollapsedRoleDragEnd = (e, ruolo) => {
@@ -563,11 +549,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         if (!draggingItem || draggingItem.type !== 'collapsedRole' || draggingItem.roleName !== ruolo.nome) return;
 
         setCollapsedRoles((prev) => prev.filter((key) => key !== ruolo.key));
-        // setCollapsedCards((prev) => {
-        //     const newCollapsed = { ...prev };
-        //     delete newCollapsed[ruolo.nome];
-        //     return newCollapsed;
-        // });
 
         setCollapsedCards((prev) => {
             const isCollapsed = !prev[ruolo.nome];
@@ -578,7 +559,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
 
         setDraggingItem(null);
         delete originalPositionsRef.current[ruolo.nome];
-        updateCanvasSize();
         clearLeaderLines();
     };
 
@@ -607,12 +587,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
         setEpWorkflowjson(JSON.stringify(updatedData));
         setCollapsedRoles((prev) => prev.filter((key) => key !== role.ruolo.key));
 
-        // setCollapsedCards((prev) => {
-        //     const newCollapsed = { ...prev };
-        //     delete newCollapsed[roleName];
-        //     return newCollapsed;
-        // });
-
         setCollapsedCards((prev) => {
             const isCollapsed = !prev[roleName];
             return { ...prev, [roleName]: isCollapsed };
@@ -620,7 +594,6 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
 
         setDraggingItem(null);
         delete originalPositionsRef.current[roleName];
-        updateCanvasSize();
         clearLeaderLines();
     };
 
@@ -647,24 +620,23 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                 <i className={`bi ${isRightBarOpen ? 'bi-chevron-right' : 'bi-chevron-left'}`}></i>
             </button>
 
-
             {isRightBarOpen && (
                 <div className="right-bar">
                     <div className="right-bar-header">
                         <h4>Ruoli</h4>
-                        <a
-                            href="#"
+                        <span
                             className="filter-toggle-all-ruoli"
                             onClick={(e) => {
                                 e.preventDefault();
                                 handleToggleAll();
                             }}
                         >
+                            {/* eslint-disable-next-line */}
                             {collapsedRoles.length == MainData.map((role) => role?.ruolo?.key).filter(Boolean).length
                                 ? 'Espandi tutti'
                                 : 'Collassa tutti'}
 
-                        </a>
+                        </span>
                     </div>
                     <input
                         type="text"
@@ -743,10 +715,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                         return element?.ruolo && visibleRoles[element.ruolo.nome] ? (
                             !collapsedRoles.includes(element.ruolo.key) && (
                                 <RoleCard
-                                    key={element.ruolo.nome}
-                                    dataID={dataID}
                                     element={element}
-                                    visibleRoles={visibleRoles}
                                     shownStatuses={shownStatuses}
                                     setShownStatuses={setShownStatuses}
                                     associatedActions={
@@ -766,14 +735,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                     openActionItemModal={openActionItemModal}
                                     openStatusItemModal={openStatusItemModal}
                                     openTitleItemModal={openTitleItemModal}
-                                    drawConnections={drawConnections}
-                                    setHoveredStatus={setHoveredStatus}
-                                    setHoveredAction={setHoveredAction}
                                     refsMap={refsMap}
                                     dropdownToggleRefs={dropdownToggleRefs}
-                                    hoveredStatus={hoveredStatus}
-                                    hoveredAction={hoveredAction}
-                                    updateCanvasSize={updateCanvasSize}
                                     zoomLevel={zoomLevel}
                                     containerRef={containerRef}
                                     isEditMode={isEditMode}
@@ -783,9 +746,8 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                     createLeaderLine={createLeaderLine}
                                     leaderLinesRef={leaderLinesRef}
                                     onCollapse={handleCollapseCard}
-                                    duplicateCount={duplicateCount}
-                                    setDuplicateCount={setDuplicateCount}
                                     rDataID={rDataID}
+                                    dataID={dataID}
                                 />)
                         ) : null
                     }
@@ -891,7 +853,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                         setRoleToClone(null);
                     }}
                     onClone={(data) =>
-                        handleCloneRoleSubmit(roleToClone, data, MainData, setEpWorkflowjson, setCloneRoleModalShow, setRoleToClone, updateCanvasSize)
+                        handleCloneRoleSubmit(roleToClone, data, MainData, setEpWorkflowjson, setCloneRoleModalShow, setRoleToClone)
                     }
                     initialNome={roleToClone?.ruolo?.nome || ''}
                     roleToClone={roleToClone}
@@ -912,8 +874,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
                                 MainData,
                                 setEpWorkflowjson,
                                 setShownStatuses,
-                                setCollapsedCards,
-                                updateCanvasSize
+                                setCollapsedCards
                             );
                         }
                         setRoleDeleteConfirmation({ modal: false, value: null });

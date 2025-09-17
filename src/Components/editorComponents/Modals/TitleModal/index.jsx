@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
-import DeleteConfirmationModal from "../../../DeleteConfirmationModal";
+
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 
 const TitleModal = ({ show, currentDataId, handleClose, initialData, titleModalType, MainData, currentFaculty, selectedTitle, setEpWorkflowjson, setSelectedTitle, setTitleItemModalShow }) => {
@@ -9,87 +9,10 @@ const TitleModal = ({ show, currentDataId, handleClose, initialData, titleModalT
         defaultValues: initialData || { title: "" }
     });
 
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
     useEffect(() => {
         reset(initialData || { title: "" });
     }, [initialData, reset, show]);
-
-    const handleDeleteTitle = (title, type) => {
-        const updatedData = initializeWorkflowMapping([...MainData]);
-        const facultyIndex = updatedData.findIndex((elem) => elem.ruolo?.nome === currentFaculty);
-        const workflowIndex = updatedData.length - 1;
-
-        if (type === 'liste') {
-            const list = updatedData[facultyIndex].liste.find(item => item.title === title);
-            if (list) {
-                list.listArray.forEach(item => {
-                    const itemKey = item.key;
-                    updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-                        wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
-                        wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
-                    });
-                    updatedData[facultyIndex].azioni.forEach(action => {
-                        action.listArray.forEach(item => {
-                            if (item.moveToList) {
-                                const moveToListKeys = item.moveToList.split(',').map(key => key.trim());
-                                item.moveToList = moveToListKeys.filter(key => key !== itemKey).join(', ');
-                            }
-                            if (item.doNotMoveToList) {
-                                const doNotMoveToListKeys = item.doNotMoveToList.split(',').map(key => key.trim());
-                                item.doNotMoveToList = doNotMoveToListKeys.filter(key => key !== itemKey).join(', ');
-                            }
-                        });
-                    });
-                });
-                updatedData[facultyIndex].liste = updatedData[facultyIndex].liste.filter(
-                    (item) => item.title !== title
-                );
-            }
-        } else if (type === 'azioni') {
-            const action = updatedData[facultyIndex].azioni.find(item => item.title === title);
-            if (action) {
-                action.listArray.forEach(item => {
-                    const itemKey = item.key;
-                    updatedData[workflowIndex].workflowmapping = updatedData[workflowIndex].workflowmapping.filter(
-                        (wf) => wf.keyAzione !== itemKey
-                    );
-                    updatedData[workflowIndex].workflowmapping.forEach((wf) => {
-                        wf.listeDestinazione = wf.listeDestinazione.filter(key => key !== itemKey);
-                        wf.doNotlisteDestinazione = wf.doNotlisteDestinazione.filter(key => key !== itemKey);
-                        if (wf.statoDestinazione === itemKey) {
-                            wf.statoDestinazione = null;
-                        }
-                    });
-                    updatedData.forEach((faculty, index) => {
-                        if (faculty.pulsantiAttivi) {
-                            Object.keys(faculty.pulsantiAttivi).forEach(status => {
-                                delete faculty.pulsantiAttivi[status][itemKey];
-                            });
-                        }
-                    });
-                    updatedData[facultyIndex].azioni.forEach(otherAction => {
-                        otherAction.listArray.forEach(otherItem => {
-                            if (otherItem.moveToList) {
-                                const moveToListKeys = otherItem.moveToList.split(',').map(key => key.trim());
-                                otherItem.moveToList = moveToListKeys.filter(key => key !== itemKey).join(', ');
-                            }
-                            if (otherItem.doNotMoveToList) {
-                                const doNotMoveToListKeys = otherItem.doNotMoveToList.split(',').map(key => key.trim());
-                                otherItem.doNotMoveToList = doNotMoveToListKeys.filter(key => key !== itemKey).join(', ');
-                            }
-                        });
-                    });
-                });
-                updatedData[facultyIndex].azioni = updatedData[facultyIndex].azioni.filter(
-                    (item) => item.title !== title
-                );
-            }
-        }
-
-        setEpWorkflowjson(JSON.stringify(updatedData));
-        setTitleItemModalShow(false);
-        setSelectedTitle(null);
-    };
 
     const handleAddTitleItem = (data) => {
         const updatedData = initializeWorkflowMapping([...MainData]);
@@ -172,21 +95,6 @@ const TitleModal = ({ show, currentDataId, handleClose, initialData, titleModalT
     };
 
 
-    const handleDeleteClick = () => {
-        setShowDeleteConfirmation(true);
-    };
-
-    const handleConfirmDelete = () => {
-        if (initialData && titleModalType) {
-            handleDeleteTitle(initialData.title, titleModalType);
-        }
-        handleFinalClose()
-        setShowDeleteConfirmation(false);
-    };
-
-    const handleCancelDelete = () => {
-        setShowDeleteConfirmation(false);
-    };
 
     const validateListTitle = (value) => {
         const trimmedValue = value.trim();
@@ -266,20 +174,6 @@ const TitleModal = ({ show, currentDataId, handleClose, initialData, titleModalT
                             </Row>
                         </Form.Group>
 
-                        {/* <div className="d-flex justify-content-center mt-4">
-                            <Button variant="primary" type="submit" className="mx-2">Save</Button>
-                            <Button variant="dark" onClick={handleFinalClose} className="mx-2">Close</Button>
-                            {initialData && (
-                                <Button
-                                    variant="danger"
-                                    className="mx-2"
-                                    onClick={handleDeleteClick}
-                                    disabled={!initialData}
-                                >
-                                    Delete
-                                </Button>
-                            )}
-                        </div> */}
 
                     </Modal.Body>
                     <Modal.Footer>
@@ -289,13 +183,6 @@ const TitleModal = ({ show, currentDataId, handleClose, initialData, titleModalT
                     </Modal.Footer>
                 </Form>
             </Modal>
-
-            <DeleteConfirmationModal
-                show={showDeleteConfirmation}
-                handleClose={handleCancelDelete}
-                handleConfirm={handleConfirmDelete}
-                itemType={`${titleModalType === 'liste' ? 'list' : 'action'}`}
-            />
         </>
 
     );

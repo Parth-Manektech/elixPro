@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Modal, Button, Form, Col, Row } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import { initializeWorkflowMapping } from "../../ViewComponentUtility";
 import { ErrorToast } from "../../../../utils/Toster";
 
-const CloneStatusModal = ({ show, handleClose, roleName, statusToClone, MainData, setEpWorkflowjson, updateCanvasSize }) => {
+const CloneStatusModal = ({ show, handleClose, roleName, statusToClone, MainData, setEpWorkflowjson }) => {
 
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: { status: "", title: "" }
@@ -54,7 +54,6 @@ const CloneStatusModal = ({ show, handleClose, roleName, statusToClone, MainData
         updatedData[workflowIndex].ajWFStatiName[newStatusKey] = { value: newStatusKey, title: newTitle };
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        updateCanvasSize();
         handleClose();
     };
 

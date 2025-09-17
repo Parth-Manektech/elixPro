@@ -47,58 +47,6 @@ export const customFormatSql = (sql) => {
 };
 
 
-// Draws an arrow on the canvas
-export const drawArrow = (ctx, fromX, fromY, toX, toY, color, zoomLevel) => {
-    ctx.beginPath();
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = color;
-    const horizontalOffset = 10;
-    let midX1 = toX > fromX ? fromX + horizontalOffset : fromX - horizontalOffset;
-    const midY1 = fromY;
-    const midX2 = midX1;
-    const midY2 = toY;
-    ctx.moveTo(fromX, fromY);
-    ctx.lineTo(midX1, midY1);
-    ctx.lineTo(midX2, midY2);
-    ctx.lineTo(toX, toY);
-    const headLength = 6;
-    let angle;
-    if (toX > midX2) angle = 0;
-    else if (toX < midX2) angle = Math.PI;
-    else if (toY > fromY) angle = Math.PI / 2;
-    else angle = -Math.PI / 2;
-    ctx.moveTo(toX, toY);
-    ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
-    ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
-    ctx.lineTo(toX, toY);
-    ctx.fillStyle = color;
-    ctx.stroke();
-};
-
-// Finds the role name for a given element ID
-export const getRoleForElement = (MainData, elementId) => {
-    for (const role of MainData) {
-        if (!role.ruolo?.nome) continue;
-        if (role.liste) {
-            for (const list of role.liste) {
-                if (list.listArray.some((item) => item.key === elementId)) {
-                    return role.ruolo.nome;
-                }
-            }
-        }
-        if (role.azioni) {
-            for (const action of role.azioni) {
-                if (action.listArray.some((item) => item.key === elementId)) {
-                    return role.ruolo.nome;
-                }
-            }
-        }
-        if (role.pulsantiAttivi && Object.keys(role.pulsantiAttivi).includes(elementId)) {
-            return role.ruolo.nome;
-        }
-    }
-    return null;
-};
 
 // Toggles status visibility for a role
 export const toggleStatusVisibility = (roleName, status, setShownStatuses) => {
@@ -130,7 +78,7 @@ export const toggleActionVisibility = (roleName, status, actionKey, MainData, se
 };
 
 // Deletes a role and updates workflow mappings
-export const handleDeleteRole = (roleName, MainData, setEpWorkflowjson, setShownStatuses, setCollapsedCards, updateCanvasSize) => {
+export const handleDeleteRole = (roleName, MainData, setEpWorkflowjson, setShownStatuses, setCollapsedCards) => {
     const updatedData = initializeWorkflowMapping([...MainData]);
     const workflowIndex = updatedData.length - 1;
 
@@ -205,11 +153,10 @@ export const handleDeleteRole = (roleName, MainData, setEpWorkflowjson, setShown
         delete newCollapsed[roleName];
         return newCollapsed;
     });
-    updateCanvasSize();
 };
 
 // Clones a role with a new name and key
-export const handleCloneRoleSubmit = (roleToClone, NewData, MainData, setEpWorkflowjson, setCloneRoleModalShow, setRoleToClone, updateCanvasSize) => {
+export const handleCloneRoleSubmit = (roleToClone, NewData, MainData, setEpWorkflowjson, setCloneRoleModalShow, setRoleToClone) => {
     if (!roleToClone) {
         console.error('No role to clone');
         return;
@@ -317,5 +264,4 @@ export const handleCloneRoleSubmit = (roleToClone, NewData, MainData, setEpWorkf
     setEpWorkflowjson(JSON.stringify(updatedData));
     setCloneRoleModalShow(false);
     setRoleToClone(null);
-    updateCanvasSize();
 };
