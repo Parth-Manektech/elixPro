@@ -44,17 +44,18 @@ function RoleCard({
     const initialTop = element.layout?.top || 0;
     const initialLeft = element.layout?.left || 0;
     const initialWidth = element.layout?.width || 350;
-    // Fixed height as per original code
     const dragStartPosRef = useRef({ x: 0, y: 0 });
     const resizingRoleRef = useRef(null);
     const originalPositionsRef = useRef({});
+    const latestWidthRef = useRef(initialWidth); // Track the latest width
     const [contrastColor, setContrastColor] = useState("");
     const [tempPosition, setTempPosition] = useState({ top: initialTop, left: initialLeft });
     const [tempColor, setTempColor] = useState(element.ruolo?.colore || '#6f42c1');
-    const [tempWidth, setTempWidth] = useState(initialWidth);
+    const [tempWidth, settempWidth] = useState(initialWidth);
 
     const handleCollapseClick = () => {
         onCollapse(element?.ruolo);
+        console.log('tempWidth', tempWidth);
     };
 
     const handleRoleCardDragStart = useCallback((e) => {
@@ -78,6 +79,7 @@ function RoleCard({
             width: initialWidth,
             height: element.layout?.height || 690,
         };
+        // eslint-disable-next-line
     }, [roleName, setDraggingItem, initialTop, initialLeft, initialWidth]);
 
     const handleRoleCardDrag = useCallback((e) => {
@@ -111,7 +113,7 @@ function RoleCard({
                 ...currentLayout,
                 top: tempPosition.top,
                 left: tempPosition.left,
-                width: tempWidth,
+                width: latestWidthRef?.current,
                 height: original.height,
             };
         }
@@ -150,25 +152,29 @@ function RoleCard({
         document.body.style.cursor = 'e-resize';
         document.addEventListener('mousemove', handleResize);
         document.addEventListener('mouseup', handleResizeStop);
+        // eslint-disable-next-line
     }, [roleName, initialTop, initialLeft, initialWidth]);
 
     const handleResize = useCallback((e) => {
+        document.addEventListener('mouseup', handleResizeStop);
         if (!resizingRoleRef.current || e.clientX === 0 || e.clientY === 0) {
             document.removeEventListener('mousemove', handleResize);
             return;
         }
 
-        const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
-        const originalWidth = originalPositionsRef.current[roleName]?.width;
+        const startX = originalPositionsRef.current[roleName]?.startX || dragStartPosRef.current.x;
+        const deltaX = ((e.clientX - startX) / zoomLevel) || 0; // Use relative movement
+        const originalWidth = originalPositionsRef.current[roleName]?.width || 350;
 
         const newWidth = Math.max(200, originalWidth + deltaX);
-
-        setTempWidth(newWidth);
+        latestWidthRef.current = newWidth; // Update ref with latest width
+        settempWidth(newWidth);
+        // eslint-disable-next-line
     }, [roleName, zoomLevel]);
 
-    const handleResizeStop = useCallback(() => {
+    const handleResizeStop = () => {
         document.removeEventListener('mousemove', handleResize);
-        document.removeEventListener('mouseup', handleResizeStop);
+        // document.removeEventListener('mouseup', handleResizeStop);
 
         if (!resizingRoleRef.current) {
             console.warn('Resize stop called with no resizing role');
@@ -176,25 +182,27 @@ function RoleCard({
         }
 
         const updatedData = [...MainData];
-        const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === roleName);
+        const roleIndex = updatedData.findIndex((r) => r.ruolo?.key === element?.ruolo?.key);
         if (roleIndex === -1) {
             console.error('Role not found during resize:', roleName);
             resizingRoleRef.current = null;
             return;
         }
-        const currentLayout = updatedData[roleIndex].layout
+
+        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350 };
 
         updatedData[roleIndex].layout = {
             ...currentLayout,
-            width: tempWidth,
+            width: latestWidthRef.current, // Use ref for the latest width
         };
 
         setEpWorkflowjson(JSON.stringify(updatedData));
         resizingRoleRef.current = null;
         document.body.style.cursor = 'auto';
-    }, [roleName, tempWidth, MainData, setEpWorkflowjson]);
+    }
 
     // Create the debounced function only once
+    // eslint-disable-next-line
     const debouncedColorUpdate = useCallback(
         debounce((newColor) => {
             const updatedData = [...MainData];
@@ -216,11 +224,11 @@ function RoleCard({
         debouncedColorUpdate(newColor);
     }
 
-    useEffect(() => {
-        setTempColor(element.ruolo?.colore || '#6f42c1');
-        setTempWidth(initialWidth);
-        setTempPosition({ top: initialTop, left: initialLeft });
-    }, [element.ruolo?.colore, initialWidth, initialTop, initialLeft]);
+    // useEffect(() => {
+    //     setTempColor(element.ruolo?.colore || '#6f42c1');;
+    //     setTempPosition({ top: initialTop, left: initialLeft });
+    //     latestWidthRef.current = initialWidth;
+    // }, [element, initialWidth, initialTop, initialLeft]);
 
     useEffect(() => {
         function isColorLight(hexColor) {
@@ -233,7 +241,8 @@ function RoleCard({
         }
         const isLight = isColorLight(tempColor || "#343a40");
         setContrastColor(isLight ? "#212529" : "#f8f9fa");
-    }, [tempColor])
+    }, [tempColor]);
+
     return (
         <div
             key={roleName}
@@ -245,7 +254,7 @@ function RoleCard({
                 position: 'absolute',
                 top: `${tempPosition.top}px`,
                 left: `${tempPosition.left}px`,
-                width: `${tempWidth}px`,
+                width: `${latestWidthRef?.current}px`,
                 background: draggingItem?.type === 'role' && draggingItem?.roleName === roleName ? '#f0f0f0' : 'white',
             }}
         >
@@ -294,7 +303,7 @@ function RoleCard({
                         {isEditMode && (
                             <input
                                 type="color"
-                                className='ColorInput  form-control-color'
+                                className='ColorInput form-control-color'
                                 style={{ border: `1px solid ${contrastColor}` }}
                                 value={tempColor}
                                 onChange={handleColorChange}
