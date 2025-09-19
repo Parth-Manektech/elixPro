@@ -362,6 +362,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
             addFrecciaClass();
         }, 10);
         isEditMode && detectAndMarkDuplicatedKeys();
+        console.log('MainDataaa', MainData);
         // eslint-disable-next-line
     }, [MainData, setEpWorkflowjson]);
 

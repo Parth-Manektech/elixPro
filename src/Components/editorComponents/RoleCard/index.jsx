@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, Dropdown } from 'react-bootstrap';
 import { CardResizer, ArrowMove, ThreeDotsIcon } from '../../../Assets/SVGs';
 
 import ListSection from './ListSection';
 import StatusSection from './StatusSection';
 import ActionSection from './ActionSection';
-
+import { debounce } from '../../../utils/arrowUtils';
 
 function RoleCard({
     element,
@@ -41,19 +41,23 @@ function RoleCard({
     dataID
 }) {
     const roleName = element.ruolo.nome;
-    const top = element.layout?.top || 0;
-    const left = element.layout?.left || 0;
-    const width = element.layout?.width || 350;
+    const initialTop = element.layout?.top || 0;
+    const initialLeft = element.layout?.left || 0;
+    const initialWidth = element.layout?.width || 350;
+    // Fixed height as per original code
     const dragStartPosRef = useRef({ x: 0, y: 0 });
     const resizingRoleRef = useRef(null);
     const originalPositionsRef = useRef({});
-    const [contrastColor, setContrastColor] = useState("")
+    const [contrastColor, setContrastColor] = useState("");
+    const [tempPosition, setTempPosition] = useState({ top: initialTop, left: initialLeft });
+    const [tempColor, setTempColor] = useState(element.ruolo?.colore || '#6f42c1');
+    const [tempWidth, setTempWidth] = useState(initialWidth);
 
     const handleCollapseClick = () => {
         onCollapse(element?.ruolo);
     };
 
-    const handleRoleCardDragStart = (e) => {
+    const handleRoleCardDragStart = useCallback((e) => {
         if (
             e.target.closest(
                 '.list-item, .status-item, .action-item, .catLista-header, .catAzione-header, .plus-icon'
@@ -68,24 +72,16 @@ function RoleCard({
         e.dataTransfer.setData('roleName', roleName);
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
 
-        const role = MainData.find((r) => r.ruolo?.nome === roleName);
         originalPositionsRef.current[roleName] = {
-            top: role.layout?.top || 0,
-            left: role.layout?.left || 0,
-            width: role.layout?.width || 350,
-            height: role.layout?.height || 690,
+            top: initialTop,
+            left: initialLeft,
+            width: initialWidth,
+            height: element.layout?.height || 690,
         };
-    };
+    }, [roleName, setDraggingItem, initialTop, initialLeft, initialWidth]);
 
-
-    function handleRoleCardDrag(e) {
-        if (!draggingItem || draggingItem.type !== 'role') return;
-
-        if (e.clientX === 0 && e.clientY === 0) return;
-
-        const updatedData = [...MainData];
-        const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === roleName);
-        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350, height: 690 };
+    const handleRoleCardDrag = useCallback((e) => {
+        if (!draggingItem || draggingItem.type !== 'role' || e.clientX === 0 || e.clientY === 0) return;
 
         const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
         const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
@@ -93,34 +89,29 @@ function RoleCard({
         const originalTop = originalPositionsRef.current[roleName]?.top || 0;
         const originalLeft = originalPositionsRef.current[roleName]?.left || 0;
 
-        let newTop = Math.max(0, Math.round((originalTop + deltaY) / 20) * 20);
-        let newLeft = Math.max(0, Math.round((originalLeft + deltaX) / 20) * 20);
+        const newTop = Math.max(0, Math.round((originalTop + deltaY) / 20) * 20);
+        const newLeft = Math.max(0, Math.round((originalLeft + deltaX) / 20) * 20);
 
-        updatedData[roleIndex].layout = {
-            ...currentLayout,
-            top: newTop,
-            left: newLeft,
-        };
+        setTempPosition({ top: newTop, left: newLeft });
+    }, [draggingItem, roleName, zoomLevel]);
 
-        setEpWorkflowjson(JSON.stringify(updatedData));
-    }
-
-
-    const handleRoleCardDrop = (e) => {
+    const handleRoleCardDrop = useCallback((e) => {
         e.preventDefault();
         if (!draggingItem || draggingItem.type !== 'role') return;
 
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === roleName);
+        if (roleIndex === -1) return;
+
         const currentLayout = updatedData[roleIndex].layout;
         const original = originalPositionsRef.current[roleName];
 
         if (original && Math.abs(currentLayout.top - original.top) < 10 && Math.abs(currentLayout.left - original.left) < 10) {
             updatedData[roleIndex].layout = {
                 ...currentLayout,
-                top: original.top,
-                left: original.left,
-                width: original.width,
+                top: tempPosition.top,
+                left: tempPosition.left,
+                width: tempWidth,
                 height: original.height,
             };
         }
@@ -128,15 +119,15 @@ function RoleCard({
         setEpWorkflowjson(JSON.stringify(updatedData));
         setDraggingItem(null);
         delete originalPositionsRef.current[roleName];
-    };
+    }, [draggingItem, roleName, tempPosition, MainData, setEpWorkflowjson, setDraggingItem]);
 
-
-    const handleRoleCardDragOver = (e) => {
+    const handleRoleCardDragOver = useCallback((e) => {
         e.preventDefault();
-    };
+    }, []);
 
 
-    const handleResizeStart = (e) => {
+
+    const handleResizeStart = useCallback((e) => {
         if (!e.target.closest('.resize-handle')) {
             console.warn('Resize start aborted: Not a resize handle', e.target);
             return;
@@ -148,35 +139,39 @@ function RoleCard({
         resizingRoleRef.current = roleName;
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
 
-        const role = MainData.find((r) => r.ruolo?.nome === roleName);
-        if (!role) {
-            console.error('Role not found:', roleName);
-            resizingRoleRef.current = null;
-            return;
-        }
 
         originalPositionsRef.current[roleName] = {
-            top: role.layout?.top || 0,
-            left: role.layout?.left || 0,
-            width: role.layout?.width || 350,
-            height: role.layout?.height || 690,
+            top: initialTop,
+            left: initialLeft,
+            width: initialWidth,
+            height: element.layout?.height || 690,
         };
 
-        document.body.style.cursor = 'w-resize'; // Set cursor to w-resize globally
+        document.body.style.cursor = 'e-resize';
         document.addEventListener('mousemove', handleResize);
         document.addEventListener('mouseup', handleResizeStop);
-    };
+    }, [roleName, initialTop, initialLeft, initialWidth]);
 
-
-    const handleResize = (e) => {
-        if (!resizingRoleRef.current) {
-            console.warn('Resize aborted: No resizing role');
+    const handleResize = useCallback((e) => {
+        if (!resizingRoleRef.current || e.clientX === 0 || e.clientY === 0) {
             document.removeEventListener('mousemove', handleResize);
             return;
         }
 
-        if (e.clientX === 0 && e.clientY === 0) {
-            console.warn('Invalid mouse event:', { clientX: e.clientX, clientY: e.clientY });
+        const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
+        const originalWidth = originalPositionsRef.current[roleName]?.width;
+
+        const newWidth = Math.max(200, originalWidth + deltaX);
+
+        setTempWidth(newWidth);
+    }, [roleName, zoomLevel]);
+
+    const handleResizeStop = useCallback(() => {
+        document.removeEventListener('mousemove', handleResize);
+        document.removeEventListener('mouseup', handleResizeStop);
+
+        if (!resizingRoleRef.current) {
+            console.warn('Resize stop called with no resizing role');
             return;
         }
 
@@ -187,38 +182,45 @@ function RoleCard({
             resizingRoleRef.current = null;
             return;
         }
-
-        const currentLayout = updatedData[roleIndex].layout || { top: 0, left: 0, width: 350, height: 690 };
-
-        const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
-        const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
-
-        const newWidth = Math.max(200, currentLayout.width + deltaX);
-        const newHeight = Math.max(200, currentLayout.height + deltaY);
+        const currentLayout = updatedData[roleIndex].layout
 
         updatedData[roleIndex].layout = {
             ...currentLayout,
-            width: newWidth,
-            height: newHeight,
+            width: tempWidth,
         };
 
         setEpWorkflowjson(JSON.stringify(updatedData));
-        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
-    };
-
-
-    const handleResizeStop = () => {
-        document.removeEventListener('mousemove', handleResize);
-        document.removeEventListener('mouseup', handleResizeStop);
-
-        if (!resizingRoleRef.current) {
-            console.warn('Resize stop called with no resizing role');
-            return;
-        }
-
         resizingRoleRef.current = null;
-        document.body.style.cursor = 'auto'; // Reset cursor to default
-    };
+        document.body.style.cursor = 'auto';
+    }, [roleName, tempWidth, MainData, setEpWorkflowjson]);
+
+    // Create the debounced function only once
+    const debouncedColorUpdate = useCallback(
+        debounce((newColor) => {
+            const updatedData = [...MainData];
+            const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === roleName);
+            if (roleIndex !== -1) {
+                updatedData[roleIndex].ruolo = {
+                    ...updatedData[roleIndex].ruolo,
+                    colore: newColor,
+                };
+                setEpWorkflowjson(JSON.stringify(updatedData));
+            }
+        }, 800),
+        [MainData, roleName, setEpWorkflowjson]
+    );
+
+    const handleColorChange = (e) => {
+        const newColor = e.target.value;
+        setTempColor(newColor);
+        debouncedColorUpdate(newColor);
+    }
+
+    useEffect(() => {
+        setTempColor(element.ruolo?.colore || '#6f42c1');
+        setTempWidth(initialWidth);
+        setTempPosition({ top: initialTop, left: initialLeft });
+    }, [element.ruolo?.colore, initialWidth, initialTop, initialLeft]);
 
     useEffect(() => {
         function isColorLight(hexColor) {
@@ -229,15 +231,9 @@ function RoleCard({
             const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
             return luminance > 140;
         }
-        const isLight = isColorLight(element.ruolo?.colore ? element.ruolo?.colore : "#343a40");
-        if (isLight) {
-            setContrastColor("#212529")
-        } else {
-            setContrastColor("#f8f9fa")
-        }
-        //eslint-disable-next-line
-    }, [MainData])
-
+        const isLight = isColorLight(tempColor || "#343a40");
+        setContrastColor(isLight ? "#212529" : "#f8f9fa");
+    }, [tempColor])
     return (
         <div
             key={roleName}
@@ -246,15 +242,16 @@ function RoleCard({
             data-id={rDataID}
             ref={(el) => (refsMap.current[element.ruolo.key] = el)}
             style={{
-                top: `${top}px`,
-                left: `${left}px`,
-                width: `${width}px`,
+                position: 'absolute',
+                top: `${tempPosition.top}px`,
+                left: `${tempPosition.left}px`,
+                width: `${tempWidth}px`,
                 background: draggingItem?.type === 'role' && draggingItem?.roleName === roleName ? '#f0f0f0' : 'white',
             }}
         >
             <Card>
                 <Card.Header
-                    style={{ backgroundColor: element.ruolo?.colore || '#343a40' }}
+                    style={{ backgroundColor: tempColor }}
                     className='d-flex align-items-center justify-content-between position-relative cursor-default'
                 >
                     <div className='d-flex align-items-center gap-2'>
@@ -282,79 +279,66 @@ function RoleCard({
                                     });
                                 }}
                             >
-                                {collapsedCards[roleName] ? <i class="bi bi-chevron-down" style={{ color: contrastColor }}></i> : <i class="bi bi-chevron-up" style={{ color: contrastColor }}></i>}
+                                {collapsedCards[roleName] ? <i className="bi bi-chevron-down" style={{ color: contrastColor }}></i> : <i className="bi bi-chevron-up" style={{ color: contrastColor }}></i>}
                             </span>
                         </div>
                     </div>
 
-
                     <div className="d-flex gap-2 align-items-center justify-content-center">
                         <div className='role-toggle-button ms-1 cursor-pointer'>
-                            <span
-                                onClick={handleCollapseClick}
-                            >
+                            <span onClick={handleCollapseClick}>
                                 <i className="bi bi-arrows-angle-contract" style={{ color: contrastColor }}></i>
                             </span>
                         </div>
 
-                        {isEditMode && <input
-                            type="color"
-                            className='ColorInput'
-                            style={{ border: `1px solid ${contrastColor}` }}
-                            value={element.ruolo?.colore || '#6f42c1'}
-                            onChange={(e) => {
-                                const updatedData = [...MainData];
-                                const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === roleName);
-                                if (roleIndex !== -1) {
-                                    updatedData[roleIndex] = {
-                                        ...updatedData[roleIndex],
-                                        ruolo: {
-                                            ...updatedData[roleIndex].ruolo,
-                                            colore: e.target.value,
-                                        },
-                                    };
-                                    setEpWorkflowjson(JSON.stringify(updatedData));
-                                }
-                            }}
-                        />}
+                        {isEditMode && (
+                            <input
+                                type="color"
+                                className='ColorInput  form-control-color'
+                                style={{ border: `1px solid ${contrastColor}` }}
+                                value={tempColor}
+                                onChange={handleColorChange}
+                            />
+                        )}
 
-
-                        {isEditMode && <Dropdown>
-                            <Dropdown.Toggle className="menu-btn-list" ref={(el) => (dropdownToggleRefs.current[roleName] = el)}>
-                                <ThreeDotsIcon fill={contrastColor} className='mb-1' height={20} width={20} />
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu className='darshan'>
-                                <Dropdown.Item
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        openRoleModal(element?.ruolo, rDataID);
-                                        dropdownToggleRefs.current[roleName]?.click();
-                                    }}
-                                >
-                                    <i className='bi bi-pencil me-2' /> Modifica
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleCloneRole(element);
-                                        dropdownToggleRefs.current[roleName]?.click();
-                                    }}
-                                >
-                                    <i className='bi bi-files me-2' /> Clona
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setRoleToDelete(roleName);
-                                        setRoleDeleteConfirmation({ modal: true, value: element.ruolo.nome });
-                                        dropdownToggleRefs.current[roleName]?.click();
-                                    }}
-                                    className='text-danger'
-                                >
-                                    <i className='bi bi-trash me-2' /> Elimina
-                                </Dropdown.Item>
-                            </Dropdown.Menu>
-                        </Dropdown>}
+                        {isEditMode && (
+                            <Dropdown>
+                                <Dropdown.Toggle className="menu-btn-list" ref={(el) => (dropdownToggleRefs.current[roleName] = el)}>
+                                    <ThreeDotsIcon fill={contrastColor} className='mb-1' height={20} width={20} />
+                                </Dropdown.Toggle>
+                                <Dropdown.Menu className='darshan'>
+                                    <Dropdown.Item
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openRoleModal(element?.ruolo, rDataID);
+                                            dropdownToggleRefs.current[roleName]?.click();
+                                        }}
+                                    >
+                                        <i className='bi bi-pencil me-2' /> Modifica
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCloneRole(element);
+                                            dropdownToggleRefs.current[roleName]?.click();
+                                        }}
+                                    >
+                                        <i className='bi bi-files me-2' /> Clona
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRoleToDelete(roleName);
+                                            setRoleDeleteConfirmation({ modal: true, value: element.ruolo.nome });
+                                            dropdownToggleRefs.current[roleName]?.click();
+                                        }}
+                                        className='text-danger'
+                                    >
+                                        <i className='bi bi-trash me-2' /> Elimina
+                                    </Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                        )}
                     </div>
                 </Card.Header>
 
@@ -428,6 +412,14 @@ function RoleCard({
                 {!collapsedCards[roleName] && (
                     <div
                         className="resize-handle"
+                        style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            right: 0,
+                            cursor: 'e-resize',
+                            width: '16px',
+                            height: '16px',
+                        }}
                         onMouseDown={handleResizeStart}
                     >
                         <CardResizer height={16} width={16} />
