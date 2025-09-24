@@ -68,7 +68,9 @@ function RoleCard({
             e.stopPropagation();
             return;
         }
-
+        e.stopPropagation();
+        setSelectedElement(null);
+        clearLeaderLines();
         setDraggingItem({ type: 'role', roleName });
         e.dataTransfer.setData('roleName', roleName);
         dragStartPosRef.current = { x: e.clientX, y: e.clientY };
@@ -84,7 +86,8 @@ function RoleCard({
 
     const handleRoleCardDrag = useCallback((e) => {
         if (!draggingItem || draggingItem.type !== 'role' || e.clientX === 0 || e.clientY === 0) return;
-
+        setSelectedElement(null);
+        clearLeaderLines();
         const deltaX = (e.clientX - dragStartPosRef.current.x) / zoomLevel;
         const deltaY = (e.clientY - dragStartPosRef.current.y) / zoomLevel;
 
@@ -95,12 +98,14 @@ function RoleCard({
         const newLeft = Math.max(0, Math.round((originalLeft + deltaX) / 20) * 20);
 
         setTempPosition({ top: newTop, left: newLeft });
+        //eslint-disable-next-line 
     }, [draggingItem, roleName, zoomLevel]);
 
     const handleRoleCardDrop = useCallback((e) => {
         e.preventDefault();
         if (!draggingItem || draggingItem.type !== 'role') return;
-
+        setSelectedElement(null);
+        clearLeaderLines();
         const updatedData = [...MainData];
         const roleIndex = updatedData.findIndex((r) => r.ruolo?.nome === roleName);
         if (roleIndex === -1) return;
@@ -121,6 +126,7 @@ function RoleCard({
         setEpWorkflowjson(JSON.stringify(updatedData));
         setDraggingItem(null);
         delete originalPositionsRef.current[roleName];
+        //eslint-disable-next-line
     }, [draggingItem, roleName, tempPosition, MainData, setEpWorkflowjson, setDraggingItem]);
 
     const handleRoleCardDragOver = useCallback((e) => {
@@ -282,6 +288,8 @@ function RoleCard({
                             <span
                                 className="cursor-pointer"
                                 onClick={() => {
+                                    setSelectedElement(null);
+                                    clearLeaderLines();
                                     setCollapsedCards((prev) => {
                                         const isCollapsed = !prev[roleName];
                                         return { ...prev, [roleName]: isCollapsed };

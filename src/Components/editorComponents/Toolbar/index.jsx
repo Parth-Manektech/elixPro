@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Dropdown, Form } from 'react-bootstrap';
 import { CircleMinus, Circleplus, SettingIcon } from '../../../Assets/SVGs';
 
-function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisibleRoles, isEditMode, setIsEditMode, hendelGenrateCode }) {
+function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisibleRoles, isEditMode, setIsEditMode, hendelGenrateCode, handleUndo, handleRedo, canUndo, canRedo, clearHistory }) {
     const [zoomCount, setZoomCount] = useState(1)
 
     function Zoomin(e) {
@@ -14,11 +14,12 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
             setZoomCount(parseFloat(zValue.toFixed(10)));
             setZoomLevel(parseFloat(zValue.toFixed(10)));
         } else if (zoomCount === 0.05) {
-            const zValue = zoomCount + 0.05
+            const zValue = zoomCount + 0.05;
             setZoomCount(parseFloat(zValue.toFixed(10)));
             setZoomLevel(parseFloat(zValue.toFixed(10)));
         }
     }
+
     function Zoomout(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -28,15 +29,17 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
             setZoomCount(parseFloat(zValue.toFixed(10)));
             setZoomLevel(parseFloat(zValue.toFixed(10)));
         } else if (zoomCount === 0.1) {
-            const zValue = zoomCount - 0.05
+            const zValue = zoomCount - 0.05;
             setZoomCount(parseFloat(zValue.toFixed(10)));
             setZoomLevel(parseFloat(zValue.toFixed(10)));
         }
     }
 
     const SalvaButton = () => {
-        hendelGenrateCode()
-    }
+        hendelGenrateCode();
+        clearHistory();
+    };
+
     return (
         <div className="toolbar">
             <div className='d-flex justify-content-center gap-3'>
@@ -50,7 +53,7 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
 
                 <Dropdown>
                     <Dropdown.Toggle variant="light" id="filter-roles" className="no-caret btn btn-light btn-filter">
-                        <i class="bi bi-filter "></i> Filtra
+                        <i className="bi bi-filter"></i> Filtra
                     </Dropdown.Toggle>
                     <Dropdown.Menu className='btn-filter-dropdown-menu'>
                         <div className='d-flex justify-content-between align-items-center px-3 py-2'>
@@ -68,11 +71,9 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                                     setVisibleRoles(updatedRoles);
                                 }}
                             >
-                                {
-                                    Object.values(visibleRoles).every(Boolean)
-                                        ? "Deseleziona tutti"
-                                        : "Seleziona tutti"
-                                }
+                                {Object.values(visibleRoles).every(Boolean)
+                                    ? "Deseleziona tutti"
+                                    : "Seleziona tutti"}
                             </span>
                         </div>
 
@@ -102,14 +103,13 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                         )}
                     </Dropdown.Menu>
                 </Dropdown>
-
             </div>
 
             <div className='d-flex justify-content-center gap-3'>
-                <span className={!isEditMode && "onswitchtext"}>
+                <span className={!isEditMode ? "onswitchtext" : ""}>
                     Display mode
                 </span>
-                <Form.Check // prettier-ignore
+                <Form.Check
                     type="switch"
                     id="custom-switch"
                     className="large-switch"
@@ -117,21 +117,27 @@ function Toolbar({ openRoleModal, setZoomLevel, MainData, visibleRoles, setVisib
                         setIsEditMode(e.target.checked);
                     }}
                 />
-                <span className={isEditMode && "onswitchtext"}>
+                <span className={isEditMode ? "onswitchtext" : ""}>
                     Edit mode
                 </span>
             </div>
 
             <div className='d-flex align-items-center gap-3'>
                 <span className='d-flex align-items-center gap-2'>
-                    <CircleMinus onClick={(e) => Zoomout(e)} className="cursor-pointer select-none " fill="#000" height={20} width={20} />
-                    <span className='border border-dark py-1 px-2 select-none' >{`${zoomCount * 100}%`}</span>
-                    <Circleplus onClick={(e) => Zoomin(e)} className="cursor-pointer select-none " height={20} width={20} />
+                    <CircleMinus onClick={(e) => Zoomout(e)} className="cursor-pointer select-none" fill="#000" height={20} width={20} />
+                    <span className='border border-dark py-1 px-2 select-none'>{`${zoomCount * 100}%`}</span>
+                    <Circleplus onClick={(e) => Zoomin(e)} className="cursor-pointer select-none" height={20} width={20} />
                 </span>
+                <Button size='sm' variant="secondary d-flex align-items-center gap-1" onClick={handleUndo} disabled={!isEditMode || !canUndo}>
+                    <i className="bi bi-arrow-counterclockwise "></i> Undo
+                </Button>
+                <Button size='sm' variant="secondary d-flex align-items-center gap-1" onClick={handleRedo} disabled={!isEditMode || !canRedo}>
+                    <i className="bi bi-arrow-clockwise "></i> Redo
+                </Button>
                 <span className='cursor-pointer'>
                     <SettingIcon height={22} width={22} />
                 </span>
-                <span >
+                <span>
                     <Button variant="primary" onClick={SalvaButton} disabled={!isEditMode || !MainData?.length}>Salva</Button>
                 </span>
             </div>
