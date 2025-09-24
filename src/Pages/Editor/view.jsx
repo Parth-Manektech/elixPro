@@ -109,7 +109,7 @@ function View({ epWorkflowjson, setEpWorkflowjson, hendelGenrateCode, activeKey 
 
     useEffect(() => {
         if ((undoStack.length > 0 || redoStack.length > 0) && blocker.state === "blocked") {
-            const ok = window.confirm('Unsaved changes will be lost. Are you sure? From bloker ');
+            const ok = window.confirm('Unsaved changes will be lost. Are you sure?');
             if (ok) blocker.proceed();
             else blocker.reset();
         }
